@@ -1,7 +1,7 @@
 /* Faithfulness check: does the built site still have every hook the prototype's
    behaviour depends on, and does its CSS still carry every prototype rule?
    Run: npm run build && node scripts/verify.mjs */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 
 const ROOT = '/Volumes/BEE1/Users/beever/Documents/DEV/R1/Port-Site';
 const proto = readFileSync(`${ROOT}/docs/v2/portfolio-prototype-v2.html`, 'utf8');
@@ -215,6 +215,9 @@ const mustHave = [
   ['href="#legal-impressum"', 'Impressum link (FR-44)'],
   ['href="#legal-privacy"', 'privacy link (FR-45)'],
   ['fonts.googleapis.com', 'Archivo + Unbounded webfonts'],
+  ['property="og:image"', 'Open Graph image for link previews'],
+  ['favicon-dark.svg', 'dark-scheme favicon variant'],
+  ['https://reverb-one.space/og.png', 'og:image resolves to an absolute URL on the live domain'],
 ];
 for (const [needle, label] of mustHave) {
   check(built.includes(needle), label, `${label} — "${needle}" not in built page`);
@@ -228,6 +231,15 @@ check(
   !built.includes('Replay page loader'),
   'prototype control labels absent from prod',
   'prototype control labels leaked into prod',
+);
+/* The dev LOOK panel's saved values (localStorage key "look") must not reach prod: the block is
+   behind import.meta.env.DEV, so the bundles must not read or write that key. */
+const builtJs = [built, ...readdirSync(`${ROOT}/site/dist/_astro`).filter((f) => f.endsWith('.js'))
+  .map((f) => readFileSync(`${ROOT}/site/dist/_astro/${f}`, 'utf8'))].join('\n');
+check(
+  !/["'`]look["'`]/.test(builtJs),
+  'saved LOOK overrides compiled out of prod',
+  'the dev LOOK storage key reached the production bundle',
 );
 
 /* ---------- 7. DOM skeleton parity ---------- */

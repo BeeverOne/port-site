@@ -258,6 +258,98 @@ const sym = await mob.evaluate(() => {
 check(Math.abs(sym.top - sym.bottom) < 1.5, `collapsed footer wraps snugly around the row (top ${sym.top} / bottom ${sym.bottom})`, `collapsed footer padding asymmetric (top ${sym.top} / bottom ${sym.bottom})`);
 await mob.close();
 
+/* CR-22 regression: after a reverse, one small nudge down must re-trigger the clock-driven
+   transition. The reverse leaves scrollTop at the rounded trigger position, which on some
+   viewports is just above it (failed at 1280x777 before the fix, passed at 1440x900). */
+for (const vp of [{ width: 1280, height: 777 }, { width: 1440, height: 900 }]) {
+  const pg = await browser.newPage({ viewport: vp });
+  pg.on('pageerror', (e) => bad(`page error (${vp.width}x${vp.height}): ${e.message}`));
+  await pg.goto(SITE);
+  await pg.waitForTimeout(3500);
+  await pg.mouse.move(vp.width / 2, vp.height / 2);
+  const pst = () => pg.evaluate(() => document.querySelector('#scroller').scrollTop);
+  const inWorks = () => pg.evaluate(() => document.body.classList.contains('mode-works'));
+  await pg.click('#enterWorks');
+  await pg.waitForTimeout(3500);
+  await pg.mouse.wheel(0, -200);            // reverse at the first card
+  await pg.waitForTimeout(2600);
+  const back = !(await inWorks());
+  await pg.mouse.wheel(0, 120);             // one small nudge down
+  await pg.waitForTimeout(250);
+  const s1 = await pst();
+  await pg.waitForTimeout(700);
+  const s2 = await pst();
+  await pg.waitForTimeout(2500);
+  check(back && s2 > s1 + 5 && (await inWorks()),
+    `nudge after a reverse re-triggers the transition at ${vp.width}x${vp.height} (${s1} -> ${s2}) (FR-02, CR-22)`,
+    `no re-trigger after a reverse at ${vp.width}x${vp.height} (back ${back}, ${s1} -> ${s2}, works ${await inWorks()})`);
+  await pg.close();
+}
+
+/* Settle pause at the first card: momentum that jacks the track back to card 1 must not roll
+   straight into the reverse transition (the reverse branch used to run before the settle check). */
+{
+  const pg = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await pg.goto(SITE);
+  await pg.waitForTimeout(3500);
+  await pg.mouse.move(720, 450);
+  await pg.click('#enterWorks');
+  await pg.waitForTimeout(3500);
+  await pg.mouse.wheel(0, 400);             // jack right
+  await pg.waitForTimeout(900);
+  await pg.mouse.wheel(0, -600);            // jack back to the first card
+  await pg.waitForFunction(() => document.querySelector('#track').scrollLeft <= 2, null, { timeout: 3000, polling: 'raf' });
+  const st0 = await pg.evaluate(() => document.querySelector('#scroller').scrollTop);
+  await pg.mouse.wheel(0, -120);            // momentum tail inside the 250 ms window
+  await pg.waitForTimeout(120);
+  const st1 = await pg.evaluate(() => document.querySelector('#scroller').scrollTop);
+  check(Math.abs(st1 - st0) <= 2, `settle pause holds at the first card (${st0} -> ${st1})`, `momentum rolled into the reverse transition (${st0} -> ${st1})`);
+  await pg.waitForTimeout(400);
+  await pg.mouse.wheel(0, -120);            // window closed: a deliberate wheel up reverses
+  await pg.waitForTimeout(500);
+  const st2 = await pg.evaluate(() => document.querySelector('#scroller').scrollTop);
+  check(st2 < st1 - 5, `wheel up after the pause starts the reverse (${st1} -> ${st2}) (FR-03)`, `no reverse after the pause (${st1} -> ${st2})`);
+  await pg.close();
+}
+
+/* NFR-04: while the transition runs, the canvas is cleared once per frame, not twice
+   (animTick renders; the scroll event its scrollTop write fires must not render again). */
+{
+  const pg = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await pg.addInitScript(() => {
+    window.__clears = 0; window.__frames = 0;
+    const clear = CanvasRenderingContext2D.prototype.clearRect;
+    CanvasRenderingContext2D.prototype.clearRect = function (...a) { window.__clears++; return clear.apply(this, a); };
+    const tick = () => { window.__frames++; requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+  await pg.goto(SITE);
+  await pg.waitForTimeout(3500);
+  await pg.click('#enterWorks');
+  await pg.waitForTimeout(400);             // the transition is under way
+  await pg.evaluate(() => { window.__clears = 0; window.__frames = 0; });
+  await pg.waitForTimeout(800);
+  const { clears, frames } = await pg.evaluate(() => ({ clears: window.__clears, frames: window.__frames }));
+  const ratio = clears / Math.max(1, frames);
+  check(frames > 10 && ratio <= 1.1, `one canvas draw per frame during the transition (${clears} clears / ${frames} frames) (NFR-04)`,
+    `canvas drawn ${ratio.toFixed(2)}x per frame during the transition (${clears} clears / ${frames} frames)`);
+
+  /* Keys cannot scroll the island while the transition plays: scroll keys are prevented. */
+  await pg.waitForTimeout(3000);
+  await pg.mouse.move(720, 450);
+  await pg.mouse.wheel(0, -200);            // start the reverse
+  await pg.waitForTimeout(300);
+  await pg.evaluate(() => {
+    window.__prevented = null;
+    window.addEventListener('keydown', (e) => { window.__prevented = e.defaultPrevented; }, { once: true });
+    document.querySelector('#scroller').focus({ preventScroll: true });
+  });
+  await pg.keyboard.press('PageDown');
+  check(await pg.evaluate(() => window.__prevented === true), 'scroll keys are suppressed while the transition plays (CR-22)',
+    'PageDown was not prevented during the transition');
+  await pg.close();
+}
+
 await browser.close();
 if (server) {
   try { process.kill(-server.pid); } catch { /* already gone */ }

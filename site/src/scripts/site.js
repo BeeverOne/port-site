@@ -24,7 +24,7 @@ const LOOK = {
 };
 const BAKED_LOOK = Object.assign({}, LOOK);   // reset target; session overrides load below
 const SETTLE_MS = 250;         // owner direction: brief pause at a section boundary before the next input phase takes over
-const STAGGER_MS = 50;         // flow-in: per-item delay once the transition ends (CR-13 value, now triggered)
+const STAGGER_MS = 50;         // flow-in: per-item delay once the transition ends (CR-20)
 const FLOW_MS = 600;           // flow-in: per-item duration
 const TRANSITION_MS = 1800;    // the transition is its own animation: duration at full travel
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -110,40 +110,44 @@ function runLoader() {
 }
 $('#replayLoader')?.addEventListener('click', runLoader);
 
-/* Dev-only transition look controls: write LOOK live and re-measure or re-draw. */
-const lookInputs = $$('.proto [data-param]');
-const lookOut = (inp) => { const o = document.querySelector('output[data-out="' + inp.dataset.param + '"]'); if (o) o.textContent = inp.value; };
-lookInputs.forEach((inp) => {
-  inp.value = String(LOOK[inp.dataset.param]);
-  lookOut(inp);
-  inp.addEventListener('input', () => {
-    LOOK[inp.dataset.param] = parseFloat(inp.value);
+/* Dev-only transition look controls: write LOOK live and re-measure or re-draw. The whole block
+   is compiled out of production builds, so a saved look can never override the baked LOOK there. */
+if (import.meta.env.DEV) {
+  const lookInputs = $$('.proto [data-param]');
+  const lookOut = (inp) => { const o = document.querySelector('output[data-out="' + inp.dataset.param + '"]'); if (o) o.textContent = inp.value; };
+  lookInputs.forEach((inp) => {
+    inp.value = String(LOOK[inp.dataset.param]);
     lookOut(inp);
-    if (['density', 'jitter', 'stream', 'speed', 'triggerOffset'].includes(inp.dataset.param)) layout(); else render();
+    inp.addEventListener('input', () => {
+      LOOK[inp.dataset.param] = parseFloat(inp.value);
+      lookOut(inp);
+      if (['density', 'jitter', 'stream', 'speed', 'triggerOffset'].includes(inp.dataset.param)) layout(); else render();
+    });
   });
-});
-/* Session defaults: saved values reload with the panel; Copy emits a paste-ready LOOK literal. */
-let savedLook = null;
-try { savedLook = JSON.parse(store.get('look') || 'null'); } catch { savedLook = null; }
-if (savedLook && typeof savedLook === 'object') {
-  for (const k of Object.keys(LOOK)) {
-    if (typeof savedLook[k] === 'number' && isFinite(savedLook[k])) LOOK[k] = savedLook[k];
+  /* Saved values (localStorage, so they persist across dev sessions) reload with the panel;
+     Copy emits a paste-ready LOOK literal. */
+  let savedLook = null;
+  try { savedLook = JSON.parse(store.get('look') || 'null'); } catch { savedLook = null; }
+  if (savedLook && typeof savedLook === 'object') {
+    for (const k of Object.keys(LOOK)) {
+      if (typeof savedLook[k] === 'number' && isFinite(savedLook[k])) LOOK[k] = savedLook[k];
+    }
+    lookInputs.forEach((inp) => { inp.value = String(LOOK[inp.dataset.param]); lookOut(inp); });
+    /* no layout() here: the start block runs it once every declaration exists */
   }
-  lookInputs.forEach((inp) => { inp.value = String(LOOK[inp.dataset.param]); lookOut(inp); });
-  /* no layout() here: the start block runs it once every declaration exists */
+  $('#copyLook')?.addEventListener('click', () => {
+    const text = 'const LOOK = {\n' + Object.entries(LOOK).map(([k, v]) => '  ' + k + ': ' + v + ',').join('\n') + '\n};';
+    if (navigator.clipboard) navigator.clipboard.writeText(text);
+    console.log(text);
+  });
+  $('#saveLook')?.addEventListener('click', () => store.set('look', JSON.stringify(LOOK)));
+  $('#resetLook')?.addEventListener('click', () => {
+    Object.assign(LOOK, BAKED_LOOK);
+    store.set('look', '{}');
+    lookInputs.forEach((inp) => { inp.value = String(LOOK[inp.dataset.param]); lookOut(inp); });
+    layout();
+  });
 }
-$('#copyLook')?.addEventListener('click', () => {
-  const text = 'const LOOK = {\n' + Object.entries(LOOK).map(([k, v]) => '  ' + k + ': ' + v + ',').join('\n') + '\n};';
-  if (navigator.clipboard) navigator.clipboard.writeText(text);
-  console.log(text);
-});
-$('#saveLook')?.addEventListener('click', () => store.set('look', JSON.stringify(LOOK)));
-$('#resetLook')?.addEventListener('click', () => {
-  Object.assign(LOOK, BAKED_LOOK);
-  store.set('look', '{}');
-  lookInputs.forEach((inp) => { inp.value = String(LOOK[inp.dataset.param]); lookOut(inp); });
-  layout();
-});
 
 /* ---------- Works track ---------- */
 function localizeCards() {
@@ -345,13 +349,17 @@ function startAnim(to) {
 scroller.addEventListener('scroll', () => {
   const st = scroller.scrollTop;
   const max = scroller.scrollHeight - scroller.clientHeight;
-  // crossing the trigger line downwards starts the transition as one fluid motion
-  if (!anim && wasSt >= 0 && wasSt < runwayStart && st >= runwayStart && st < max - 1) startAnim(1);
+  // crossing the trigger line downwards starts the transition as one fluid motion. A reverse ends
+  // by setting scrollTop to runwayStart, which the browser rounds, sometimes to just above it; the
+  // 1 px band counts that resting position as "at the line", so the next nudge down re-triggers.
+  if (!anim && wasSt >= 0 && wasSt <= runwayStart + 1 && st > runwayStart + 1 && st < max - 1) startAnim(1);
   wasSt = st;
   const bottom = atBottom();
   if (bottom && !wasBottom) settleUntil = performance.now() + SETTLE_MS;      // pause before the jack takes over
   wasBottom = bottom;
-  if (!rq) rq = requestAnimationFrame(() => { rq = 0; render(); });
+  // while the transition runs, animTick() already renders once per frame; the scrollTop it writes
+  // fires this listener, and a second render here would draw the canvas twice per frame (NFR-04)
+  if (!rq && !anim) rq = requestAnimationFrame(() => { rq = 0; render(); });
 }, { passive: true });
 const atBottom = () => scroller.scrollTop >= scroller.scrollHeight - scroller.clientHeight - 2;
 
@@ -363,9 +371,11 @@ scroller.addEventListener('wheel', (e) => {
   if (!atBottom()) return;                                     // native scroll; crossing the trigger starts the transition
   if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;         // FR-07: native horizontal input
   const dy = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaY;
+  // brief pause at a boundary (arriving at the bottom, or back at the first card): wheel momentum
+  // is absorbed here, before it can roll on into the jack or into the reverse transition
+  if (performance.now() < settleUntil) { e.preventDefault(); return; }
   if (dy < 0 && track.scrollLeft <= 2 && (target === null || target <= 2)) { e.preventDefault(); startAnim(0); return; }   // reverse transition (FR-03, FR-18)
   if (reduce.matches) return;                                  // FR-19: no scroll-jacking with reduced motion
-  if (performance.now() < settleUntil) { e.preventDefault(); return; }   // brief pause at the boundary
   e.preventDefault(); jack(dy);
 }, { passive: false });
 
@@ -389,11 +399,16 @@ scroller.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 // Keyboard (FR-08, FR-03)
+const SCROLL_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End', ' '];
 window.addEventListener('keydown', (e) => {
   if (document.querySelector('dialog[open]')) return;
   if ($('#detail').classList.contains('open')) { if (e.key === 'Escape') closeDetail(); return; }
-  if (performance.now() < lockUntil) return;                 // the flow-in suspends scrolling, keys included
-  if (anim) return;                                          // the transition suspends scrolling, keys included
+  if (anim || performance.now() < lockUntil) {               // the transition and the flow-in suspend scrolling, keys included
+    const typing = e.target.closest?.('input, textarea, select');
+    const pressing = e.key === ' ' && e.target.closest?.('button, [role="button"]');
+    if (!typing && !pressing && SCROLL_KEYS.includes(e.key)) e.preventDefault();   // no native scroll to fight the clock
+    return;
+  }
   if (!atBottom()) return;
   const tag = document.activeElement ? document.activeElement.tagName : '';
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;

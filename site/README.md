@@ -83,7 +83,7 @@ against the previous language's text lengths.
 
 The v1 drawing-sheet frame, the owner-directed `.frame-blur` band, the title blocks, `body.lock` and
 the v1 mode state machine are all gone: the islands layout (CR-09), the title-block removal (CR-08)
-and the scroll-driven transition (CR-02) replace them. The v1 port remains in git at `855d989`.
+and the single-scroller transition (CR-02, clock-driven since CR-22) replace them. The v1 port remains in git at `855d989`.
 
 ## One deliberate build-config deviation
 

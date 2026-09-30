@@ -10,8 +10,24 @@ const { title = 're.verb one - Oluwafemi Bamigboye' } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
+    <!-- Dark artwork for light tabs, light artwork for dark tabs: the brand asset pair. -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon-dark.svg" media="(prefers-color-scheme: dark)" />
     <meta name="description" content="re.verb one - Oluwafemi Bamigboye, software developer." />
+    <!-- Link previews (iMessage, WhatsApp, Slack, Discord): Open Graph. Crawlers fetch
+         server-side, so og:url and og:image must be absolute; Astro.site supplies the domain. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="re.verb one" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content="re.verb one - Oluwafemi Bamigboye, software developer." />
+    <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
+    <meta property="og:image" content={new URL('/og.png', Astro.site)} />
+    <meta property="og:image:width" content="2400" />
+    <meta property="og:image:height" content="1260" />
+    <meta property="og:image:alt" content="re.verb one wordmark on a dark green background" />
+    <!-- summary_large_image shows the wide 1.9:1 card; plain summary crops it to a small square. -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image:alt" content="re.verb one wordmark on a dark green background" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

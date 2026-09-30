@@ -2,8 +2,8 @@
 import ProjectCard from './ProjectCard.astro';
 
 /* Works (FR-04 to FR-12). Lives inside the island's scroller, in normal flow after the
-   runway; the scroll-driven renderer brings it in from the bottom. The staggered items
-   carry .stagger (CR-17 keeps the scroll-linked flow-in). */
+   runway; the clock-driven transition brings the view here (CR-22). The staggered items
+   carry .stagger and flow in on a triggered time stagger at the end of it (CR-20). */
 const { projects } = Astro.props;
 ---
 
