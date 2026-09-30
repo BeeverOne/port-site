@@ -19,8 +19,8 @@ const { title = 're.verb one - Oluwafemi Bamigboye' } = Astro.props;
       rel="stylesheet"
     />
   </head>
-  <!-- class="lock": the page loader covers the intro until it ends (FR-47). -->
-  <body class="lock">
+  <!-- v2: the page itself never scrolls; the content island's scroller owns vertical scroll. -->
+  <body>
     <slot />
   </body>
 </html>

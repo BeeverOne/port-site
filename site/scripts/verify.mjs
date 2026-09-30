@@ -4,7 +4,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 
 const ROOT = '/Volumes/BEE1/Users/beever/Documents/DEV/R1/Port-Site';
-const proto = readFileSync(`${ROOT}/base/portfolio-prototype.html`, 'utf8');
+const proto = readFileSync(`${ROOT}/docs/v2/portfolio-prototype-v2.html`, 'utf8');
 const js = readFileSync(`${ROOT}/site/src/scripts/site.js`, 'utf8');
 
 const distIndex = `${ROOT}/site/dist/index.html`;
@@ -69,7 +69,7 @@ if (!island) {
     bad(`island JSON invalid: ${e.message}`);
   }
   if (data) {
-    const cardIds = [...built.matchAll(/class="card cb"[^>]*data-id="([\w-]+)"/g)].map((m) => m[1]);
+    const cardIds = [...built.matchAll(/class="card cb[^"]*"[^>]*data-id="([\w-]+)"/g)].map((m) => m[1]);
     ok(`island parses: ${data.length} projects`);
     check(
       data.length === cardIds.length,
@@ -122,6 +122,7 @@ function canon(sel) {
     .replace(/\s+\)/g, ')')
     .replace(/,\s*/g, ',')
     .replace(/\bfrom\b/g, '0%')
+    .replace(/\bto\b/g, '100%')
     .replace(/:\s+/g, ':')
     .trim()
     .toLowerCase();
@@ -162,13 +163,13 @@ for (const href of builtCssFiles) {
   /* Effects a minifier could plausibly rewrite or drop — check values, not just selectors. */
   const critical = [
     ['mask-image plus field', /mask-image:url\("data:image\/svg\+xml/],
-    ['edge blur backdrop-filter', /(?:^|[{;])backdrop-filter:blur\(7px\)/],
+    ['edge blur backdrop-filter', /(?:^|[{;])backdrop-filter:blur\(8px\)/],
     ['card thumb conic-gradient', /conic-gradient/],
     ['detail clip-path', /clip-path/],
     ['highlighter gradient', /linear-gradient\(100deg/],
     ['corner-mark hover gradients', /linear-gradient\(var\(--cb\),\s*var\(--cb\)\)/],
-    ['loader fill keyframes', /@keyframes fill/],
-    ['loader loop keyframes', /@keyframes loop/],
+    ['loader rise keyframes', /@keyframes rise/],
+    ['scan keyframes', /@keyframes scan/],
     ['dark-mode media query', /prefers-color-scheme:dark/],
     ['reduced-motion media query', /prefers-reduced-motion:reduce/],
     ['works colour token', /--works:\s*#0f5c55/i],
@@ -179,29 +180,32 @@ for (const href of builtCssFiles) {
     check(re.test(min), label, `${label} — pattern ${re} not in built CSS`);
   }
 }
-console.log('  note  src/styles/global.css equals the prototype <style> block plus the owner-directed .frame-blur addition');
+console.log('  note  src/styles/global.css is byte-identical to the v2 prototype <style> block (checked separately)');
 
 /* ---------- 5. Structural parity ---------- */
 console.log('\n[5] structural parity with prototype');
 const mustHave = [
-  ['<body class="lock">', 'body starts locked (FR-47)'],
+  ['class="island"', 'content island (v2 architecture)'],
+  ['class="scroller"', 'island scroller owns vertical scroll'],
+  ['class="runway"', 'runway spacer sizes the transition'],
+  ['class="lmark"', 'v-stack loader mark (FR-47)'],
+  ['role="slider"', 'draggable indicator slider (FR-05, CR-04)'],
+  ['btn-primary', 'primary buttons carry the scan sweep'],
   ['class="plus-field"', 'plus-mark field'],
-  ['class="frame"', 'drawing-sheet frame'],
-  ['class="frame-blur"', 'outer frame blur, stronger than the bottom edge (owner direction)'],
   ['id="loader"', 'page loader'],
-  ['class="site-header"', 'header'],
+  ['class="site-header"', 'header island'],
   ['class="mark cb"', 'header mark link'],
   ['mark-wordmark', 'desktop wordmark'],
   ['mark-vstack', 'mobile v-stack'],
   ['id="themeBtn"', 'theme toggle (FR-24)'],
   ['id="intro"', 'intro section (FR-01)'],
   ['id="statement"', 'intro statement h1'],
-  ['class="edge-blur"', 'bottom-edge blur'],
+  ['class="edge-blur"', 'bottom-edge blur inside the island'],
   ['id="grain"', 'grain canvas (FR-02)'],
   ['id="works"', 'works section (FR-04)'],
   ['id="track"', 'works track'],
-  ['class="indicator"', 'horizontal-scroll signal (FR-05)'],
-  ['class="works-footer"', 'works footer (FR-12)'],
+  ['class="indicator', 'horizontal-scroll signal (FR-05)'],
+  ['class="works-footer', 'works footer (FR-12)'],
   ['id="detail"', 'detail view (FR-13)'],
   ['id="contact"', 'contact overlay (FR-26)'],
   ['id="demoRange"', 'interactive component preview (FR-17)'],
@@ -242,9 +246,7 @@ function skeleton(html) {
   s = s.replace(/<script[\s\S]*?<\/script>/g, '');
   s = s.replace(/<svg[\s\S]*?<\/svg>/g, '<svg>'); /* svg innards come from the extracted marks */
   s = s.replace(/<details class="proto">[\s\S]*?<\/details>/g, '');
-  /* the outer-margin blur is an owner-directed addition, not in the prototype */
-  s = s.replace(/<div class="frame-blur"[^>]*>(?:<div[^>]*>\s*<\/div>\s*)*<\/div>/g, '');
-  s = s.replace(/<div class="track"[^>]*>[\s\S]*?<\/div>\s*<div class="indicator"/g, '<div class="track" id="track"><div class="indicator"');
+  s = s.replace(/<div class="track"[^>]*>[\s\S]*?<\/div>\s*<div class="indicator/g, '<div class="track" id="track"><div class="indicator');
   const tags = [];
   for (const m of s.matchAll(/<([a-zA-Z][\w-]*)([^>]*)>/g)) {
     const tag = m[1].toLowerCase();
@@ -280,7 +282,7 @@ if (protoSkel.length === builtSkel.length && protoSkel.every((t, i) => t === bui
 /* Class-name multiset: catches a renamed or dropped hook the sequence check could mask. */
 /* Known, deliberate differences: the track's cards (Astro renders them, the prototype
    injects them at runtime) and the dev-only prototype control panel (checked in [6]). */
-const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'frame-blur'];
+const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger'];
 function classBag(html) {
   const bag = new Map();
   for (const m of bodyOf(html).matchAll(/\bclass="([^"]*)"/g)) {

@@ -1,11 +1,12 @@
 ---
-import TitleBlock from './TitleBlock.astro';
+/* Intro (FR-01). The title blocks are gone (CR-08); the outro is just the trigger
+   line and the enter control, and it fades out upwards as the transition starts. */
 ---
 
-<!-- ============ INTRO (FR-01) ============ -->
 <main class="intro" id="intro">
   <div class="label" data-i18n="about">[ about ]</div>
-  <!-- Filled by renderStatement() so the name and the highlighter keep their own fonts (FR-18 pattern). -->
+  <!-- Filled by renderStatement(): plain parts, the name span, and highlighter spans
+       carrying their own --hl-delay / --hl-dur (owner note 3). -->
   <h1 id="statement"></h1>
   <div class="copy">
     <p data-i18n="p2"></p>
@@ -14,14 +15,11 @@ import TitleBlock from './TitleBlock.astro';
     <p data-i18n="p4"></p>
   </div>
   <div class="outro" id="outro">
-    <div>
-      <h2 data-i18n="trigger">Here are some of my work</h2>
-      <button class="enter cb" type="button" id="enterWorks" data-i18n-label="enterWorks" aria-label="Go to my works">
-        <svg width="40" height="64" viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"
-          ><path d="M20 0v62M6 48l14 14 14-14"></path></svg
-        >
-      </button>
-    </div>
-    <TitleBlock sheet="sheetIntro" sheetText="1 of 2, Intro" />
+    <h2 data-i18n="trigger">Here are some of my work</h2>
+    <button class="enter cb" type="button" id="enterWorks" data-i18n-label="enterWorks" aria-label="Go to my works">
+      <svg width="40" height="64" viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"
+        ><path d="M20 0v62M6 48l14 14 14-14"></path></svg
+      >
+    </button>
   </div>
 </main>

@@ -1,32 +1,41 @@
 ---
-import TitleBlock from './TitleBlock.astro';
 import ProjectCard from './ProjectCard.astro';
 
-/* Published projects, in the owner's order (FR-11). */
+/* Works (FR-04 to FR-12). Lives inside the island's scroller, in normal flow after the
+   runway; the scroll-driven renderer brings it in from the bottom. The staggered items
+   carry .stagger (CR-17 keeps the scroll-linked flow-in). */
 const { projects } = Astro.props;
 ---
 
-<!-- ============ WORKS (FR-04 to FR-12) ============ -->
-<section class="works" id="works" aria-labelledby="worksTitle" inert>
+<section class="works" id="works" aria-labelledby="worksTitle">
   <div class="plus-field" aria-hidden="true"></div>
   <div class="works-main">
-    <div class="works-head">
-      <h2 id="worksTitle" data-i18n="works">[ Works ]</h2>
-      <TitleBlock sheet="sheetWorks" sheetText="2 of 2, Works" />
-    </div>
+    <div class="works-head stagger"><h2 id="worksTitle" data-i18n="works">[ Works ]</h2></div>
     <div class="track" id="track" aria-label="Projects">
       {projects.map((p) => <ProjectCard id={p.id} {...p.data.en} />)}
     </div>
-    <div class="indicator" aria-hidden="true">
-      <span id="pos">1 / {projects.length}</span>
-      <div class="bar"><i id="barFill"></i></div>
-      <svg width="28" height="12" viewBox="0 0 28 12" fill="none" stroke="currentColor" stroke-width="1.5"
+    <div class="indicator stagger">
+      <span id="pos" aria-hidden="true">1 / {projects.length}</span>
+      <div
+        class="bar cb"
+        id="bar"
+        role="slider"
+        tabindex="0"
+        aria-valuemin="1"
+        aria-valuemax={projects.length}
+        aria-valuenow="1"
+        data-i18n-label="scrollbar"
+        aria-label="Project position"
+      >
+        <i id="barFill"></i>
+      </div>
+      <svg width="28" height="12" viewBox="0 0 28 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"
         ><path d="M0 6h26M21 1l5 5-5 5"></path></svg
       >
     </div>
   </div>
-  <footer class="works-footer">
-    <button class="btn cb" type="button" data-open-contact data-i18n="contact">Contact</button>
+  <footer class="works-footer stagger">
+    <button class="btn btn-primary cb" type="button" data-open-contact data-i18n="contact">Contact</button>
     <nav aria-label="Footer">
       <a class="cb" href="https://github.com/" target="_blank" rel="noopener">[ GitHub ]</a
       ><!-- replace with the profile URL -->

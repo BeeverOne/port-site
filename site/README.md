@@ -1,8 +1,8 @@
 # portfolio-site — Astro build
 
-Astro port of `../base/portfolio-prototype.html`, the owner-approved reference
-implementation for portfolio-site v1. The build is intended to be indistinguishable
-from the prototype; everything below exists to keep it that way.
+Astro port of `../docs/v2/portfolio-prototype-v2.html`, the owner-approved v2 reference
+(WP1 of `../docs/v2-feedback/PORT-PLAN.md`). The v1 port remains in git at commit `855d989`.
+The build is intended to be indistinguishable from the prototype; everything below exists to keep it that way.
 
 ## Run
 
@@ -19,16 +19,16 @@ npm run test:e2e   # browser smoke test of the interactive flows (needs Chrome)
 
 | Path | What it is |
 | --- | --- |
-| `src/styles/global.css` | The prototype's `<style>` block verbatim, plus the owner-directed `.frame-blur` addition. Edit here, not in a component. |
-| `src/scripts/site.js` | The prototype's `<script>`, byte-identical except the four edits listed below. |
-| `src/i18n/ui.js` | The prototype's EN/DE dictionary, lifted out verbatim. |
-| `src/components/marks/` | The three inline SVG brand marks, sliced out verbatim. |
+| `src/styles/global.css` | The v2 prototype's `<style>` block, byte-identical. Edit here, not in a component. |
+| `src/scripts/site.js` | The v2 prototype's `<script>`, byte-identical except the four standing edits listed below. |
+| `src/i18n/ui.js` | The v2 EN/DE dictionary, lifted out verbatim (statement parts carry the highlighter timing). |
+| `src/components/marks/` | The inline SVG brand marks, sliced out verbatim. `VStack` is parameterised: the header mark and the loader's base/fillmark pair. `R1Mark` retired with the title blocks (CR-08). |
 | `src/content/projects/` | One markdown file per project (the content model; a CMS replaces this loader later). |
-| `src/components/` | One component per prototype region: loader, header, intro, works, detail, contact. |
+| `src/components/` | One component per prototype region: loader, header, intro, works, detail, contact. `TitleBlock` retired with CR-08. |
 | `scripts/verify.mjs` | Asserts the build still matches the prototype (DOM hooks, CSS selectors, skeleton). |
 | `scripts/interact.mjs` | Drives the built site in Chrome: transition, scroll-jack, detail, i18n, theme, contact. |
 
-## The four deliberate edits to `site.js`
+## The four standing edits to `site.js` (v1 and v2 ports alike)
 
 1. `const T = {...}` moved to `src/i18n/ui.js` and imported.
 2. `const PROJECTS = [...]` replaced by a read of the `#projects-data` JSON island,
@@ -39,15 +39,15 @@ npm run test:e2e   # browser smoke test of the interactive flows (needs Chrome)
    dev-only (`import.meta.env.DEV`) and the prototype marks it "not part of the site".
 
 Plus one behaviour-preserving substitution: the forced reflow in `openDetail()` uses
-`getBoundingClientRect()` instead of a bare `offsetHeight;` expression.
+`getBoundingClientRect()` instead of a bare `offsetHeight;` expression. And one ordering rule:
+`applyLang()` calls `localizeCards()` before the `layout()` it schedules, or the runway is measured
+against the previous language's text lengths.
 
-## Owner-directed design additions
+## Retired by the v2 port
 
-- `.frame-blur` (in `global.css` + one element in `src/pages/index.astro`): the frame frames the
-  site by sitting over the content, so the whole sheet margin outside the 1px border blurs at
-  full strength - 16px, stronger than the bottom-edge blur's 7px, with no fade. Content that
-  scrolls under the frame reads as frosted glass behind it; the 1px border paints above and
-  stays crisp.
+The v1 drawing-sheet frame, the owner-directed `.frame-blur` band, the title blocks, `body.lock` and
+the v1 mode state machine are all gone: the islands layout (CR-09), the title-block removal (CR-08)
+and the scroll-driven transition (CR-02) replace them. The v1 port remains in git at `855d989`.
 
 ## One deliberate build-config deviation
 

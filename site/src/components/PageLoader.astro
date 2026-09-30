@@ -1,10 +1,12 @@
 ---
-import R1Mark from './marks/R1Mark.astro';
+import VStack from './marks/VStack.astro';
 ---
 
-<!-- Page loader (FR-47 to FR-49, FR-52) -->
+<!-- Page loader (FR-47 to FR-49, FR-52): the v-stack wordmark fills from bottom to top.
+     .base is the faint outline, .fillmark is the clip-path reveal on top of it. -->
 <div class="loader run" id="loader" role="status" aria-live="polite">
-  <R1Mark size={56} />
-  <div class="fill" aria-hidden="true"><i></i></div>
+  <div class="lmark" aria-hidden="true"
+    ><VStack markClass="base" width={200} height={96} /><VStack markClass="fillmark" width={200} height={96} /></div
+  >
   <span class="sr-only" data-i18n="loading">Loading</span>
 </div>
