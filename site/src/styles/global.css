@@ -269,3 +269,96 @@ body.mode-works .proto { bottom: calc(var(--gap) + 96px); }
   .btn-primary::before { animation: none; background: none; }
   .loader.run .fillmark, .loader.loop .fillmark { animation: none; clip-path: inset(0 0 0 0); }
 }
+
+/* ---------- Owner-directed additions on top of prototype v2 (2026-09-30) ---------- */
+/* Flow-in: at the end of the scroll-driven transition the works items flow in on a time
+   stagger (50 ms per item) while scrolling stays locked; leaving the trigger plays a
+   softer 300 ms exit. Reduced motion shows the items without movement (FR-18, FR-52). */
+.stagger { opacity: 0; transform: translateY(var(--lift, 90px)); transition: transform 600ms cubic-bezier(.2,.7,.2,1), opacity 600ms ease-out; }
+.works.flow .stagger { opacity: 1; transform: none; transition-delay: var(--fd, 0ms); }
+.works:not(.flow) .stagger { transition-duration: 300ms; transition-delay: 0ms; }
+
+/* The canvas cross-fade is the single background of the island: the works section stops
+   painting its own colour, so no hard slab edge travels up over the mid-fade canvas.
+   overflow hidden also clips the pre-flow stagger translate, which otherwise inflates the
+   scroller's scrollHeight and yanks the pinned viewport down as the flow-in plays. */
+.works { background: transparent; overflow: hidden; }
+
+/* Card hover choreography: the whole card scales from one origin so the composition holds
+   together; the title cross-fades from beneath the thumbnail to a slot above it (mirroring
+   its position in the detail view), and the sibling cards dim behind a works-coloured veil. */
+.card { position: relative; transition: transform 250ms cubic-bezier(.2,.7,.2,1); }
+.card::before {
+  content: ""; position: absolute; inset: 0; z-index: 1; border-radius: var(--radius);
+  background: var(--works); opacity: 0; pointer-events: none; transition: opacity 200ms ease-out;
+}
+.track:has(.card:hover) .card:not(:hover)::before { opacity: 0.45; }
+.card .hover-title {
+  position: absolute; left: 0; right: 0; bottom: calc(100% + 10px);
+  margin: 0; font-size: clamp(22px, 2.1vw, 30px); line-height: 1.1; font-weight: 500; font-stretch: 115%;
+  opacity: 0; transform: translateY(8px); pointer-events: none;
+  transition: opacity 200ms ease-out, transform 250ms cubic-bezier(.2,.7,.2,1);
+}
+.card h3 { transition: opacity 200ms ease-out; }
+.card:hover, .card:focus-visible, .works.flow .card:hover, .works.flow .card:focus-visible { transform: scale(1.03); }
+.card:hover .hover-title, .card:focus-visible .hover-title { opacity: 1; transform: none; }
+.card:hover h3, .card:focus-visible h3 { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger { opacity: 1; transform: none; transition: none; }
+  .card, .card .hover-title { transform: none; }
+  .card .hover-title { transition: opacity 200ms ease-out; }
+}
+
+/* Headroom for the hover title above the thumbnail: the track clips overflow-y, so
+   without this band the title would be cut off at the track's top edge. */
+.track { padding-top: 56px; }
+@media (max-width: 767px) { .track { padding-top: 44px; } }
+
+/* Single plus-mark field: the works section no longer carries its own, so no doubled crosses
+   during the transition; the field colour follows the active section instead. It paints above the
+   canvas (otherwise the opaque cross-fade fill hides the crosses) and below the scroller content. */
+.island > .plus-field { z-index: 3; transition: background-color 300ms; }
+.scroller { z-index: 4; }
+body.mode-works .island > .plus-field { background-color: var(--works-plus); }
+
+/* The enter arrow nudges down on a slow loop with a hold between dips: there is more to
+   see below (owner direction). It lives inside the outro, so it fades with the trigger line. */
+.enter svg { animation: enterNudge 2.4s cubic-bezier(.45, 0, .3, 1) infinite; }
+@keyframes enterNudge { 0%, 55%, 100% { transform: translateY(0); } 75% { transform: translateY(7px); } }
+@media (prefers-reduced-motion: reduce) { .enter svg { animation: none; } }
+
+/* Mobile footer collapse: a chevron to the far right of Contact folds the links and the
+   copyright away (owner direction). On desktop the wrappers dissolve via display: contents,
+   so the three-column footer keeps its exact v2 geometry. */
+.wf-row { display: contents; }
+.wf-more, .wf-more-inner { display: contents; }
+.wf-toggle { display: none; }
+@media (max-width: 767px) {
+  .works-footer { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  .wf-row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  .wf-toggle {
+    display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; margin-right: -10px;
+    background: transparent; border: 0; border-radius: var(--radius);
+    color: var(--accent-ink); --cb: var(--accent-ink);
+  }
+  .wf-toggle svg { transition: transform 300ms cubic-bezier(.2,.7,.2,1); }
+  .works-footer:not(.open) .wf-toggle svg { transform: rotate(180deg); }
+  .wf-more { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 300ms cubic-bezier(.2,.7,.2,1); }
+  .wf-more-inner { display: grid; gap: 8px; min-height: 0; overflow: hidden; transition: opacity 200ms ease-out; }
+  .works-footer:not(.open) .wf-more { grid-template-rows: 0fr; }
+  .works-footer:not(.open) .wf-more-inner { opacity: 0; visibility: hidden; transition: opacity 200ms ease-out, visibility 0s 300ms; }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .wf-toggle svg, .wf-more, .wf-more-inner { transition: none; }
+}
+
+/* Collapsed footer wraps snugly around the visible row (the flex gap must go with the
+   hidden block), and the mobile-only chevron keeps a plain focus ring instead of the
+   corner-mark hover (owner direction). */
+@media (max-width: 767px) {
+  .works-footer { transition: gap 300ms cubic-bezier(.2,.7,.2,1); }
+  .works-footer:not(.open) { gap: 0; }
+}
+.wf-toggle:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }

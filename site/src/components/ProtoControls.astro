@@ -1,7 +1,8 @@
 ---
 /* Prototype control panel. The prototype marks this "Not part of the site", so
-   index.astro renders it only in dev. site.js reads all three controls
-   optionally, so their absence in a production build is safe. */
+   index.astro renders it only in dev. site.js reads every control optionally,
+   so their absence in a production build is safe. The transition look ranges write
+   the LOOK parameters live; tuned values get baked into site.js once frozen. */
 ---
 
 <details class="proto">
@@ -11,5 +12,25 @@
     <label><input type="checkbox" id="simSlow" /> Slow page load (FR-49 loop)</label>
     <button type="button" id="replayLoader">Replay page loader</button>
     <span>Not part of the site.</span>
+  </div>
+  <div>
+    <span>Transition look</span>
+    <label>scale <input type="range" data-param="scale" min="0.5" max="2" step="0.05" value="0.8" /><output data-out="scale"></output></label>
+    <label>density <input type="range" data-param="density" min="6" max="20" step="1" value="20" /><output data-out="density"></output></label>
+    <label>size falloff <input type="range" data-param="falloff" min="0.4" max="3" step="0.05" value="1.35" /><output data-out="falloff"></output></label>
+    <label>falloff width <input type="range" data-param="falloffWidth" min="0.3" max="1" step="0.05" value="0.7" /><output data-out="falloffWidth"></output></label>
+    <label>randomness <input type="range" data-param="jitter" min="0" max="1" step="0.05" value="1" /><output data-out="jitter"></output></label>
+    <label>min size <input type="range" data-param="rmin" min="0.5" max="10" step="0.5" value="0.5" /><output data-out="rmin"></output></label>
+    <label>max size <input type="range" data-param="rmax" min="0" max="200" step="5" value="0" /><output data-out="rmax"></output></label>
+    <label>fade width <input type="range" data-param="fade" min="0.1" max="0.6" step="0.05" value="0.45" /><output data-out="fade"></output></label>
+    <label>stream <input type="range" data-param="stream" min="0.8" max="2.4" step="0.05" value="1.45" /><output data-out="stream"></output></label>
+    <label>speed <input type="range" data-param="speed" min="0.8" max="2.4" step="0.05" value="2.4" /><output data-out="speed"></output></label>
+    <label>trigger lead <input type="range" data-param="lead" min="0" max="0.25" step="0.01" value="0.22" /><output data-out="lead"></output></label>
+    <label>trigger offset <input type="range" data-param="triggerOffset" min="-100" max="300" step="4" value="252" /><output data-out="triggerOffset"></output></label>
+    <div style="display: flex; gap: 6px; flex-wrap: wrap">
+      <button type="button" id="copyLook">Copy LOOK</button>
+      <button type="button" id="saveLook">Save as session defaults</button>
+      <button type="button" id="resetLook">Reset</button>
+    </div>
   </div>
 </details>

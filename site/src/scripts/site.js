@@ -5,10 +5,28 @@ import { T } from '../i18n/ui.js';
 
 /* ---------- Settings ---------- */
 const LOADER_MS = 1200;        // FR-48: replace with the measured average time to "intro ready" (max 2000)
-const FADE_WIDTH = 0.30;       // background cross-fade takes 30% of the transition, centred on its middle
-const STREAM = 1.6;            // height of the circle stream, in island heights
-const SPEED = 1.3;             // circles move 1.3 px for every 1 px of scroll
-const TRIGGER_OFFSET = 24;     // the transition starts when the trigger line is this far below the top of the island
+/* Transition look parameters. Sizes and density are viewport-relative, so a value tuned on one
+   display behaves the same on any other; the px clamps are only extreme safety rails.
+   The dev-only control panel writes these live (ProtoControls.astro). */
+const LOOK = {
+  fade: 0.45,        // share of the transition taken by the background cross-fade, centred on its middle
+  stream: 1.45,      // height of the circle stream, in island heights
+  speed: 2.4,        // auto-scroll travel of the transition: R = (S+H)/speed, in island heights
+  scale: 0.8,        // radius multiplier for every circle
+  density: 20,       // circle columns across the island width
+  falloff: 1.35,     // exponent of the size envelope along the stream
+  falloffWidth: 0.7, // width of the envelope's large-middle band (0.3-1)
+  jitter: 1,         // position and radius randomness (0 = even grid, 1 = prototype spread)
+  rmin: 0.5,         // skip circles below this radius, px
+  rmax: 0,           // absolute radius cap, px; 0 keeps the nearest-neighbour cap only
+  lead: 0.22,        // how far before the transition ends the flow-in starts, in progress units
+  triggerOffset: 252 // px below the island top at which the trigger line starts the transition
+};
+const BAKED_LOOK = Object.assign({}, LOOK);   // reset target; session overrides load below
+const SETTLE_MS = 250;         // owner direction: brief pause at a section boundary before the next input phase takes over
+const STAGGER_MS = 50;         // flow-in: per-item delay once the transition ends (CR-13 value, now triggered)
+const FLOW_MS = 600;           // flow-in: per-item duration
+const TRANSITION_MS = 1800;    // the transition is its own animation: duration at full travel
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 /* ---------- Content (placeholder until the CMS supplies it) ---------- */
@@ -32,8 +50,8 @@ function syncProjects() {
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const store = {
-  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage can be blocked */ } }
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage can be blocked */ } }
 };
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const scroller = $('#scroller'), track = $('#track'), works = $('#works');
@@ -82,7 +100,7 @@ function runLoader() {
   const el = $('#loader');
   el.classList.remove('done', 'loop'); el.classList.add('run'); document.body.classList.remove('ready');
   el.style.setProperty('--fill-ms', LOADER_MS + 'ms');
-  const fill = el.querySelector('.fillmark'); fill.style.animation = 'none'; fill.offsetHeight; fill.style.animation = '';
+  const fill = el.querySelector('.fillmark'); fill.style.animation = 'none'; fill.getBoundingClientRect(); fill.style.animation = '';   /* forced reflow restarts the fill */
   let filled = false, ready = false;
   const finish = () => { el.classList.add('done'); document.body.classList.add('ready'); };
   const slow = $('#simSlow')?.checked ? 3500 : 0;
@@ -91,6 +109,41 @@ function runLoader() {
   setTimeout(() => { filled = true; if (ready) finish(); else { el.classList.remove('run'); el.classList.add('loop'); } }, reduce.matches ? 0 : LOADER_MS);
 }
 $('#replayLoader')?.addEventListener('click', runLoader);
+
+/* Dev-only transition look controls: write LOOK live and re-measure or re-draw. */
+const lookInputs = $$('.proto [data-param]');
+const lookOut = (inp) => { const o = document.querySelector('output[data-out="' + inp.dataset.param + '"]'); if (o) o.textContent = inp.value; };
+lookInputs.forEach((inp) => {
+  inp.value = String(LOOK[inp.dataset.param]);
+  lookOut(inp);
+  inp.addEventListener('input', () => {
+    LOOK[inp.dataset.param] = parseFloat(inp.value);
+    lookOut(inp);
+    if (['density', 'jitter', 'stream', 'speed', 'triggerOffset'].includes(inp.dataset.param)) layout(); else render();
+  });
+});
+/* Session defaults: saved values reload with the panel; Copy emits a paste-ready LOOK literal. */
+let savedLook = null;
+try { savedLook = JSON.parse(store.get('look') || 'null'); } catch { savedLook = null; }
+if (savedLook && typeof savedLook === 'object') {
+  for (const k of Object.keys(LOOK)) {
+    if (typeof savedLook[k] === 'number' && isFinite(savedLook[k])) LOOK[k] = savedLook[k];
+  }
+  lookInputs.forEach((inp) => { inp.value = String(LOOK[inp.dataset.param]); lookOut(inp); });
+  /* no layout() here: the start block runs it once every declaration exists */
+}
+$('#copyLook')?.addEventListener('click', () => {
+  const text = 'const LOOK = {\n' + Object.entries(LOOK).map(([k, v]) => '  ' + k + ': ' + v + ',').join('\n') + '\n};';
+  if (navigator.clipboard) navigator.clipboard.writeText(text);
+  console.log(text);
+});
+$('#saveLook')?.addEventListener('click', () => store.set('look', JSON.stringify(LOOK)));
+$('#resetLook')?.addEventListener('click', () => {
+  Object.assign(LOOK, BAKED_LOOK);
+  store.set('look', '{}');
+  lookInputs.forEach((inp) => { inp.value = String(LOOK[inp.dataset.param]); lookOut(inp); });
+  layout();
+});
 
 /* ---------- Works track ---------- */
 function localizeCards() {
@@ -120,7 +173,12 @@ function updateIndicator() {
   $('#barFill').style.left = (track.scrollLeft / max * (100 - 100 / n)) + '%';
   $('#bar').setAttribute('aria-valuenow', String(i + 1));
 }
-track.addEventListener('scroll', updateIndicator, { passive: true });
+track.addEventListener('scroll', () => {
+  const first = track.scrollLeft <= 2;
+  if (first && !wasFirstCard) settleUntil = performance.now() + SETTLE_MS;   // pause before the return scroll takes over
+  wasFirstCard = first;
+  updateIndicator();
+}, { passive: true });
 
 let target = null, raf = 0;
 function jack(delta) {                                   // FR-06: vertical input moves the track sideways
@@ -173,19 +231,22 @@ function layout() {
   W = scroller.clientWidth; H = scroller.clientHeight;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  S = H * STREAM; R = (S + H) / SPEED;
+  S = H * LOOK.stream; R = (S + H) / LOOK.speed;
+  works.style.setProperty('--lift', Math.round(H * 0.115) + 'px');   // flow-in lift scales with the island
   const outro = $('#outro');
   const prevTransform = outro.style.transform; outro.style.transform = 'none';
-  runwayStart = offsetIn(outro) - TRIGGER_OFFSET;
+  runwayStart = offsetIn(outro) - LOOK.triggerOffset;
   outro.style.transform = prevTransform;
   const introEnd = offsetIn($('#runway'));
-  // the works section reaches the bottom of the island exactly when the circle stream ends
-  $('#runway').style.height = Math.max(0, Math.round(runwayStart + R + H - introEnd)) + 'px';
+  // the works section fills the island exactly when the circle stream ends; the flow-in
+  // then plays on its own clock, so no extra scroll is needed to bring it into view
+  $('#runway').style.height = Math.max(0, Math.round(runwayStart + R - introEnd)) + 'px';
   // circle stream: jittered grid, radius capped by the nearest neighbour so circles never overlap
-  const cell = clamp(W / 11, 56, 130), rnd = mulberry(7);
+  const cell = clamp(W / LOOK.density, 24, 220), rnd = mulberry(7);
+  const lo = 0.5 - 0.38 * LOOK.jitter, spread = 0.76 * LOOK.jitter;
   pts = [];
   for (let gy = 0; gy < S / cell; gy++) for (let gx = -1; gx < W / cell + 1; gx++) {
-    pts.push({ x: gx * cell + cell * (0.12 + 0.76 * rnd()) + (gy % 2 ? cell / 2 : 0), sy: gy * cell + cell * (0.12 + 0.76 * rnd()), k: 0.6 + 0.4 * rnd() });
+    pts.push({ x: gx * cell + cell * (lo + spread * rnd()) + (gy % 2 ? cell / 2 : 0), sy: gy * cell + cell * (lo + spread * rnd()), k: (1 - 0.4 * LOOK.jitter) + 0.4 * LOOK.jitter * rnd() });
   }
   for (const p of pts) {
     let m = Infinity;
@@ -193,16 +254,42 @@ function layout() {
     p.maxR = Math.max(0, Math.sqrt(m) / 2 - cell * 0.06);
   }
   readColours();
+  // flow-in stagger delays per item; the scroll lock lasts until the last item settles
+  const flowEls = $$('.stagger', works);
+  flowEls.forEach((el, i) => el.style.setProperty('--fd', (i * STAGGER_MS) + 'ms'));
+  flowLockMs = reduce.matches ? 0 : Math.max(0, flowEls.length - 1) * STAGGER_MS + FLOW_MS;
   render();
 }
 
 let lastWorksHash = null;
 function render() {
+  let p;
+  if (anim) {
+    // the transition is its own animation: progress runs on the clock and drives the view
+    const t = clamp((performance.now() - anim.start) / anim.dur);
+    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    p = anim.from + (anim.to - anim.from) * e;
+    scroller.scrollTop = runwayStart + p * R;
+    if (t >= 1) {
+      anim = null;
+      if (pendingHome) { pendingHome = false; scroller.scrollTo({ top: 0, behavior: reduce.matches ? 'auto' : 'smooth' }); }
+    }
+  } else {
+    p = clamp((scroller.scrollTop - runwayStart) / R);
+  }
   const st = scroller.scrollTop;
-  const p = clamp((st - runwayStart) / R);                       // transition progress
-  const q = clamp((st - runwayStart - R) / H);                   // works entry progress
-  let f = clamp((p - (0.5 - FADE_WIDTH / 2)) / FADE_WIDTH); f = f * f * (3 - 2 * f);
+  let f = clamp((p - (0.5 - LOOK.fade / 2)) / LOOK.fade); f = f * f * (3 - 2 * f);
   document.body.classList.toggle('mode-works', f >= 0.5);
+
+  // the flow-in starts just before the transition ends and locks scrolling until it settles;
+  // scrolling back below the trigger plays the softer exit and unlocks
+  const arrived = p >= 1 - LOOK.lead;
+  if (arrived !== wasArrived) {
+    wasArrived = arrived;
+    works.classList.toggle('flow', arrived);
+    flowSettleAt = arrived ? performance.now() + flowLockMs : 0;
+    lockUntil = arrived ? flowSettleAt : 0;
+  }
 
   // trigger line fades out upwards
   const u = clamp((st - runwayStart) / (H * 0.22));
@@ -221,23 +308,17 @@ function render() {
       const shift = H - p * (S + H);
       for (const c of pts) {
         const y = c.sy + shift;
-        const env = Math.pow(Math.sin(Math.PI * clamp(c.sy / S)), 0.9);   // small -> large -> small along the stream
-        const r = c.maxR * c.k * env;
-        if (r < 0.5 || y < -r || y > H + r) continue;
+        const x = clamp(0.5 + (clamp(c.sy / S) - 0.5) / LOOK.falloffWidth);
+        // floor keeps the stream's smallest circles on screen from the very start
+        const env = Math.max(0.04, Math.pow(Math.sin(Math.PI * x), LOOK.falloff));   // small -> large -> small along the stream
+        const r = Math.min(c.maxR * c.k * LOOK.scale * env, LOOK.rmax || Infinity);
+        if (r < LOOK.rmin || y < -r || y > H + r) continue;
         ctx.moveTo(c.x + r, y); ctx.arc(c.x, y, r, 0, Math.PI * 2);
       }
       ctx.fill();
     }
   }
 
-  // works section enters from the bottom with a staggered flow
-  const items = $$('.stagger', works).filter((el) => !el.classList.contains('card')).slice(0, 1).concat(cards(), $$('.indicator, .works-footer', works));
-  items.forEach((el, i) => {
-    if (reduce.matches) { el.style.transform = ''; el.style.opacity = ''; return; }
-    const t = clamp(q * 1.5 - i * 0.1), e = 1 - Math.pow(1 - t, 3);
-    el.style.transform = 'translateY(' + ((1 - e) * 90).toFixed(1) + 'px)';
-    el.style.opacity = String(0.15 + 0.85 * e);
-  });
   $('#edgeBlur').style.opacity = String(1 - clamp(p * 3));
 
   // works overview URL while the works section fills the island (FR-11, FR-16)
@@ -248,17 +329,43 @@ function render() {
     if (!atWorks && location.hash.startsWith('#/works')) history.replaceState(null, '', location.pathname + location.search);
   }
 }
-let rq = 0;
-scroller.addEventListener('scroll', () => { if (!rq) rq = requestAnimationFrame(() => { rq = 0; render(); }); }, { passive: true });
+let rq = 0, settleUntil = 0, wasBottom = false, wasFirstCard = true;
+let flowLockMs = 0, lockUntil = 0, wasArrived = false, flowSettleAt = 0;
+let anim = null, wasSt = -1, pendingHome = false, animRaf = 0;
+function animTick() {
+  render();
+  animRaf = anim ? requestAnimationFrame(animTick) : 0;
+}
+function startAnim(to) {
+  const p0 = clamp((scroller.scrollTop - runwayStart) / R);
+  if (Math.abs(to - p0) < 0.01) { scroller.scrollTop = runwayStart + to * R; render(); return; }
+  anim = { from: p0, to, start: performance.now(), dur: Math.max(160, (reduce.matches ? 300 : TRANSITION_MS) * Math.abs(to - p0)) };
+  if (!animRaf) animRaf = requestAnimationFrame(animTick);   // the clock drives the transition, not scroll events
+}
+scroller.addEventListener('scroll', () => {
+  const st = scroller.scrollTop;
+  const max = scroller.scrollHeight - scroller.clientHeight;
+  // crossing the trigger line downwards starts the transition as one fluid motion
+  if (!anim && wasSt >= 0 && wasSt < runwayStart && st >= runwayStart && st < max - 1) startAnim(1);
+  wasSt = st;
+  const bottom = atBottom();
+  if (bottom && !wasBottom) settleUntil = performance.now() + SETTLE_MS;      // pause before the jack takes over
+  wasBottom = bottom;
+  if (!rq) rq = requestAnimationFrame(() => { rq = 0; render(); });
+}, { passive: true });
 const atBottom = () => scroller.scrollTop >= scroller.scrollHeight - scroller.clientHeight - 2;
 
 /* ---------- Input in the works section ---------- */
 // Wheel: at the bottom, vertical input moves the track (FR-06). Upward input at the first card scrolls the page up (FR-03).
 scroller.addEventListener('wheel', (e) => {
-  if (!atBottom() || reduce.matches) return;                 // FR-19: no scroll-jacking with reduced motion
-  if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;       // FR-07: native horizontal input
+  if (anim) { e.preventDefault(); return; }                    // the transition drives the view
+  if (performance.now() < lockUntil) { e.preventDefault(); return; }   // the flow-in suspends scrolling
+  if (!atBottom()) return;                                     // native scroll; crossing the trigger starts the transition
+  if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;         // FR-07: native horizontal input
   const dy = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaY;
-  if (dy < 0 && track.scrollLeft <= 2 && (target === null || target <= 2)) return;   // native scroll up
+  if (dy < 0 && track.scrollLeft <= 2 && (target === null || target <= 2)) { e.preventDefault(); startAnim(0); return; }   // reverse transition (FR-03, FR-18)
+  if (reduce.matches) return;                                  // FR-19: no scroll-jacking with reduced motion
+  if (performance.now() < settleUntil) { e.preventDefault(); return; }   // brief pause at the boundary
   e.preventDefault(); jack(dy);
 }, { passive: false });
 
@@ -267,12 +374,14 @@ let tx = 0, ty = 0, gesture = null;
 scroller.addEventListener('touchstart', (e) => { const t = e.touches[0]; tx = t.clientX; ty = t.clientY; gesture = null; }, { passive: true });
 scroller.addEventListener('touchmove', (e) => {
   const t = e.touches[0], dx = tx - t.clientX, dy = ty - t.clientY;
+  if (anim || performance.now() < lockUntil) { e.preventDefault(); return; }   // transition or flow-in suspends scrolling
   if (gesture === null) {
     if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
     if (!atBottom() || reduce.matches || Math.abs(dx) > Math.abs(dy)) gesture = 'native';
-    else if (dy < 0 && track.scrollLeft <= 2) gesture = 'native';   // swipe down at the first card: page scrolls up
+    else if (dy < 0 && track.scrollLeft <= 2) gesture = 'reverse';   // swipe down at the first card: reverse transition
     else gesture = 'jack';
   }
+  if (gesture === 'reverse') { e.preventDefault(); gesture = null; startAnim(0); return; }
   if (gesture !== 'jack') return;
   e.preventDefault();
   track.scrollLeft = clamp(track.scrollLeft + dy, 0, trackMax());
@@ -283,6 +392,8 @@ scroller.addEventListener('touchmove', (e) => {
 window.addEventListener('keydown', (e) => {
   if (document.querySelector('dialog[open]')) return;
   if ($('#detail').classList.contains('open')) { if (e.key === 'Escape') closeDetail(); return; }
+  if (performance.now() < lockUntil) return;                 // the flow-in suspends scrolling, keys included
+  if (anim) return;                                          // the transition suspends scrolling, keys included
   if (!atBottom()) return;
   const tag = document.activeElement ? document.activeElement.tagName : '';
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
@@ -290,7 +401,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goToCard(Math.min(i + 1, PROJECTS.length - 1), true); }
   if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
     e.preventDefault();
-    if (i === 0 && track.scrollLeft <= 2) scroller.scrollBy({ top: -H * 0.6, behavior: reduce.matches ? 'auto' : 'smooth' });
+    if (i === 0 && track.scrollLeft <= 2) startAnim(0);
     else goToCard(Math.max(i - 1, 0), true);
   }
 });
@@ -298,7 +409,8 @@ $('#enterWorks').addEventListener('click', () => scroller.scrollTo({ top: scroll
 $('#home').addEventListener('click', (e) => {
   e.preventDefault();
   if ($('#detail').classList.contains('open')) closeDetail();
-  scroller.scrollTo({ top: 0, behavior: reduce.matches ? 'auto' : 'smooth' });
+  if (clamp((scroller.scrollTop - runwayStart) / R) > 0) { pendingHome = true; startAnim(0); }
+  else scroller.scrollTo({ top: 0, behavior: reduce.matches ? 'auto' : 'smooth' });
 });
 
 /* ---------- Detail view with its own URL (FR-13 to FR-17) ---------- */
@@ -318,7 +430,7 @@ function openDetail(id, fromCard) {
   lastCard = cards().find((c) => c.dataset.id === id) || null;
   detail.classList.add('open');
   if (lastCard && fromCard && !reduce.matches) {
-    detail.style.transition = 'none'; setClip(lastCard.getBoundingClientRect()); detail.offsetHeight; detail.style.transition = '';
+    detail.style.transition = 'none'; setClip(lastCard.getBoundingClientRect()); detail.getBoundingClientRect(); detail.style.transition = '';   /* forced reflow: commit the clip-path start value (FR-13) */
   }
   requestAnimationFrame(() => ['--ct', '--cl', '--cr', '--cb2'].forEach((v) => detail.style.setProperty(v, '0px')));
   detail.scrollTop = 0; detail.focus({ preventScroll: true });
@@ -382,6 +494,19 @@ form.addEventListener('submit', (e) => {
     status.className = 'status ok'; status.textContent = T[lang].sent; form.reset(); $('#count').textContent = '0 / 3000';
   }, 700);
 });
+
+/* ---------- Mobile footer collapse (owner direction; collapsed by default, CR-25) ---------- */
+const mqMobile = window.matchMedia('(max-width: 767px)');
+function syncWfAria() {
+  const open = !mqMobile.matches || $('.works-footer').classList.contains('open');
+  $('#wfToggle').setAttribute('aria-expanded', String(open));
+}
+mqMobile.addEventListener('change', syncWfAria);
+$('#wfToggle')?.addEventListener('click', () => {
+  $('.works-footer').classList.toggle('open');
+  syncWfAria();
+});
+syncWfAria();
 
 /* ---------- Start ---------- */
 applyLang();

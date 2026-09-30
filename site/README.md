@@ -43,6 +43,42 @@ Plus one behaviour-preserving substitution: the forced reflow in `openDetail()` 
 `applyLang()` calls `localizeCards()` before the `layout()` it schedules, or the runway is measured
 against the previous language's text lengths.
 
+## Owner-directed additions on top of the v2 prototype
+
+- Settle pause (`SETTLE_MS`, 250 ms in `src/scripts/site.js`): wheel momentum that arrives at the
+  works section, or that returns the track to the first card, is absorbed for a beat before the next
+  input phase takes over (the horizontal jack, or the native scroll back to the intro). Owner
+  direction 2026-09-30; the v2 prototype has no pause. Horizontal trackpad input (FR-07) and reduced
+  motion (FR-19) bypass it.
+- Time-driven transition (CR-22): scrolling the trigger line to the top of the island starts the
+  grain transition as an animation of its own; it runs on a clock, drives the view to the works
+  section and suspends scrolling while it plays. Its end minus the lead starts the works flow-in,
+  whose settle returns control; backward input at the first card plays it in reverse. One plus-mark
+  field serves the whole island (CR-23).
+- Frozen look values (owner, 2026-09-30): fade 0.45, stream 1.45, speed 2.4, scale 0.8, density 20,
+  falloff 1.35, falloff width 0.7, jitter 1, min size 0.5, max size uncapped, lead 0.22, trigger
+  offset 252 - baked into the LOOK object at the top of site/src/scripts/site.js.
+- Single background (feel review 2): the canvas cross-fade is the island's only background; the works
+  section paints none and clips the pre-flow stagger translate, which keeps the scroller height
+  stable and removes both the travelling slab edge and the downward nudge.
+- Card hover (CR-21): the whole card scales to 1.03 from one origin; the headline cross-fades to a
+  slot above the thumbnail, siblings dim behind a works-coloured veil, and the track headroom band
+  keeps the hover title clear of the track's overflow clip.
+- Transition look controls: the dev-only prototype panel carries live ranges with value readouts for
+  scale, density, size falloff, falloff width, randomness, min and max size, fade width, stream,
+  speed, trigger lead and trigger offset (px below the island top at which the trigger line starts
+  the transition), plus Copy LOOK (a paste-ready literal for site.js), Save as session defaults
+  (localStorage, survives reloads) and Reset. All geometry is viewport-relative, so tuned
+  values transfer across display sizes; the frozen defaults sit in the LOOK object at the top of
+  site/src/scripts/site.js.
+- Enter arrow nudge: the arrow below the trigger line dips 7 px on a 2.4 s loop with a hold between
+  dips, signalling more content below; static under reduced motion.
+- Mobile footer collapse (CR-24): below 768 px the works footer carries an animated chevron at the
+  far right of Contact; tapping it folds the GitHub/Impressum/privacy links and the copyright away
+  through a grid-rows animation, and the chevron rotates 180 degrees between states. The footer
+  starts collapsed on phones and one tap reveals the links (CR-25, FR-12 amended); the desktop
+  footer is untouched because the wrappers dissolve with display: contents.
+
 ## Retired by the v2 port
 
 The v1 drawing-sheet frame, the owner-directed `.frame-blur` band, the title blocks, `body.lock` and

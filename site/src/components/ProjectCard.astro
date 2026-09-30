@@ -5,6 +5,7 @@ const { id, headline, title, year, tags } = Astro.props;
 ---
 
 <a class="card cb stagger" href={`#/works/${id}`} data-id={id}
+  ><span class="hover-title" aria-hidden="true">{headline}</span
   ><div class="thumb"><span>Project thumbnail</span></div><h3>{headline}</h3><div class="meta"
     ><span class="t">{title}</span><span class="year">{year}</span></div
   ><div class="tags">{tags.map((t) => <span>{t}</span>)}</div></a

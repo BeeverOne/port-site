@@ -31,7 +31,7 @@ function check(cond, passMsg, failMsg) {
 console.log('\n[1] DOM hooks required by site.js');
 /* These belong to the dev-only prototype control panel, so their absence from a
    production build is correct; site.js reads them with `?.`. */
-const DEV_ONLY = new Set(['simFail', 'simSlow', 'replayLoader']);
+const DEV_ONLY = new Set(['simFail', 'simSlow', 'replayLoader', 'copyLook', 'saveLook', 'resetLook']);
 const ids = new Set();
 for (const m of js.matchAll(/\$\('#([\w-]+)'\)/g)) ids.add(m[1]);
 for (const m of js.matchAll(/getElementById\('([\w-]+)'\)/g)) ids.add(m[1]);
@@ -170,6 +170,7 @@ for (const href of builtCssFiles) {
     ['corner-mark hover gradients', /linear-gradient\(var\(--cb\),\s*var\(--cb\)\)/],
     ['loader rise keyframes', /@keyframes rise/],
     ['scan keyframes', /@keyframes scan/],
+    ['enter arrow nudge keyframes', /@keyframes enterNudge/],
     ['dark-mode media query', /prefers-color-scheme:dark/],
     ['reduced-motion media query', /prefers-reduced-motion:reduce/],
     ['works colour token', /--works:\s*#0f5c55/i],
@@ -180,7 +181,7 @@ for (const href of builtCssFiles) {
     check(re.test(min), label, `${label} — pattern ${re} not in built CSS`);
   }
 }
-console.log('  note  src/styles/global.css is byte-identical to the v2 prototype <style> block (checked separately)');
+console.log('  note  src/styles/global.css is the v2 prototype <style> block verbatim plus the owner-directed flow-in and hover additions');
 
 /* ---------- 5. Structural parity ---------- */
 console.log('\n[5] structural parity with prototype');
@@ -190,6 +191,7 @@ const mustHave = [
   ['class="runway"', 'runway spacer sizes the transition'],
   ['class="lmark"', 'v-stack loader mark (FR-47)'],
   ['role="slider"', 'draggable indicator slider (FR-05, CR-04)'],
+  ['class="hover-title"', 'card hover title above the thumbnail (owner direction)'],
   ['btn-primary', 'primary buttons carry the scan sweep'],
   ['class="plus-field"', 'plus-mark field'],
   ['id="loader"', 'page loader'],
@@ -206,6 +208,7 @@ const mustHave = [
   ['id="track"', 'works track'],
   ['class="indicator', 'horizontal-scroll signal (FR-05)'],
   ['class="works-footer', 'works footer (FR-12)'],
+  ['id="wfToggle"', 'mobile footer collapse chevron (owner direction)'],
   ['id="detail"', 'detail view (FR-13)'],
   ['id="contact"', 'contact overlay (FR-26)'],
   ['id="demoRange"', 'interactive component preview (FR-17)'],
@@ -220,6 +223,7 @@ for (const [needle, label] of mustHave) {
 /* ---------- 6. Production hygiene ---------- */
 console.log('\n[6] production hygiene');
 check(!built.includes('class="proto"'), 'prototype control panel excluded from prod', 'prototype control panel leaked into the production build');
+check(!built.includes('data-param'), 'transition look controls excluded from prod', 'transition look controls leaked into prod');
 check(
   !built.includes('Replay page loader'),
   'prototype control labels absent from prod',
@@ -246,6 +250,15 @@ function skeleton(html) {
   s = s.replace(/<script[\s\S]*?<\/script>/g, '');
   s = s.replace(/<svg[\s\S]*?<\/svg>/g, '<svg>'); /* svg innards come from the extracted marks */
   s = s.replace(/<details class="proto">[\s\S]*?<\/details>/g, '');
+  /* the island field is the only plus-mark field now; the prototype still carries two */
+  s = s.replace(/<div class="plus-field"[^>]*>\s*<\/div>/g, '');
+  /* the hover title is an owner-directed addition, not in the prototype */
+  s = s.replace(/<span class="hover-title"[^>]*>[\s\S]*?<\/span>/g, '');
+  /* the mobile footer wrappers and chevron are owner-directed additions too */
+  s = s.replace(/<div class="wf-row">/g, '');
+  s = s.replace(/<button class="wf-toggle[^>]*>[\s\S]*?<\/button>/g, '');
+  s = s.replace(/<div class="wf-more"[^>]*>/g, '');
+  s = s.replace(/<div class="wf-more-inner">/g, '');
   s = s.replace(/<div class="track"[^>]*>[\s\S]*?<\/div>\s*<div class="indicator/g, '<div class="track" id="track"><div class="indicator');
   const tags = [];
   for (const m of s.matchAll(/<([a-zA-Z][\w-]*)([^>]*)>/g)) {
@@ -282,7 +295,7 @@ if (protoSkel.length === builtSkel.length && protoSkel.every((t, i) => t === bui
 /* Class-name multiset: catches a renamed or dropped hook the sequence check could mask. */
 /* Known, deliberate differences: the track's cards (Astro renders them, the prototype
    injects them at runtime) and the dev-only prototype control panel (checked in [6]). */
-const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger'];
+const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger', 'hover-title', 'plus-field', 'wf-row', 'wf-toggle', 'wf-more', 'wf-more-inner'];
 function classBag(html) {
   const bag = new Map();
   for (const m of bodyOf(html).matchAll(/\bclass="([^"]*)"/g)) {

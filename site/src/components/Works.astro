@@ -8,7 +8,6 @@ const { projects } = Astro.props;
 ---
 
 <section class="works" id="works" aria-labelledby="worksTitle">
-  <div class="plus-field" aria-hidden="true"></div>
   <div class="works-main">
     <div class="works-head stagger"><h2 id="worksTitle" data-i18n="works">[ Works ]</h2></div>
     <div class="track" id="track" aria-label="Projects">
@@ -35,13 +34,32 @@ const { projects } = Astro.props;
     </div>
   </div>
   <footer class="works-footer stagger">
-    <button class="btn btn-primary cb" type="button" data-open-contact data-i18n="contact">Contact</button>
-    <nav aria-label="Footer">
-      <a class="cb" href="https://github.com/" target="_blank" rel="noopener">[ GitHub ]</a
-      ><!-- replace with the profile URL -->
-      <a class="cb" href="#legal-impressum" data-i18n="impressum">[ Impressum ]</a>
-      <a class="cb" href="#legal-privacy" data-i18n="privacy">[ Privacy policy ]</a>
-    </nav>
-    <span class="copyright">© re.verb one 2026</span>
+    <div class="wf-row">
+      <button class="btn btn-primary cb" type="button" data-open-contact data-i18n="contact">Contact</button>
+      <button
+        class="wf-toggle"
+        type="button"
+        id="wfToggle"
+        aria-expanded="true"
+        aria-controls="wfMore"
+        data-i18n-label="footerToggle"
+        aria-label="Show or hide the footer links"
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"
+          ><path d="M4 13l6-6 6 6"></path></svg
+        >
+      </button>
+    </div>
+    <div class="wf-more" id="wfMore">
+      <div class="wf-more-inner">
+        <nav aria-label="Footer">
+          <a class="cb" href="https://github.com/" target="_blank" rel="noopener">[ GitHub ]</a
+          ><!-- replace with the profile URL -->
+          <a class="cb" href="#legal-impressum" data-i18n="impressum">[ Impressum ]</a>
+          <a class="cb" href="#legal-privacy" data-i18n="privacy">[ Privacy policy ]</a>
+        </nav>
+        <span class="copyright">© re.verb one 2026</span>
+      </div>
+    </div>
   </footer>
 </section>
