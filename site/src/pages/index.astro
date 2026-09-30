@@ -1,0 +1,46 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import PageLoader from '../components/PageLoader.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import Intro from '../components/Intro.astro';
+import Works from '../components/Works.astro';
+import ProjectDetail from '../components/ProjectDetail.astro';
+import ContactOverlay from '../components/ContactOverlay.astro';
+import ProtoControls from '../components/ProtoControls.astro';
+
+/* Published projects in the owner's order (FR-11, FR-40). */
+const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+
+/* The cards are server-rendered; this island carries the same fields in both
+   languages so the client can localise the track and the detail view (FR-10, FR-22). */
+const projectData = projects.map(({ id, data }) => ({ id, en: data.en, de: data.de }));
+---
+
+<Base>
+  <!-- drawing sheet: plus-mark field and sheet border -->
+  <div class="plus-field" aria-hidden="true"></div>
+  <div class="frame" aria-hidden="true"></div>
+
+  <PageLoader />
+  <SiteHeader />
+
+  <Intro />
+  <div class="edge-blur" aria-hidden="true"><div></div><div></div><div></div></div>
+
+  <!-- grain transition (FR-02, FR-03) -->
+  <canvas id="grain" aria-hidden="true"></canvas>
+
+  <Works {projects} />
+  <ProjectDetail />
+  <ContactOverlay />
+  {import.meta.env.DEV && <ProtoControls />}
+
+  <!-- is:inline: a JSON payload, not a module — Astro must not try to bundle it. -->
+  <script type="application/json" id="projects-data" is:inline set:html={JSON.stringify(projectData)} />
+  <script>
+    import '../scripts/site.js';
+  </script>
+</Base>

@@ -1,0 +1,27 @@
+---
+import TitleBlock from './TitleBlock.astro';
+---
+
+<!-- ============ INTRO (FR-01) ============ -->
+<main class="intro" id="intro">
+  <div class="label" data-i18n="about">[ about ]</div>
+  <!-- Filled by renderStatement() so the name and the highlighter keep their own fonts (FR-18 pattern). -->
+  <h1 id="statement"></h1>
+  <div class="copy">
+    <p data-i18n="p2"></p>
+    <div class="note"><span>[ AI ]</span><span class="line"></span><span class="dot"></span></div>
+    <p data-i18n="p3"></p>
+    <p data-i18n="p4"></p>
+  </div>
+  <div class="outro" id="outro">
+    <div>
+      <h2 data-i18n="trigger">Here are some of my work</h2>
+      <button class="enter cb" type="button" id="enterWorks" data-i18n-label="enterWorks" aria-label="Go to my works">
+        <svg width="40" height="64" viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"
+          ><path d="M20 0v62M6 48l14 14 14-14"></path></svg
+        >
+      </button>
+    </div>
+    <TitleBlock sheet="sheetIntro" sheetText="1 of 2, Intro" />
+  </div>
+</main>

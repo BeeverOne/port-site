@@ -1,0 +1,38 @@
+---
+import TitleBlock from './TitleBlock.astro';
+import ProjectCard from './ProjectCard.astro';
+
+/* Published projects, in the owner's order (FR-11). */
+const { projects } = Astro.props;
+---
+
+<!-- ============ WORKS (FR-04 to FR-12) ============ -->
+<section class="works" id="works" aria-labelledby="worksTitle" inert>
+  <div class="plus-field" aria-hidden="true"></div>
+  <div class="works-main">
+    <div class="works-head">
+      <h2 id="worksTitle" data-i18n="works">[ Works ]</h2>
+      <TitleBlock sheet="sheetWorks" sheetText="2 of 2, Works" />
+    </div>
+    <div class="track" id="track" aria-label="Projects">
+      {projects.map((p) => <ProjectCard id={p.id} {...p.data.en} />)}
+    </div>
+    <div class="indicator" aria-hidden="true">
+      <span id="pos">1 / {projects.length}</span>
+      <div class="bar"><i id="barFill"></i></div>
+      <svg width="28" height="12" viewBox="0 0 28 12" fill="none" stroke="currentColor" stroke-width="1.5"
+        ><path d="M0 6h26M21 1l5 5-5 5"></path></svg
+      >
+    </div>
+  </div>
+  <footer class="works-footer">
+    <button class="btn cb" type="button" data-open-contact data-i18n="contact">Contact</button>
+    <nav aria-label="Footer">
+      <a class="cb" href="https://github.com/" target="_blank" rel="noopener">[ GitHub ]</a
+      ><!-- replace with the profile URL -->
+      <a class="cb" href="#legal-impressum" data-i18n="impressum">[ Impressum ]</a>
+      <a class="cb" href="#legal-privacy" data-i18n="privacy">[ Privacy policy ]</a>
+    </nav>
+    <span class="copyright">© re.verb one 2026</span>
+  </footer>
+</section>

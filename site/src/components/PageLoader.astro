@@ -1,0 +1,10 @@
+---
+import R1Mark from './marks/R1Mark.astro';
+---
+
+<!-- Page loader (FR-47 to FR-49, FR-52) -->
+<div class="loader run" id="loader" role="status" aria-live="polite">
+  <R1Mark size={56} />
+  <div class="fill" aria-hidden="true"><i></i></div>
+  <span class="sr-only" data-i18n="loading">Loading</span>
+</div>

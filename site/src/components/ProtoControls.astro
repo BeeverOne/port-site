@@ -1,0 +1,15 @@
+---
+/* Prototype control panel. The prototype marks this "Not part of the site", so
+   index.astro renders it only in dev. site.js reads all three controls
+   optionally, so their absence in a production build is safe. */
+---
+
+<details class="proto">
+  <summary>Prototype controls</summary>
+  <div>
+    <label><input type="checkbox" id="simFail" /> Simulate send failure (FR-37)</label>
+    <label><input type="checkbox" id="simSlow" /> Slow page load (FR-49 loop)</label>
+    <button type="button" id="replayLoader">Replay page loader</button>
+    <span>Not part of the site.</span>
+  </div>
+</details>
