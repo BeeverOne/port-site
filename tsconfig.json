@@ -1,5 +1,5 @@
 {
-  "extends": "astro/tsconfigs/base",
+  "extends": "./site/tsconfig.json",
   "compilerOptions": {
     "moduleResolution": "bundler",
     "module": "ESNext",
@@ -9,6 +9,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "node_modules"]
+  "include": ["site/.astro/types.d.ts", "site/**/*"],
+  "exclude": ["site/dist", "site/node_modules", "base"]
 }

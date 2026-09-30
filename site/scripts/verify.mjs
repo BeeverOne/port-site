@@ -1,0 +1,305 @@
+/* Faithfulness check: does the built site still have every hook the prototype's
+   behaviour depends on, and does its CSS still carry every prototype rule?
+   Run: npm run build && node scripts/verify.mjs */
+import { readFileSync, existsSync } from 'node:fs';
+
+const ROOT = '/Volumes/BEE1/Users/beever/Documents/DEV/R1/Port-Site';
+const proto = readFileSync(`${ROOT}/base/portfolio-prototype.html`, 'utf8');
+const js = readFileSync(`${ROOT}/site/src/scripts/site.js`, 'utf8');
+
+const distIndex = `${ROOT}/site/dist/index.html`;
+if (!existsSync(distIndex)) {
+  console.error('dist/index.html missing — run `npm run build` first.');
+  process.exit(1);
+}
+const built = readFileSync(distIndex, 'utf8');
+
+let fail = 0;
+function bad(msg) {
+  console.log(`  FAIL  ${msg}`);
+  fail++;
+}
+function ok(msg) {
+  console.log(`  ok    ${msg}`);
+}
+function check(cond, passMsg, failMsg) {
+  if (cond) ok(passMsg);
+  else bad(failMsg);
+}
+
+/* ---------- 1. DOM hooks the behaviour needs ---------- */
+console.log('\n[1] DOM hooks required by site.js');
+/* These belong to the dev-only prototype control panel, so their absence from a
+   production build is correct; site.js reads them with `?.`. */
+const DEV_ONLY = new Set(['simFail', 'simSlow', 'replayLoader']);
+const ids = new Set();
+for (const m of js.matchAll(/\$\('#([\w-]+)'\)/g)) ids.add(m[1]);
+for (const m of js.matchAll(/getElementById\('([\w-]+)'\)/g)) ids.add(m[1]);
+
+const missingIds = [...ids].filter((id) => !DEV_ONLY.has(id) && !built.includes(`id="${id}"`));
+check(missingIds.length === 0, `all ${ids.size - DEV_ONLY.size} production ids present`, `missing ids: ${missingIds.join(', ')}`);
+
+const leakedDevIds = [...DEV_ONLY].filter((id) => built.includes(`id="${id}"`));
+check(leakedDevIds.length === 0, 'dev-only ids absent from prod', `dev-only ids shipped to prod: ${leakedDevIds.join(', ')}`);
+
+for (const c of ['card', 'lang', 'field', 'plus-field']) {
+  const present = built.includes(`class="${c}`) || built.includes(` ${c} `) || built.includes(`"${c}"`);
+  check(present, `class .${c} present`, `class .${c} missing from built markup`);
+}
+
+/* ---------- 2. Data attributes ---------- */
+console.log('\n[2] data attributes');
+for (const a of ['data-i18n', 'data-lang', 'data-open-contact', 'data-i18n-label', 'data-id']) {
+  if (!js.includes(a)) continue;
+  /* data-invalid is only ever written at runtime, so it is not expected in the markup */
+  check(built.includes(a), `${a} wired`, `${a} used by JS but absent from markup`);
+}
+check(built.includes('id="projects-data"'), 'projects-data island present', 'projects-data island missing');
+
+/* ---------- 3. Project data island ---------- */
+console.log('\n[3] project data island');
+const island = built.match(/<script[^>]*id="projects-data"[^>]*>([\s\S]*?)<\/script>/);
+if (!island) {
+  bad('could not extract island JSON');
+} else {
+  let data = null;
+  try {
+    data = JSON.parse(island[1]);
+  } catch (e) {
+    bad(`island JSON invalid: ${e.message}`);
+  }
+  if (data) {
+    const cardIds = [...built.matchAll(/class="card cb"[^>]*data-id="([\w-]+)"/g)].map((m) => m[1]);
+    ok(`island parses: ${data.length} projects`);
+    check(
+      data.length === cardIds.length,
+      `card count matches markup (${cardIds.length})`,
+      `island has ${data.length} but markup has ${cardIds.length} cards`,
+    );
+    let fieldsOk = true;
+    for (const p of data) {
+      for (const lang of ['en', 'de']) {
+        const f = p[lang];
+        if (!f) {
+          bad(`${p.id}: no ${lang} content`);
+          fieldsOk = false;
+          continue;
+        }
+        for (const k of ['headline', 'title', 'year', 'tags']) {
+          if (f[k] === undefined) {
+            bad(`${p.id}.${lang}.${k} missing`);
+            fieldsOk = false;
+          }
+        }
+      }
+      if (!cardIds.includes(p.id)) bad(`${p.id} in island but no card rendered`);
+    }
+    if (fieldsOk) ok('every project has headline/title/year/tags in en and de (FR-22)');
+  }
+}
+
+/* ---------- 4. Stylesheet fidelity ---------- */
+console.log('\n[4] stylesheet fidelity');
+const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
+
+/* Canonicalise a selector so the prototype CSS and Astro's minified output compare
+   equal. Lightning CSS rewrites all of these without changing meaning:
+     ::after -> :after        *:before -> :before      [a="b"] -> [a=b]
+     :nth-child(1) -> :first-child                     from -> 0%
+     (max-width: 767px) -> (width<=767px)              spaces around > + ~ and after : */
+function canon(sel) {
+  return sel
+    .replace(/\s+/g, ' ')
+    .replace(/::(before|after|first-line|first-letter|placeholder|selection)/g, ':$1')
+    .replace(/\*\s*(:[\w-])/g, '$1')
+    .replace(/\s*([>+~])\s*/g, '$1')
+    .replace(/\[([\w-]+)\s*=\s*"([^"]*)"\]/g, '[$1=$2]')
+    .replace(/:nth-child\(1\)/g, ':first-child')
+    .replace(/max-width:\s*([\d.]+)px/g, 'width<=$1px')
+    .replace(/min-width:\s*([\d.]+)px/g, 'width>=$1px')
+    .replace(/\(\s+/g, '(')
+    .replace(/@media\s*\(/g, '@media(')
+    .replace(/\s+\)/g, ')')
+    .replace(/,\s*/g, ',')
+    .replace(/\bfrom\b/g, '0%')
+    .replace(/:\s+/g, ':')
+    .trim()
+    .toLowerCase();
+}
+
+function selectors(css) {
+  const out = new Set();
+  for (const m of stripComments(css).matchAll(/([^{}]+)\{/g)) {
+    /* a match spans the previous rule's declarations; keep only the selector tail */
+    const tail = canon(m[1].split(';').pop());
+    if (tail) out.add(tail);
+  }
+  return out;
+}
+
+const protoCss = proto.slice(proto.indexOf('<style>\n') + 8, proto.indexOf('\n</style>'));
+const builtCssFiles = [...built.matchAll(/href="(\/_astro\/[^"]+\.css)"/g)].map((m) => m[1]);
+if (builtCssFiles.length === 0) bad('no stylesheet linked in built page');
+
+for (const href of builtCssFiles) {
+  const p = `${ROOT}/site/dist${href}`;
+  if (!existsSync(p)) {
+    bad(`stylesheet missing on disk: ${href}`);
+    continue;
+  }
+  const min = readFileSync(p, 'utf8');
+  ok(`${href} linked`);
+
+  const want = selectors(protoCss);
+  const have = selectors(min);
+  const dropped = [...want].filter((s) => !have.has(s));
+  check(
+    dropped.length === 0,
+    `all ${want.size} prototype selectors survive minification`,
+    `${dropped.length} prototype selector(s) missing from built CSS:\n          ${dropped.join('\n          ')}`,
+  );
+
+  /* Effects a minifier could plausibly rewrite or drop — check values, not just selectors. */
+  const critical = [
+    ['mask-image plus field', /mask-image:url\("data:image\/svg\+xml/],
+    ['edge blur backdrop-filter', /(?:^|[{;])backdrop-filter:blur\(7px\)/],
+    ['card thumb conic-gradient', /conic-gradient/],
+    ['detail clip-path', /clip-path/],
+    ['highlighter gradient', /linear-gradient\(100deg/],
+    ['corner-mark hover gradients', /linear-gradient\(var\(--cb\),\s*var\(--cb\)\)/],
+    ['loader fill keyframes', /@keyframes fill/],
+    ['loader loop keyframes', /@keyframes loop/],
+    ['dark-mode media query', /prefers-color-scheme:dark/],
+    ['reduced-motion media query', /prefers-reduced-motion:reduce/],
+    ['works colour token', /--works:\s*#0f5c55/i],
+    ['dark accent token', /--accent:\s*#ff6a2b/i],
+    ['font-stretch in use', /font-stretch/],
+  ];
+  for (const [label, re] of critical) {
+    check(re.test(min), label, `${label} — pattern ${re} not in built CSS`);
+  }
+}
+console.log('  note  src/styles/global.css equals the prototype <style> block plus the owner-directed .frame-blur addition');
+
+/* ---------- 5. Structural parity ---------- */
+console.log('\n[5] structural parity with prototype');
+const mustHave = [
+  ['<body class="lock">', 'body starts locked (FR-47)'],
+  ['class="plus-field"', 'plus-mark field'],
+  ['class="frame"', 'drawing-sheet frame'],
+  ['class="frame-blur"', 'outer frame blur, stronger than the bottom edge (owner direction)'],
+  ['id="loader"', 'page loader'],
+  ['class="site-header"', 'header'],
+  ['class="mark cb"', 'header mark link'],
+  ['mark-wordmark', 'desktop wordmark'],
+  ['mark-vstack', 'mobile v-stack'],
+  ['id="themeBtn"', 'theme toggle (FR-24)'],
+  ['id="intro"', 'intro section (FR-01)'],
+  ['id="statement"', 'intro statement h1'],
+  ['class="edge-blur"', 'bottom-edge blur'],
+  ['id="grain"', 'grain canvas (FR-02)'],
+  ['id="works"', 'works section (FR-04)'],
+  ['id="track"', 'works track'],
+  ['class="indicator"', 'horizontal-scroll signal (FR-05)'],
+  ['class="works-footer"', 'works footer (FR-12)'],
+  ['id="detail"', 'detail view (FR-13)'],
+  ['id="contact"', 'contact overlay (FR-26)'],
+  ['id="demoRange"', 'interactive component preview (FR-17)'],
+  ['href="#legal-impressum"', 'Impressum link (FR-44)'],
+  ['href="#legal-privacy"', 'privacy link (FR-45)'],
+  ['fonts.googleapis.com', 'Archivo + Unbounded webfonts'],
+];
+for (const [needle, label] of mustHave) {
+  check(built.includes(needle), label, `${label} — "${needle}" not in built page`);
+}
+
+/* ---------- 6. Production hygiene ---------- */
+console.log('\n[6] production hygiene');
+check(!built.includes('class="proto"'), 'prototype control panel excluded from prod', 'prototype control panel leaked into the production build');
+check(
+  !built.includes('Replay page loader'),
+  'prototype control labels absent from prod',
+  'prototype control labels leaked into prod',
+);
+
+/* ---------- 7. DOM skeleton parity ---------- */
+/* The stylesheet is byte-identical to the prototype, so rendering can only drift if the
+   markup does. Compare the body's open-tag sequence (tag#id.class) between the prototype
+   and the build. Deliberate, already-verified differences are normalised away first:
+     - the works track's cards: the prototype injects them at runtime, Astro renders them
+     - the dev-only prototype control panel
+     - Astro's own <script>/<link> plumbing and the projects-data island */
+console.log('\n[7] DOM skeleton parity with prototype body');
+
+function bodyOf(html) {
+  const i = html.indexOf('<body');
+  const j = html.lastIndexOf('</body>');
+  return i < 0 || j < 0 ? html : html.slice(i, j);
+}
+function skeleton(html) {
+  let s = bodyOf(html);
+  s = s.replace(/<!--[\s\S]*?-->/g, '');
+  s = s.replace(/<script[\s\S]*?<\/script>/g, '');
+  s = s.replace(/<svg[\s\S]*?<\/svg>/g, '<svg>'); /* svg innards come from the extracted marks */
+  s = s.replace(/<details class="proto">[\s\S]*?<\/details>/g, '');
+  /* the outer-margin blur is an owner-directed addition, not in the prototype */
+  s = s.replace(/<div class="frame-blur"[^>]*>(?:<div[^>]*>\s*<\/div>\s*)*<\/div>/g, '');
+  s = s.replace(/<div class="track"[^>]*>[\s\S]*?<\/div>\s*<div class="indicator"/g, '<div class="track" id="track"><div class="indicator"');
+  const tags = [];
+  for (const m of s.matchAll(/<([a-zA-Z][\w-]*)([^>]*)>/g)) {
+    const tag = m[1].toLowerCase();
+    const attrs = m[2];
+    if (tag === 'link' || tag === 'meta') continue;
+    const id = (attrs.match(/\bid="([^"]*)"/) || [])[1];
+    const cls = (attrs.match(/\bclass="([^"]*)"/) || [])[1];
+    let t = `<${tag}`;
+    if (id) t += `#${id}`;
+    if (cls) t += `.${cls.trim().split(/\s+/).sort().join('.')}`;
+    tags.push(t + '>');
+  }
+  return tags;
+}
+
+const protoSkel = skeleton(proto);
+const builtSkel = skeleton(built);
+if (protoSkel.length === builtSkel.length && protoSkel.every((t, i) => t === builtSkel[i])) {
+  ok(`body skeleton identical (${builtSkel.length} elements)`);
+} else {
+  bad(`body skeleton differs: prototype ${protoSkel.length} elements vs build ${builtSkel.length}`);
+  const n = Math.max(protoSkel.length, builtSkel.length);
+  let shown = 0;
+  for (let i = 0; i < n && shown < 12; i++) {
+    if (protoSkel[i] !== builtSkel[i]) {
+      console.log(`          [${i}] prototype: ${protoSkel[i] ?? '(absent)'}`);
+      console.log(`          [${i}] build:     ${builtSkel[i] ?? '(absent)'}`);
+      shown++;
+    }
+  }
+}
+
+/* Class-name multiset: catches a renamed or dropped hook the sequence check could mask. */
+/* Known, deliberate differences: the track's cards (Astro renders them, the prototype
+   injects them at runtime) and the dev-only prototype control panel (checked in [6]). */
+const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'frame-blur'];
+function classBag(html) {
+  const bag = new Map();
+  for (const m of bodyOf(html).matchAll(/\bclass="([^"]*)"/g)) {
+    for (const c of m[1].trim().split(/\s+/)) if (c) bag.set(c, (bag.get(c) || 0) + 1);
+  }
+  return bag;
+}
+const pb = classBag(proto);
+const bb = classBag(built);
+const classDrift = [];
+for (const [c, n] of pb) {
+  const m = bb.get(c) || 0;
+  if (m !== n && !EXPECTED_CLASS_DIFF.includes(c)) classDrift.push(`${c}: proto ${n} vs build ${m}`);
+}
+for (const [c] of bb) {
+  if (!pb.has(c) && !EXPECTED_CLASS_DIFF.includes(c)) classDrift.push(`${c}: only in build`);
+}
+check(classDrift.length === 0, 'class-name inventory matches', `class drift:\n          ${classDrift.join('\n          ')}`);
+
+if (fail === 0) console.log('\nPASS — built site is faithful to the prototype');
+else console.log(`\nFAIL — ${fail} problem(s)`);
+process.exit(fail === 0 ? 0 : 1);

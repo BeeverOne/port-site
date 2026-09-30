@@ -55,6 +55,18 @@ button { font: inherit; cursor: pointer; }
 /* sheet frame (drawing-sheet border) */
 .frame { position: fixed; inset: var(--pad); border: 1px solid var(--h-rule); pointer-events: none; z-index: 60; transition: border-color 200ms; }
 
+/* outer sheet margin: owner direction — the frame frames the site by sitting OVER the
+   content, so the whole band blurs at full strength with no fade: anything that runs under
+   the frame reads as frosted glass behind it. Stronger than the bottom-edge blur (7px).
+   Four thin bands keep the backdrop-filter bounds small; the 1px sheet border paints above
+   (z-index 60) and stays crisp. */
+.frame-blur { position: fixed; inset: 0; pointer-events: none; z-index: 46; }
+.frame-blur div { position: absolute; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.frame-blur div:nth-child(1) { top: 0; left: 0; right: 0; height: var(--pad); }
+.frame-blur div:nth-child(2) { bottom: 0; left: 0; right: 0; height: var(--pad); }
+.frame-blur div:nth-child(3) { left: 0; top: 0; bottom: 0; width: var(--pad); }
+.frame-blur div:nth-child(4) { right: 0; top: 0; bottom: 0; width: var(--pad); }
+
 /* ---------- Corner-mark hover and focus (buttons and links) ---------- */
 .cb { position: relative; --cb: currentColor; }
 .cb:focus-visible { outline: none; }
