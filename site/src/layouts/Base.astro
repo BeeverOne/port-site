@@ -21,13 +21,15 @@ const { title = 're.verb one - Oluwafemi Bamigboye' } = Astro.props;
     <meta property="og:title" content={title} />
     <meta property="og:description" content="re.verb one - Oluwafemi Bamigboye, software developer." />
     <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
-    <meta property="og:image" content={new URL('/og.png', Astro.site)} />
-    <meta property="og:image:width" content="2400" />
-    <meta property="og:image:height" content="1260" />
-    <meta property="og:image:alt" content="re.verb one wordmark on a dark green background" />
-    <!-- summary_large_image shows the wide 1.9:1 card; plain summary crops it to a small square. -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image:alt" content="re.verb one wordmark on a dark green background" />
+    <!-- The R1 logo on black (R1-Assets/r1-logo-1024-bg.png). Bump ?v= whenever og.png changes:
+         chat apps cache previews by image URL, so a new query string forces a fresh fetch. -->
+    <meta property="og:image" content={new URL('/og.png?v=2', Astro.site)} />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
+    <meta property="og:image:alt" content="The R1 logo, light grey on black" />
+    <!-- summary: the image is square, so the small square card fits it without cropping. -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:image:alt" content="The R1 logo, light grey on black" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
