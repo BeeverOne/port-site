@@ -2,7 +2,15 @@
 import '../styles/fonts.css';
 import '../styles/global.css';
 
-const { title = 're.verb one - Oluwafemi Bamigboye', lang = 'en', bodyClass } = Astro.props;
+const DESCRIPTION = {
+  en: 're.verb one - Oluwafemi Bamigboye, software developer.',
+  de: 're.verb one - Oluwafemi Bamigboye, Softwareentwickler.',
+};
+const { title = 're.verb one - Oluwafemi Bamigboye', lang = 'en', bodyClass, description = DESCRIPTION[lang], alternates } =
+  Astro.props;
+/* ADR-0012: every page exists in English at the root and in German under /de/. alternates names
+   both paths so search engines can pair them; English is the x-default. */
+const abs = (path) => new URL(path, Astro.site).href;
 ---
 
 <!doctype html>
@@ -14,13 +22,23 @@ const { title = 're.verb one - Oluwafemi Bamigboye', lang = 'en', bodyClass } = 
     <!-- Dark artwork for light tabs, light artwork for dark tabs: the brand asset pair. -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/svg+xml" href="/favicon-dark.svg" media="(prefers-color-scheme: dark)" />
-    <meta name="description" content="re.verb one - Oluwafemi Bamigboye, software developer." />
+    <meta name="description" content={description} />
+    {
+      alternates && (
+        <>
+          <link rel="alternate" hreflang="en" href={abs(alternates.en)} />
+          <link rel="alternate" hreflang="de" href={abs(alternates.de)} />
+          <link rel="alternate" hreflang="x-default" href={abs(alternates.en)} />
+        </>
+      )
+    }
     <!-- Link previews (iMessage, WhatsApp, Slack, Discord): Open Graph. Crawlers fetch
          server-side, so og:url and og:image must be absolute; Astro.site supplies the domain. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="re.verb one" />
     <meta property="og:title" content={title} />
-    <meta property="og:description" content="re.verb one - Oluwafemi Bamigboye, software developer." />
+    <meta property="og:description" content={description} />
+    <meta property="og:locale" content={lang === 'de' ? 'de_DE' : 'en_US'} />
     <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
     <!-- The R1 logo on black (R1-Assets/r1-logo-1024-bg.png). Bump ?v= whenever og.png changes:
          chat apps cache previews by image URL, so a new query string forces a fresh fetch. -->

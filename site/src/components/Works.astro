@@ -1,17 +1,20 @@
 ---
 import ProjectCard from './ProjectCard.astro';
+import { dict, prefix } from '../i18n/server.js';
 
 /* Works (FR-04 to FR-12). Lives inside the island's scroller, in normal flow after the
    runway; the clock-driven transition brings the view here (CR-22). The staggered items
    carry .stagger and flow in on a triggered time stagger at the end of it (CR-20). */
-const { projects } = Astro.props;
+const { projects, lang = 'en' } = Astro.props;
+const t = dict(lang);
+const legal = lang === 'de' ? { impressum: '/de/impressum', privacy: '/de/datenschutz' } : { impressum: '/impressum', privacy: '/privacy' };
 ---
 
 <section class="works" id="works" aria-labelledby="worksTitle">
   <div class="works-main">
-    <div class="works-head stagger"><h2 id="worksTitle" data-i18n="works">[ Works ]</h2></div>
-    <div class="track" id="track" aria-label="Projects">
-      {projects.map((p) => <ProjectCard id={p.id} {...p.data.en} />)}
+    <div class="works-head stagger"><h2 id="worksTitle" data-i18n="works">{t.works}</h2></div>
+    <div class="track" id="track" aria-label={t.projects}>
+      {projects.map((p) => <ProjectCard id={p.id} href={`${prefix(lang)}/works/${p.id}`} {...p.data[lang]} />)}
     </div>
     <div class="indicator stagger">
       <span id="pos" aria-hidden="true">1 / {projects.length}</span>
@@ -24,7 +27,7 @@ const { projects } = Astro.props;
         aria-valuemax={projects.length}
         aria-valuenow="1"
         data-i18n-label="scrollbar"
-        aria-label="Project position"
+        aria-label={t.scrollbar}
       >
         <i id="barFill"></i>
       </div>
@@ -35,7 +38,7 @@ const { projects } = Astro.props;
   </div>
   <footer class="works-footer stagger">
     <div class="wf-row">
-      <button class="btn btn-primary cb" type="button" data-open-contact data-i18n="contact">Contact</button>
+      <button class="btn btn-primary cb" type="button" data-open-contact data-i18n="contact">{t.contact}</button>
       <button
         class="wf-toggle"
         type="button"
@@ -43,7 +46,7 @@ const { projects } = Astro.props;
         aria-expanded="true"
         aria-controls="wfMore"
         data-i18n-label="footerToggle"
-        aria-label="Show or hide the footer links"
+        aria-label={t.footerToggle}
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"
           ><path d="M4 13l6-6 6 6"></path></svg
@@ -54,9 +57,9 @@ const { projects } = Astro.props;
       <div class="wf-more-inner">
         <nav aria-label="Footer">
           <a class="cb" href="https://github.com/BeeverOne" target="_blank" rel="noopener">[ GitHub ]</a>
-          <!-- English URLs here; applyLang() points them at the /de/ pages in German (FR-44, FR-45, ADR-0012) -->
-          <a class="cb" href="/impressum" data-legal="impressum" data-i18n="impressum">[ Impressum ]</a>
-          <a class="cb" href="/privacy" data-legal="privacy" data-i18n="privacy">[ Privacy policy ]</a>
+          <!-- the page in this page's language; applyLang() repoints them on a switch (FR-44, FR-45, ADR-0012) -->
+          <a class="cb" href={legal.impressum} data-legal="impressum" data-i18n="impressum">{t.impressum}</a>
+          <a class="cb" href={legal.privacy} data-legal="privacy" data-i18n="privacy">{t.privacy}</a>
         </nav>
         <span class="copyright">© re.verb one 2026</span>
       </div>

@@ -1,20 +1,24 @@
 ---
 import Wordmark from './marks/Wordmark.astro';
 import VStack from './marks/VStack.astro';
+import { dict, homePath } from '../i18n/server.js';
+
+const { lang = 'en' } = Astro.props;
+const t = dict(lang);
 ---
 
 <header class="site-header">
-  <a class="mark cb" href="#" id="home" aria-label="re.verb one, home"><Wordmark /><VStack /></a>
+  <a class="mark cb" href={homePath(lang)} id="home" aria-label="re.verb one, home"><Wordmark /><VStack /></a>
   <div class="controls">
     <div class="lang" role="group" aria-label="Language">
-      <button class="cb" type="button" data-lang="en" aria-pressed="true">EN</button>
-      <button class="cb" type="button" data-lang="de" aria-pressed="false">DE</button>
+      <button class="cb" type="button" data-lang="en" aria-pressed={String(lang === 'en')}>EN</button>
+      <button class="cb" type="button" data-lang="de" aria-pressed={String(lang === 'de')}>DE</button>
     </div>
-    <button class="icon-btn cb" type="button" id="themeBtn" aria-label="Switch to dark mode">
+    <button class="icon-btn cb" type="button" id="themeBtn" aria-label={t.toDark}>
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"
         ><circle cx="10" cy="10" r="7"></circle><path d="M10 3a7 7 0 0 1 0 14z" fill="currentColor"></path></svg
       >
     </button>
-    <button class="btn btn-primary cb btn-contact" type="button" data-open-contact data-i18n="contact">Contact</button>
+    <button class="btn btn-primary cb btn-contact" type="button" data-open-contact data-i18n="contact">{t.contact}</button>
   </div>
 </header>

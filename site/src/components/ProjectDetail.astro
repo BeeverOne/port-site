@@ -1,21 +1,27 @@
 ---
 /* Project detail view (FR-13 to FR-17). One shared element: openDetail() fills it
    in place, so opening a project makes no document request (FR-13).
-   The four blocks are placeholders until the CMS supplies block content (FR-17). */
+   The four blocks are placeholders until the CMS supplies block content (FR-17).
+   On a project page (/works/<id>) the title and meta are pre-rendered for that project, so the
+   page names it without JavaScript; openDetail() writes the same values on open. */
+import { dict } from '../i18n/server.js';
+
+const { lang = 'en', project } = Astro.props;
+const t = dict(lang);
 ---
 
 <article class="detail" id="detail" aria-labelledby="detailTitle" tabindex="-1">
   <div class="detail-inner">
-    <button class="close cb" type="button" id="detailClose" data-i18n="close">[ Close ]</button>
-    <div class="label" style="color: var(--works-sub)" id="detailMeta"></div>
-    <h2 id="detailTitle"></h2>
-    <div class="block" data-i18n="blockText">[Text block: project description from the CMS]</div>
-    <div class="block media" data-i18n="blockImage">[Image block]</div>
-    <div class="block media" data-i18n="blockVideo">[Video block]</div>
+    <button class="close cb" type="button" id="detailClose" data-i18n="close">{t.close}</button>
+    <div class="label" style="color: var(--works-sub)" id="detailMeta">{project && `${project.title}   ${project.year}`}</div>
+    <h2 id="detailTitle">{project?.headline}</h2>
+    <div class="block" data-i18n="blockText">{t.blockText}</div>
+    <div class="block media" data-i18n="blockImage">{t.blockImage}</div>
+    <div class="block media" data-i18n="blockVideo">{t.blockVideo}</div>
     <div class="block">
-      <div data-i18n="blockDemo" style="margin-bottom: 14px">[Interactive component preview]</div>
+      <div data-i18n="blockDemo" style="margin-bottom: 14px">{t.blockDemo}</div>
       <div class="demo">
-        <label for="demoRange" data-i18n="demoLabel">Circle size</label>
+        <label for="demoRange" data-i18n="demoLabel">{t.demoLabel}</label>
         <input type="range" id="demoRange" min="4" max="56" value="24" />
         <div class="swatch" aria-hidden="true"><i id="demoDot" style="width: 24px; height: 24px"></i></div>
       </div>

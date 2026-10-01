@@ -253,6 +253,39 @@ for (const [file, lang, other] of legalPages) {
     `legal page /${file.replace('/index.html', '')} missing or incomplete`,
   );
 }
+/* ADR-0006, ADR-0012: the site exists at /, /works and /works/<id> in English and under /de/ in
+   German, each pre-rendered in its language with hreflang alternates, real card links and no
+   hash routes left over. */
+const projectIds = [...built.matchAll(/class="card[^"]*" href="\/works\/([\w-]+)"/g)].map((m) => m[1]);
+check(projectIds.length > 0, `cards link to real project paths (${projectIds.length} projects) (FR-14)`, 'cards do not link to /works/<id>');
+const routes = [
+  ['index.html', 'en', '/', 'Here’s some of my work'],
+  ['works/index.html', 'en', '/works', 'Here’s some of my work'],
+  ['de/index.html', 'de', '/', 'Hier sind einige meiner Arbeiten'],
+  ['de/works/index.html', 'de', '/works', 'Hier sind einige meiner Arbeiten'],
+  ...projectIds.flatMap((id) => [
+    [`works/${id}/index.html`, 'en', `/works/${id}`, 'Here’s some of my work'],
+    [`de/works/${id}/index.html`, 'de', `/works/${id}`, 'Hier sind einige meiner Arbeiten'],
+  ]),
+];
+const badRoutes = [];
+for (const [file, lang, base, trigger] of routes) {
+  const path = `${OUT}/${file}`;
+  const html = existsSync(path) ? readFileSync(path, 'utf8') : '';
+  const de = base === '/' ? '/de/' : `/de${base}`;
+  const ok = html.includes(`<html lang="${lang}"`) && html.includes(trigger)
+    && html.includes(`hreflang="en" href="https://reverb-one.space${base}"`) && html.includes(`hreflang="de" href="https://reverb-one.space${de}"`)
+    && html.includes('hreflang="x-default"') && !html.includes('#/works')
+    && (lang === 'de' ? /Software\u00ADentwickler|Software&shy;entwickler/.test(html) : html.includes('software developer'));
+  if (!ok) badRoutes.push(file);
+}
+check(badRoutes.length === 0, `${routes.length} site routes pre-rendered in their language with hreflang pairs (FR-20, ADR-0012)`,
+  `routes wrong or missing: ${badRoutes.join(', ')}`);
+for (const id of projectIds) {
+  const en = readFileSync(`${OUT}/works/${id}/index.html`, 'utf8');
+  if (!/<h2 id="detailTitle">[^<]+<\/h2>/.test(en)) { bad(`/works/${id} does not pre-render the project title (FR-15)`); break; }
+}
+
 /* FR-45: both privacy pages need a contact-form section (naming Resend) and a Turnstile section. */
 for (const file of ['privacy/index.html', 'de/datenschutz/index.html']) {
   const html = readFileSync(`${OUT}/${file}`, 'utf8');
@@ -304,6 +337,8 @@ function skeleton(html) {
   s = s.replace(/<script[\s\S]*?<\/script>/g, '');
   s = s.replace(/<svg[\s\S]*?<\/svg>/g, '<svg>'); /* svg innards come from the extracted marks */
   s = s.replace(/<details class="proto">[\s\S]*?<\/details>/g, '');
+  /* the statement is pre-rendered now (ADR-0012); the prototype fills it at runtime */
+  s = s.replace(/(<h1 id="statement"[^>]*>)[\s\S]*?(<\/h1>)/, '$1$2');
   /* the island field is the only plus-mark field now; the prototype still carries two */
   s = s.replace(/<div class="plus-field"[^>]*>\s*<\/div>/g, '');
   /* the hover title is an owner-directed addition, not in the prototype */
@@ -349,7 +384,7 @@ if (protoSkel.length === builtSkel.length && protoSkel.every((t, i) => t === bui
 /* Class-name multiset: catches a renamed or dropped hook the sequence check could mask. */
 /* Known, deliberate differences: the track's cards (Astro renders them, the prototype
    injects them at runtime) and the dev-only prototype control panel (checked in [6]). */
-const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger', 'hover-title', 'plus-field', 'wf-row', 'wf-toggle', 'wf-more', 'wf-more-inner'];
+const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger', 'hover-title', 'plus-field', 'wf-row', 'wf-toggle', 'wf-more', 'wf-more-inner', 'name', 'hl'];   // name, hl: the pre-rendered statement spans (ADR-0012)
 function classBag(html) {
   const bag = new Map();
   for (const m of bodyOf(html).matchAll(/\bclass="([^"]*)"/g)) {

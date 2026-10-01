@@ -1,22 +1,40 @@
 ---
 /* Intro (FR-01). The title blocks are gone (CR-08); the outro is just the trigger
-   line and the enter control, and it fades out upwards as the transition starts. */
+   line and the enter control, and it fades out upwards as the transition starts.
+   All text is pre-rendered in the page's language (ADR-0012); renderStatement() and applyLang()
+   in site.js write the same structure when the visitor switches language. */
+import { dict } from '../i18n/server.js';
+
+const { lang = 'en' } = Astro.props;
+const t = dict(lang);
 ---
 
 <main class="intro" id="intro">
-  <div class="label" data-i18n="about">[ about ]</div>
-  <!-- Filled by renderStatement(): plain parts, the name span, and highlighter spans
-       carrying their own --hl-delay / --hl-dur (owner note 3). -->
-  <h1 id="statement"></h1>
+  <div class="label" data-i18n="about">{t.about}</div>
+  <!-- Plain parts, the name span, and highlighter spans carrying their own --hl-delay /
+       --hl-dur (owner note 3); renderStatement() rebuilds it on a language switch. -->
+  <h1 id="statement">
+    {
+      t.statement.map((part) =>
+        part.t != null ? (
+          part.t
+        ) : part.name ? (
+          <span class="name">{part.name}</span>
+        ) : (
+          <span class="hl" style={`--hl-delay: ${part.delay}ms; --hl-dur: ${part.dur}ms`}>{part.hl}</span>
+        ),
+      )
+    }
+  </h1>
   <div class="copy">
-    <p data-i18n="p2"></p>
+    <p data-i18n="p2">{t.p2}</p>
     <div class="note"><span>[ AI ]</span><span class="line"></span><span class="dot"></span></div>
-    <p data-i18n="p3"></p>
-    <p data-i18n="p4"></p>
+    <p data-i18n="p3">{t.p3}</p>
+    <p data-i18n="p4">{t.p4}</p>
   </div>
   <div class="outro" id="outro">
-    <h2 data-i18n="trigger">Here’s some of my work</h2>
-    <button class="enter cb" type="button" id="enterWorks" data-i18n-label="enterWorks" aria-label="Go to my works">
+    <h2 data-i18n="trigger">{t.trigger}</h2>
+    <button class="enter cb" type="button" id="enterWorks" data-i18n-label="enterWorks" aria-label={t.enterWorks}>
       <svg width="40" height="64" viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"
         ><path d="M20 0v62M6 48l14 14 14-14"></path></svg
       >

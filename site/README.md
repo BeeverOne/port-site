@@ -22,6 +22,15 @@ real site key only allows reverb-one.space and fails on localhost with error 110
 reads the real keys, `RESEND_API_KEY`, `CONTACT_FROM` and `CONTACT_TO` from the Vercel project's
 environment variables at runtime (astro:env, `src/pages/api/contact.js`).
 
+## Routes (ADR-0006, ADR-0012)
+
+`src/components/SitePage.astro` is the whole one-page site. Six routes render it, each pre-rendered
+in its own language with hreflang pairs: `/`, `/works`, `/works/<id>` and the same under `/de/`.
+`site.js` reads the address to decide where the view starts and moves between these URLs with the
+History API (no new document). The URL sets the language; on an English URL a saved German choice,
+or no choice plus a German browser, switches to German in place and moves to the `/de/` path.
+Old `#/works` links are rewritten to their paths on load.
+
 ## Layout
 
 | Path | What it is |

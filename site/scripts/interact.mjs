@@ -92,7 +92,7 @@ check(await page.evaluate(() => {
   const z = (sel) => getComputedStyle(document.querySelector(sel)).zIndex;
   return z('#grain') === '2' && z('.island > .plus-field') === '3' && z('.scroller') === '4';
 }), 'plus-field paints above the canvas and below the content: cross grid visible in works (CR-23 fix)', 'stacking order hides the cross grid');
-check(await page.evaluate(() => location.hash === '#/works'), 'works overview URL derived from scroll position (FR-16, CR-06)', `hash is ${await page.evaluate(() => location.hash)}`);
+check(await page.evaluate(() => location.pathname === '/works'), 'works overview URL derived from scroll position (FR-16, CR-06)', `path is ${await page.evaluate(() => location.pathname)}`);
 
 /* Suspension: while the flow-in is active, input cannot steer the works section */
 await page.evaluate(() => { const s = document.querySelector('#scroller'); const rs = document.querySelector('#outro').offsetTop - 24; const R = (s.scrollHeight - s.clientHeight) - rs; s.scrollTop = rs + 0.5 * R; });
@@ -179,7 +179,7 @@ await page.waitForTimeout(600);
 await page.click('.card[data-id="project-1"]');
 await page.waitForTimeout(900);
 check(await page.evaluate(() => document.querySelector('#detail').classList.contains('open')), 'detail view opened in place (FR-13)', 'detail did not open');
-check(await page.evaluate(() => location.hash) === '#/works/project-1', 'URL changed to the project URL (FR-14)', `hash is ${await page.evaluate(() => location.hash)}`);
+check(await page.evaluate(() => location.pathname) === '/works/project-1', 'URL changed to the project URL (FR-14)', `path is ${await page.evaluate(() => location.pathname)}`);
 const detailTitle = await page.evaluate(() => document.querySelector('#detailTitle').textContent);
 check(detailTitle === 'Short project headline', `detail filled from project data ("${detailTitle}")`, `detail title wrong: "${detailTitle}"`);
 
@@ -187,7 +187,7 @@ check(detailTitle === 'Short project headline', `detail filled from project data
 await page.keyboard.press('Escape');
 await page.waitForTimeout(900);
 check(await page.evaluate(() => !document.querySelector('#detail').classList.contains('open')), 'Escape closed the detail view (FR-16)', 'detail still open');
-check(await page.evaluate(() => location.hash) === '#/works', 'URL returned to the works overview (FR-16)', `hash is ${await page.evaluate(() => location.hash)}`);
+check(await page.evaluate(() => location.pathname) === '/works', 'URL returned to the works overview (FR-16)', `path is ${await page.evaluate(() => location.pathname)}`);
 
 /* FR-03: backward input at the first card scrolls back up through the transition */
 const topBefore = await scrollTop();
@@ -299,6 +299,76 @@ for (const vp of [{ width: 1280, height: 777 }, { width: 1440, height: 900 }]) {
   check(back && s2 > s1 + 5 && (await inWorks()),
     `nudge after a reverse re-triggers the transition at ${vp.width}x${vp.height} (${s1} -> ${s2}) (FR-02, CR-22)`,
     `no re-trigger after a reverse at ${vp.width}x${vp.height} (back ${back}, ${s1} -> ${s2}, works ${await inWorks()})`);
+  await pg.close();
+}
+
+/* PSP 4.2, ADR-0006 and ADR-0012: real paths in two languages. FT-20 (language from the URL,
+   then the saved choice, then the browser), FT-21 (toggle switches the address in place),
+   FT-15 (direct project URLs), plus the conversion of old #/works links. */
+{
+  const at = async (url, options = {}, before) => {
+    const pg = await browser.newPage({ viewport: { width: 1280, height: 800 }, ...options });
+    pg.on('pageerror', (e) => bad(`page error (routes ${url}): ${e.message}`));
+    if (before) await pg.addInitScript(before);
+    await pg.goto(SITE + url.replace(/^\//, ''));
+    await pg.waitForTimeout(3500);
+    return pg;
+  };
+  const view = (pg) => pg.evaluate(() => ({
+    path: location.pathname, hash: location.hash, lang: document.documentElement.lang,
+    trigger: document.querySelector('[data-i18n="trigger"]').textContent,
+    detail: document.querySelector('#detail').classList.contains('open') ? document.querySelector('#detailTitle').textContent : null,
+  }));
+  const DE_TRIGGER = 'Hier sind einige meiner Arbeiten';
+
+  let pg = await at('/', { locale: 'de-DE' });
+  let v = await view(pg);
+  check(v.path === '/de/' && v.lang === 'de' && v.trigger === DE_TRIGGER, `German browser at / switches to /de/ in German (FR-20)`, `German browser at /: ${JSON.stringify(v)}`);
+  await pg.close();
+
+  pg = await at('/', { locale: 'fr-FR' });
+  v = await view(pg);
+  check(v.path === '/' && v.lang === 'en', 'French browser at / stays English at / (FR-20)', `French browser at /: ${JSON.stringify(v)}`);
+  await pg.close();
+
+  pg = await at('/de/', { locale: 'en-US' });
+  v = await view(pg);
+  check(v.path === '/de/' && v.lang === 'de' && v.trigger === DE_TRIGGER, 'a /de/ URL shows German with an English browser (FR-20)', `/de/ with English browser: ${JSON.stringify(v)}`);
+  await pg.close();
+
+  pg = await at('/works', { locale: 'en-US' }, () => localStorage.setItem('lang', 'de'));
+  v = await view(pg);
+  check(v.path === '/de/works' && v.lang === 'de', 'a saved German choice moves /works to /de/works (FR-20)', `saved de at /works: ${JSON.stringify(v)}`);
+  await pg.close();
+
+  pg = await at('/works/project-2', { locale: 'en-US' });
+  v = await view(pg);
+  const p2 = v.detail;
+  check(v.path === '/works/project-2' && !!p2, `direct project URL opens that project's detail view (${p2}) (FR-15)`, `direct /works/project-2: ${JSON.stringify(v)}`);
+  const navs = [];   // document requests only: replaceState also fires framenavigated
+  pg.on('request', (r) => { if (r.resourceType() === 'document') navs.push(r.url()); });
+  await pg.click('[data-lang="de"]');
+  await pg.waitForTimeout(400);
+  v = await view(pg);
+  check(v.path === '/de/works/project-2' && v.lang === 'de' && v.detail !== null && navs.length === 0,
+    'toggle moves the address to /de/works/project-2 in place, detail stays open, no new document (FR-21)', `toggle on a project: ${JSON.stringify({ v, navs })}`);
+  await pg.close();
+
+  pg = await at('/#/works/project-1', { locale: 'en-US' });
+  v = await view(pg);
+  check(v.path === '/works/project-1' && v.hash === '' && !!v.detail, 'an old #/works link becomes its real path and opens the project', `legacy hash: ${JSON.stringify(v)}`);
+  await pg.close();
+
+  pg = await at('/de/works', { locale: 'en-US' });
+  const cardHref = await pg.evaluate(() => document.querySelector('.card').getAttribute('href'));
+  await pg.click('.card');
+  await pg.waitForTimeout(700);
+  const opened = await view(pg);
+  await pg.goBack();
+  await pg.waitForTimeout(900);
+  v = await view(pg);
+  check(cardHref.startsWith('/de/works/') && opened.path === cardHref && v.path === '/de/works' && v.detail === null,
+    `German card opens ${cardHref}; Back returns to /de/works (FR-14, FR-16)`, `German card/back: ${JSON.stringify({ cardHref, opened, v })}`);
   await pg.close();
 }
 

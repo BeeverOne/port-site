@@ -1,5 +1,8 @@
 ---
 import VStack from './marks/VStack.astro';
+import { dict } from '../i18n/server.js';
+
+const { lang = 'en' } = Astro.props;
 ---
 
 <!-- Page loader (FR-47 to FR-49, FR-52): the v-stack wordmark fills from bottom to top.
@@ -8,5 +11,5 @@ import VStack from './marks/VStack.astro';
   <div class="lmark" aria-hidden="true"
     ><VStack markClass="base" width={200} height={96} /><VStack markClass="fillmark" width={200} height={96} /></div
   >
-  <span class="sr-only" data-i18n="loading">Loading</span>
+  <span class="sr-only" data-i18n="loading">{dict(lang).loading}</span>
 </div>

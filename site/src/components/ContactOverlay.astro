@@ -4,20 +4,24 @@
    the fields, verifies the Turnstile token and sends the mail through Resend (FR-28 to FR-36).
    The Turnstile widget renders into .turnstile the first time the overlay opens, so Cloudflare
    is only contacted by visitors who open the form (privacy policy, section on Turnstile). */
+import { dict } from '../i18n/server.js';
+
+const { lang = 'en' } = Astro.props;
+const t = dict(lang);
 ---
 
 <dialog class="contact" id="contact" aria-labelledby="contactTitle">
   <form class="contact-inner" id="contactForm" novalidate>
     <div class="contact-head">
-      <h2 id="contactTitle" data-i18n="contactTitle">Contact</h2>
-      <button class="close cb" type="button" id="contactClose" data-i18n="close">[ Close ]</button>
+      <h2 id="contactTitle" data-i18n="contactTitle">{t.contactTitle}</h2>
+      <button class="close cb" type="button" id="contactClose" data-i18n="close">{t.close}</button>
     </div>
     <div class="field" id="f-name">
-      <label for="name" data-i18n="name">Name</label><input id="name" name="name" autocomplete="name" aria-describedby="e-name"
+      <label for="name" data-i18n="name">{t.name}</label><input id="name" name="name" autocomplete="name" aria-describedby="e-name"
       /><span class="err" id="e-name"></span>
     </div>
     <div class="field" id="f-email">
-      <label for="email" data-i18n="email">Email</label><input
+      <label for="email" data-i18n="email">{t.email}</label><input
         id="email"
         name="email"
         type="email"
@@ -26,7 +30,7 @@
       /><span class="err" id="e-email"></span>
     </div>
     <div class="field" id="f-message">
-      <label for="message" data-i18n="message">Message</label><textarea
+      <label for="message" data-i18n="message">{t.message}</label><textarea
         id="message"
         name="message"
         maxlength="3000"
@@ -35,7 +39,7 @@
     </div>
     <div class="turnstile"></div>
     <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
-      <button class="btn btn-primary cb" type="submit" id="sendBtn" data-i18n="send">Send</button>
+      <button class="btn btn-primary cb" type="submit" id="sendBtn" data-i18n="send">{t.send}</button>
       <span class="status" id="status" role="status" aria-live="polite"></span>
     </div>
   </form>

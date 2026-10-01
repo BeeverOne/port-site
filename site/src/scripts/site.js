@@ -57,9 +57,24 @@ const store = {
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const scroller = $('#scroller'), track = $('#track'), works = $('#works');
 
-/* ---------- Language (FR-21, FR-22) ---------- */
+/* ---------- Language and addresses (FR-20, FR-21, FR-22; ADR-0006, ADR-0012) ----------
+   The URL selects the language: /de/... is German, every other path English. On an English URL the
+   site switches to German in place, and moves the address to the /de/ path, when the saved choice
+   is German, or when nothing is saved and the browser prefers German. */
+const stripLang = (path) => path.replace(/^\/de(?=\/|$)/, '') || '/';
+const langPath = (path, l) => { const base = stripLang(path); return l === 'de' ? (base === '/' ? '/de/' : '/de' + base) : base; };
+const prefix = () => (lang === 'de' ? '/de' : '');
+const homePath = () => (lang === 'de' ? '/de/' : '/');
+const urlLang = () => (/^\/de(\/|$)/.test(location.pathname) ? 'de' : 'en');
 const prefs = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || 'en'];
-let lang = store.get('lang') || (String(prefs[0]).toLowerCase().startsWith('de') ? 'de' : 'en');
+const savedLang = store.get('lang');
+let lang = urlLang() === 'de' || savedLang === 'de' || (!savedLang && String(prefs[0]).toLowerCase().startsWith('de')) ? 'de' : 'en';
+{
+  // a #/works link shared before the real paths existed becomes its path, in the chosen language
+  const legacy = location.hash.match(/^#\/works(?:\/([\w-]+))?/);
+  if (legacy) history.replaceState(null, '', prefix() + '/works' + (legacy[1] ? '/' + legacy[1] : '') + location.search);
+  else if (lang !== urlLang()) history.replaceState(null, '', langPath(location.pathname, lang) + location.search + location.hash);
+}
 function renderStatement() {
   const h1 = $('#statement'); h1.textContent = '';
   T[lang].statement.forEach((part) => {
@@ -86,7 +101,11 @@ const LEGAL = {   // ADR-0012: English at the root, German under /de/
   impressum: { en: '/impressum', de: '/de/impressum' },
   privacy: { en: '/privacy', de: '/de/datenschutz' },
 };
-$$('.lang button').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; store.set('lang', lang); applyLang(); }));
+$$('.lang button').forEach((b) => b.addEventListener('click', () => {
+  lang = b.dataset.lang; store.set('lang', lang); applyLang();
+  // FR-21: the same page in the other language, without loading a new document
+  history.replaceState(history.state, '', langPath(location.pathname, lang) + location.search);
+}));
 
 /* ---------- Theme (FR-24, FR-25) ---------- */
 const sysDark = window.matchMedia('(prefers-color-scheme: dark)');
@@ -161,6 +180,7 @@ function localizeCards() {
   PROJECTS.forEach((p) => {
     const a = track.querySelector('.card[data-id="' + p.id + '"]');
     if (!a) return;
+    a.href = prefix() + '/works/' + p.id;   // FR-14: the project's own URL in the active language
     a.querySelector('h3').textContent = p.headline;
     a.querySelector('.t').textContent = p.title;
     a.querySelector('.year').textContent = p.year;
@@ -272,6 +292,7 @@ function layout() {
 }
 
 let lastWorksHash = null;
+let routed = false;   // render() leaves the address alone until the start-up route() has placed the view
 function render() {
   let p;
   if (anim) {
@@ -333,10 +354,11 @@ function render() {
 
   // works overview URL while the works section fills the island (FR-11, FR-16)
   const atWorks = atBottom();
-  if (atWorks !== lastWorksHash && !$('#detail').classList.contains('open')) {
+  if (routed && atWorks !== lastWorksHash && !$('#detail').classList.contains('open')) {
     lastWorksHash = atWorks;
-    if (atWorks && !location.hash.startsWith('#/works')) history.replaceState(null, '', '#/works');
-    if (!atWorks && location.hash.startsWith('#/works')) history.replaceState(null, '', location.pathname + location.search);
+    const onWorksPath = /^\/works(\/|$)/.test(stripLang(location.pathname));
+    if (atWorks && !onWorksPath) history.replaceState(null, '', prefix() + '/works' + location.search);
+    if (!atWorks && onWorksPath) history.replaceState(null, '', homePath() + location.search);
   }
 }
 let rq = 0, settleUntil = 0, wasBottom = false, wasFirstCard = true;
@@ -459,7 +481,7 @@ function openDetail(id, fromCard) {
 function closeDetail() {
   if (!detail.classList.contains('open')) return;
   if (pushed) { pushed = false; history.back(); return; }  // Back behaves like close (FR-16)
-  history.replaceState(null, '', '#/works'); hideDetail();
+  history.replaceState(null, '', prefix() + '/works'); hideDetail();
 }
 function hideDetail() {
   const done = () => { detail.classList.remove('open'); if (lastCard) lastCard.focus({ preventScroll: true }); };
@@ -468,13 +490,17 @@ function hideDetail() {
 track.addEventListener('click', (e) => {
   const a = e.target.closest('.card'); if (!a) return;
   e.preventDefault(); pushed = true;
-  history.pushState(null, '', '#/works/' + a.dataset.id);
+  history.pushState(null, '', prefix() + '/works/' + a.dataset.id);
   openDetail(a.dataset.id, true);
 });
 $('#detailClose').addEventListener('click', closeDetail);
-window.addEventListener('popstate', () => { pushed = false; route(); });
+window.addEventListener('popstate', () => {
+  pushed = false;
+  if (urlLang() !== lang) { lang = urlLang(); applyLang(); }   // an entry from before a language switch
+  route();
+});
 function route() {
-  const m = location.hash.match(/^#\/works(?:\/([\w-]+))?/);
+  const m = stripLang(location.pathname).match(/^\/works(?:\/([\w-]+))?\/?$/);
   if (!m) { if (detail.classList.contains('open')) hideDetail(); return; }
   if (!atBottom()) { scroller.scrollTop = scroller.scrollHeight; render(); }
   if (m[1]) openDetail(m[1], false); else if (detail.classList.contains('open')) hideDetail();
@@ -569,7 +595,9 @@ syncWfAria();
 applyLang();
 runLoader();
 layout();
-route();
+route();   // a direct /works or /works/<id> address puts the view in the works section first (FR-15)
+routed = true;
+render();
 scroller.focus({ preventScroll: true });
 let rz = 0;
 window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { const wasBottom = atBottom(); layout(); if (wasBottom) scroller.scrollTop = scroller.scrollHeight; updateIndicator(); }, 120); });

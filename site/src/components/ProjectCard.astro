@@ -1,10 +1,12 @@
 ---
-/* One project card (FR-10). Rendered from the content collection; localizeCards()
-   in site.js rewrites the text when the visitor switches language (FR-21, FR-22). */
-const { id, headline, title, year, tags } = Astro.props;
+/* One project card (FR-10). Rendered from the content collection in the page's language;
+   localizeCards() in site.js rewrites the text and the link when the visitor switches language
+   (FR-21, FR-22). href is the project's own URL (FR-14, ADR-0006), so the card also works as a
+   plain link (new tab, copy link). */
+const { id, href, headline, title, year, tags } = Astro.props;
 ---
 
-<a class="card cb stagger" href={`#/works/${id}`} data-id={id}
+<a class="card cb stagger" href={href} data-id={id}
   ><span class="hover-title" aria-hidden="true">{headline}</span
   ><div class="thumb"><span>Project thumbnail</span></div><h3>{headline}</h3><div class="meta"
     ><span class="t">{title}</span><span class="year">{year}</span></div
