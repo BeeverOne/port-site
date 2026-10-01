@@ -13,7 +13,8 @@ npm run build      # static pages + the contact function in .vercel/output (Verc
 npm run preview    # serve .vercel/output/static on :4322 (the adapter has no `astro preview`)
 npm run verify     # build + faithfulness checks against the prototype
 npm test           # unit tests of the contact endpoint logic (Vitest, no network)
-npm run test:e2e   # browser smoke test of the interactive flows (needs Chrome; Turnstile and /api/contact stubbed)
+npm run test:e2e   # Playwright Test in Chrome and WebKit against the build (Firefox too in CI) (Turnstile and /api/contact stubbed)
+npm run test:e2e:chrome   # the same suite in Chrome only (faster)
 ```
 
 Local `.env` (git-ignored) needs `PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` set to
@@ -78,7 +79,7 @@ Old `#/works` links are rewritten to their paths on load.
 | `src/content/projects/` | One markdown file per project (the content model; a CMS replaces this loader later). |
 | `src/components/` | One component per prototype region: loader, header, intro, works, detail, contact. `TitleBlock` retired with CR-08. |
 | `scripts/verify.mjs` | Asserts the build still matches the prototype (DOM hooks, CSS selectors, skeleton). |
-| `scripts/interact.mjs` | Drives the built site in Chrome: transition, scroll-jack, detail, i18n, theme, contact. |
+| `tests/e2e/site.spec.mjs` | End-to-end suite (Playwright Test, `playwright.config.mjs`): 11 flows, 90 checks, in Chromium (installed Chrome), WebKit and Firefox. Run `npm run build` first; it serves the build itself. One-time: `npx playwright install webkit`. Locally the suite runs Chrome and WebKit; Firefox runs in GitHub Actions (`.github/workflows/e2e.yml`) on every push, because Firefox cannot be started from the command line on macOS 27. |
 
 ## The four standing edits to `site.js` (v1 and v2 ports alike)
 

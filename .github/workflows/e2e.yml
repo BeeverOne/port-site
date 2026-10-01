@@ -1,0 +1,50 @@
+---
+# Build the site and run the unit tests and the end-to-end suite in Chromium, WebKit and Firefox
+# (ADR-0011, QS-05, NFR-06). Firefox runs only here: on the owner's Mac (macOS 27) Firefox cannot be
+# started from the command line, so the local suite covers Chrome and WebKit.
+# npm run verify is not part of CI: it compares against the prototype in docs/, which is not in the
+# repository; run it locally.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+      # Google Chrome is preinstalled on the runner (the chromium project uses it); WebKit and
+      # Firefox come from Playwright, with their system libraries.
+      - run: npx playwright install --with-deps webkit firefox
+      - run: npm run build
+      - run: npm test
+      - run: npx playwright test
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        if: ${{ failure() }}
+        with:
+          name: playwright-report
+          path: site/playwright-report
+          retention-days: 14
