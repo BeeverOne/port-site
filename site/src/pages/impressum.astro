@@ -1,0 +1,19 @@
+---
+/* Impressum, English (FR-44). § 5 DDG also asks for a postal address where legal mail can be
+   served; the owner has chosen not to publish a home address (see the PR notes / CR log), so
+   this page lists name and email only until an address is decided. */
+import LegalPage from '../components/LegalPage.astro';
+import { OPERATOR } from '../i18n/legal.js';
+---
+
+<LegalPage lang="en" title="Impressum - re.verb one" heading="Impressum" enHref="/impressum" deHref="/de/impressum">
+  <p class="legal-sub">Legal notice. Information pursuant to § 5 of the German Digital Services Act (DDG).</p>
+
+  <h2>Operator</h2>
+  <address>
+    <p>{OPERATOR.name}</p>
+  </address>
+
+  <h2>Contact</h2>
+  <p>Email: <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a></p>
+</LegalPage>

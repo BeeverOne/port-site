@@ -212,9 +212,11 @@ const mustHave = [
   ['id="detail"', 'detail view (FR-13)'],
   ['id="contact"', 'contact overlay (FR-26)'],
   ['id="demoRange"', 'interactive component preview (FR-17)'],
-  ['href="#legal-impressum"', 'Impressum link (FR-44)'],
-  ['href="#legal-privacy"', 'privacy link (FR-45)'],
-  ['fonts.googleapis.com', 'Archivo + Unbounded webfonts'],
+  ['href="/impressum" data-legal="impressum"', 'Impressum link (FR-44)'],
+  ['href="/privacy" data-legal="privacy"', 'privacy link (FR-45)'],
+  ['href="https://github.com/BeeverOne"', 'GitHub profile link (FR-37)'],
+  ['href="/fonts/archivo-latin-var.woff2"', 'Archivo webfont self-hosted and preloaded'],
+  ['href="/fonts/unbounded-latin-var.woff2"', 'Unbounded webfont self-hosted and preloaded'],
   ['property="og:image"', 'Open Graph image for link previews'],
   ['favicon-dark.svg', 'dark-scheme favicon variant'],
   ['https://reverb-one.space/og.png', 'og:image resolves to an absolute URL on the live domain'],
@@ -232,10 +234,40 @@ check(
   'prototype control labels absent from prod',
   'prototype control labels leaked into prod',
 );
+/* Legal pages (FR-44, FR-45, ADR-0012): all four built, each in its own language, each naming the
+   operator and the contact email, and each linking to its counterpart in the other language. */
+const legalPages = [
+  ['impressum/index.html', 'en', '/de/impressum'], ['de/impressum/index.html', 'de', '/impressum'],
+  ['privacy/index.html', 'en', '/de/datenschutz'], ['de/datenschutz/index.html', 'de', '/privacy'],
+];
+for (const [file, lang, other] of legalPages) {
+  const path = `${ROOT}/site/dist/${file}`;
+  const html = existsSync(path) ? readFileSync(path, 'utf8') : '';
+  check(
+    html.includes(`<html lang="${lang}"`) && html.includes('Oluwafemi Bamigboye') && html.includes('mailto:thebeeverone@gmail.com')
+      && html.includes(`href="${other}"`) && !/fonts\.(googleapis|gstatic)\.com/.test(html),
+    `legal page /${file.replace('/index.html', '')} built (${lang}, operator, email, counterpart link)`,
+    `legal page /${file.replace('/index.html', '')} missing or incomplete`,
+  );
+}
 /* The dev LOOK panel's saved values (localStorage key "look") must not reach prod: the block is
    behind import.meta.env.DEV, so the bundles must not read or write that key. */
 const builtJs = [built, ...readdirSync(`${ROOT}/site/dist/_astro`).filter((f) => f.endsWith('.js'))
   .map((f) => readFileSync(`${ROOT}/site/dist/_astro/${f}`, 'utf8'))].join('\n');
+/* Fonts are self-hosted: no request may go to Google (it would send visitors' IP addresses there,
+   which the privacy policy does not cover), and both @font-face rules must reach the built CSS. */
+const builtCss = readdirSync(`${ROOT}/site/dist/_astro`).filter((f) => f.endsWith('.css'))
+  .map((f) => readFileSync(`${ROOT}/site/dist/_astro/${f}`, 'utf8')).join('\n');
+check(
+  !/fonts\.(googleapis|gstatic)\.com/.test(built + builtCss + builtJs),
+  'no Google Fonts requests in prod',
+  'a fonts.googleapis.com / fonts.gstatic.com reference reached the production build',
+);
+check(
+  /font-family:\s*Archivo[\s\S]*?archivo-latin-var\.woff2/.test(builtCss) && /font-family:\s*Unbounded[\s\S]*?unbounded-latin-var\.woff2/.test(builtCss),
+  'self-hosted @font-face rules for Archivo and Unbounded in the built CSS',
+  '@font-face rules for the self-hosted fonts missing from the built CSS',
+);
 check(
   !/["'`]look["'`]/.test(builtJs),
   'saved LOOK overrides compiled out of prod',

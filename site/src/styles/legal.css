@@ -1,0 +1,33 @@
+/* Legal pages (FR-44, FR-45): a normal scrolling document on the island layout. Only the legal pages
+   import this file, so the main page's rules stay exactly as the prototype wrote them. */
+body.legal { overflow: auto; }
+
+.legal .lang a {
+  display: flex; align-items: center; justify-content: center;
+  min-width: 44px; height: 44px; padding: 0 6px; border-radius: var(--radius);
+  color: var(--h-sub); font-size: 14px; font-weight: 600; text-decoration: none; --cb: var(--h-ink);
+}
+.legal .lang a[aria-current="page"] {
+  color: var(--h-ink); text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px;
+}
+
+.legal-sheet {
+  margin: calc(var(--gap) * 2 + var(--header-h)) var(--gap) var(--gap);
+  padding: clamp(28px, 5vw, 72px);
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: var(--radius);
+}
+.legal-sheet > * { max-width: 68ch; }
+.legal-sheet h1 {
+  margin: 0 0 8px; font-size: clamp(30px, 4.4vw, 56px); line-height: 1.05;
+  font-weight: 500; font-stretch: 118%; letter-spacing: -0.01em; text-wrap: balance;
+}
+.legal-sheet h2 { margin: 44px 0 10px; font-size: 20px; line-height: 1.3; font-weight: 600; font-stretch: 110%; }
+.legal-sheet p, .legal-sheet li { font-size: 17px; line-height: 1.6; }
+.legal-sheet p { margin: 0 0 12px; }
+.legal-sheet ul { margin: 0 0 12px; padding-left: 1.2em; }
+.legal-sheet a { color: inherit; text-underline-offset: 3px; }
+.legal-sheet .legal-sub { margin-bottom: 32px; color: var(--sub); }
+.legal-sheet address { font-style: normal; }
+.legal-back { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 24px; color: var(--sub); font-weight: 600; text-decoration: none; }
+.legal-back:hover { color: var(--ink); }

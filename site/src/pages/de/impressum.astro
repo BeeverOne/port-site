@@ -1,0 +1,17 @@
+---
+/* Impressum, Deutsch (FR-44). Siehe die Notiz zur Postanschrift in src/pages/impressum.astro. */
+import LegalPage from '../../components/LegalPage.astro';
+import { OPERATOR } from '../../i18n/legal.js';
+---
+
+<LegalPage lang="de" title="Impressum - re.verb one" heading="Impressum" enHref="/impressum" deHref="/de/impressum">
+  <p class="legal-sub">Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG).</p>
+
+  <h2>Betreiber</h2>
+  <address>
+    <p>{OPERATOR.name}</p>
+  </address>
+
+  <h2>Kontakt</h2>
+  <p>E-Mail: <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a></p>
+</LegalPage>

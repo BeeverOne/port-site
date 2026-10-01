@@ -77,9 +77,14 @@ function applyLang() {
   $$('[data-i18n-label]').forEach((el) => el.setAttribute('aria-label', T[lang][el.dataset.i18nLabel]));
   $$('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
   track.setAttribute('aria-label', T[lang].projects);
+  $$('[data-legal]').forEach((a) => { a.href = LEGAL[a.dataset.legal][lang]; });   // FR-44, FR-45: the page in the active language
   updateThemeLabel();
   requestAnimationFrame(layout);   // text length changes the intro height
 }
+const LEGAL = {   // ADR-0012: English at the root, German under /de/
+  impressum: { en: '/impressum', de: '/de/impressum' },
+  privacy: { en: '/privacy', de: '/de/datenschutz' },
+};
 $$('.lang button').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; store.set('lang', lang); applyLang(); }));
 
 /* ---------- Theme (FR-24, FR-25) ---------- */

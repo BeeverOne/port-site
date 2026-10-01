@@ -1,0 +1,85 @@
+---
+/* Privacy policy, English (FR-45). It describes what the site does today. When the contact form
+   starts sending (PSP 5.2), add the sections for the form, Cloudflare Turnstile and Resend here and
+   in de/datenschutz.astro (FT-45 checks for the form and Turnstile sections). */
+import LegalPage from '../components/LegalPage.astro';
+import { OPERATOR, UPDATED } from '../i18n/legal.js';
+---
+
+<LegalPage lang="en" title="Privacy policy - re.verb one" heading="Privacy policy" enHref="/privacy" deHref="/de/datenschutz">
+  <p class="legal-sub">Last updated: {UPDATED.en}</p>
+
+  <h2>1. Who is responsible</h2>
+  <p>
+    The controller under the EU General Data Protection Regulation (GDPR) is {OPERATOR.name}, email{' '}
+    <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>.
+  </p>
+
+  <h2>2. In short</h2>
+  <p>
+    This site sets no cookies, uses no analytics or tracking tools and shows no advertising. Personal
+    data is processed only as far as it is needed to deliver the site and to answer you when you
+    write to us.
+  </p>
+
+  <h2>3. Hosting and server logs</h2>
+  <p>
+    The site is hosted by Vercel Inc., 440 N Barranca Avenue #4133, Covina, CA 91723, USA. When you
+    open a page, your browser sends technical data that the server records in log files:
+  </p>
+  <ul>
+    <li>your IP address</li>
+    <li>date and time of the request</li>
+    <li>the page or file requested</li>
+    <li>the referring page, if your browser sends it</li>
+    <li>browser type and operating system (user agent)</li>
+  </ul>
+  <p>
+    This is needed to deliver the site and to keep it secure, for example to detect and prevent
+    attacks. The legal basis is Art. 6(1)(f) GDPR (legitimate interest in a secure and working
+    website). Vercel processes this data on our behalf under a data processing agreement (Art. 28
+    GDPR) and keeps the logs for a limited period. Data may be transferred to the USA. Vercel is
+    certified under the EU-U.S. Data Privacy Framework, for which an adequacy decision of the European
+    Commission exists (Art. 45 GDPR); in addition, its agreement includes the EU Standard Contractual
+    Clauses. More: <a href="https://vercel.com/legal/privacy-policy" rel="noopener">Vercel privacy notice</a>.
+  </p>
+
+  <h2>4. Fonts</h2>
+  <p>
+    The fonts (Archivo and Unbounded) are served from this site's own domain. Your browser makes no
+    connection to Google or any other font provider.
+  </p>
+
+  <h2>5. Settings stored in your browser</h2>
+  <p>
+    When you choose a language or a colour theme, the site saves that choice in your browser's local
+    storage (keys <code>lang</code> and <code>theme</code>), so the site opens the same way next time.
+    The values stay on your device and are not sent to us. You can delete them at any time in your
+    browser settings. The legal basis is § 25(2) no. 2 of the German Telecommunications Digital
+    Services Data Protection Act (TDDDG): the storage is strictly necessary for the function you asked for.
+  </p>
+
+  <h2>6. Contact by email</h2>
+  <p>
+    If you email us, we process your email address, your name if you give it, and your message to
+    answer you. The legal basis is Art. 6(1)(b) GDPR if your request concerns a contract or its
+    preparation, otherwise Art. 6(1)(f) GDPR (legitimate interest in answering enquiries). We delete
+    the data when it is no longer needed, unless a legal retention period applies.
+  </p>
+
+  <h2>7. Link to GitHub</h2>
+  <p>
+    The site links to the owner's profile on GitHub. GitHub receives data about you only when you
+    follow that link. Its own privacy statement then applies.
+  </p>
+
+  <h2>8. Your rights</h2>
+  <p>
+    You have the right of access (Art. 15 GDPR), rectification (Art. 16), erasure (Art. 17),
+    restriction of processing (Art. 18), data portability (Art. 20) and to object to processing based
+    on Art. 6(1)(f) GDPR (Art. 21). To use these rights, email{' '}
+    <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>. You can also lodge a complaint with a data
+    protection supervisory authority, in particular in the EU member state where you live or work
+    (Art. 77 GDPR).
+  </p>
+</LegalPage>

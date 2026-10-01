@@ -1,0 +1,87 @@
+---
+/* Datenschutzerklärung, Deutsch (FR-45). Siehe die Notiz zu PSP 5.2 in src/pages/privacy.astro. */
+import LegalPage from '../../components/LegalPage.astro';
+import { OPERATOR, UPDATED } from '../../i18n/legal.js';
+---
+
+<LegalPage lang="de" title="Datenschutzerklärung - re.verb one" heading={"Datenschutz\u00ADerklärung"} enHref="/privacy" deHref="/de/datenschutz">
+  <p class="legal-sub">Stand: {UPDATED.de}</p>
+
+  <h2>1. Verantwortlicher</h2>
+  <p>
+    Verantwortlich im Sinne der Datenschutz-Grundverordnung (DSGVO) ist {OPERATOR.name}, E-Mail{' '}
+    <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>.
+  </p>
+
+  <h2>2. Kurz gesagt</h2>
+  <p>
+    Diese Website setzt keine Cookies, nutzt keine Analyse- oder Tracking-Werkzeuge und zeigt keine
+    Werbung. Personenbezogene Daten werden nur verarbeitet, soweit das nötig ist, um die Website
+    auszuliefern und Ihnen zu antworten, wenn Sie uns schreiben.
+  </p>
+
+  <h2>3. Hosting und Server-Logs</h2>
+  <p>
+    Die Website wird von Vercel Inc., 440 N Barranca Avenue #4133, Covina, CA 91723, USA, gehostet.
+    Beim Aufruf einer Seite sendet Ihr Browser technische Daten, die der Server in Log-Dateien
+    speichert:
+  </p>
+  <ul>
+    <li>Ihre IP-Adresse</li>
+    <li>Datum und Uhrzeit der Anfrage</li>
+    <li>die angefragte Seite oder Datei</li>
+    <li>die verweisende Seite, sofern Ihr Browser sie übermittelt</li>
+    <li>Browsertyp und Betriebssystem (User-Agent)</li>
+  </ul>
+  <p>
+    Das ist nötig, um die Website auszuliefern und sicher zu betreiben, zum Beispiel um Angriffe zu
+    erkennen und abzuwehren. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an
+    einer sicheren und funktionierenden Website). Vercel verarbeitet diese Daten in unserem Auftrag auf
+    Grundlage eines Auftragsverarbeitungsvertrags (Art. 28 DSGVO) und speichert die Logs für einen
+    begrenzten Zeitraum. Dabei kann eine Übermittlung in die USA stattfinden. Vercel ist nach dem
+    EU-U.S. Data Privacy Framework zertifiziert, für das ein Angemessenheitsbeschluss der Europäischen
+    Kommission besteht (Art. 45 DSGVO); zusätzlich enthält der Vertrag die EU-Standardvertragsklauseln.
+    Mehr: <a href="https://vercel.com/legal/privacy-policy" rel="noopener">Datenschutzhinweise von Vercel</a>.
+  </p>
+
+  <h2>4. Schriftarten</h2>
+  <p>
+    Die Schriftarten (Archivo und Unbounded) werden von der eigenen Domain dieser Website geladen. Ihr
+    Browser baut keine Verbindung zu Google oder einem anderen Schriftanbieter auf.
+  </p>
+
+  <h2>5. Im Browser gespeicherte Einstellungen</h2>
+  <p>
+    Wenn Sie eine Sprache oder ein Farbschema wählen, speichert die Website diese Wahl im lokalen
+    Speicher (Local Storage) Ihres Browsers (Schlüssel <code>lang</code> und <code>theme</code>), damit
+    die Website beim nächsten Besuch genauso erscheint. Die Werte bleiben auf Ihrem Gerät und werden
+    nicht an uns übermittelt. Sie können sie jederzeit in den Einstellungen Ihres Browsers löschen.
+    Rechtsgrundlage ist § 25 Abs. 2 Nr. 2 Telekommunikation-Digitale-Dienste-Datenschutz-Gesetz
+    (TDDDG): Die Speicherung ist für die von Ihnen gewünschte Funktion unbedingt erforderlich.
+  </p>
+
+  <h2>6. Kontakt per E-Mail</h2>
+  <p>
+    Wenn Sie uns eine E-Mail schreiben, verarbeiten wir Ihre E-Mail-Adresse, Ihren Namen, sofern Sie
+    ihn angeben, und Ihre Nachricht, um Ihnen zu antworten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b
+    DSGVO, wenn Ihre Anfrage einen Vertrag oder dessen Anbahnung betrifft, sonst Art. 6 Abs. 1 lit. f
+    DSGVO (berechtigtes Interesse an der Beantwortung von Anfragen). Wir löschen die Daten, sobald sie
+    nicht mehr erforderlich sind, sofern keine gesetzliche Aufbewahrungspflicht besteht.
+  </p>
+
+  <h2>7. Link zu GitHub</h2>
+  <p>
+    Die Website verlinkt auf das Profil des Betreibers bei GitHub. GitHub erhält Daten über Sie erst,
+    wenn Sie diesem Link folgen. Dann gilt die Datenschutzerklärung von GitHub.
+  </p>
+
+  <h2>8. Ihre Rechte</h2>
+  <p>
+    Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17),
+    Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und auf Widerspruch gegen
+    eine Verarbeitung nach Art. 6 Abs. 1 lit. f DSGVO (Art. 21). Schreiben Sie dazu an{' '}
+    <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>. Sie können sich außerdem bei einer
+    Datenschutz-Aufsichtsbehörde beschweren, insbesondere in dem EU-Mitgliedstaat, in dem Sie wohnen
+    oder arbeiten (Art. 77 DSGVO).
+  </p>
+</LegalPage>

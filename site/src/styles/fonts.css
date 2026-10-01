@@ -1,0 +1,21 @@
+/* Self-hosted webfonts. Loading them from fonts.googleapis.com sent every visitor's IP address to
+   Google; serving them from our own domain keeps that transfer out of the privacy policy.
+   Both files are the variable fonts from public/fonts/<Family>/, subset to Google's Latin range
+   (EN and DE, including ä ö ü ß €, dashes, quotes and the soft hyphen) and converted to WOFF2 with
+   fonttools pyftsubset. The site uses upright styles only, so no italics are shipped.
+   Licence: SIL Open Font License 1.1 (public/fonts/<Family>/OFL.txt). */
+@font-face {
+  font-family: Archivo;
+  src: url('/fonts/archivo-latin-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: Unbounded;
+  src: url('/fonts/unbounded-latin-var.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}

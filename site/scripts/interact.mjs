@@ -286,6 +286,38 @@ for (const vp of [{ width: 1280, height: 777 }, { width: 1440, height: 900 }]) {
   await pg.close();
 }
 
+/* FR-44, FR-45, ADR-0012: the footer's legal links follow the active language, and the legal
+   pages scroll, switch language by link and remember the choice for the main page (FR-21). */
+{
+  const pg = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  pg.on('pageerror', (e) => bad(`page error (legal): ${e.message}`));
+  await pg.goto(SITE);
+  await pg.waitForTimeout(3500);
+  const hrefs = () => pg.evaluate(() => ({
+    imp: document.querySelector('[data-legal="impressum"]').getAttribute('href'),
+    pri: document.querySelector('[data-legal="privacy"]').getAttribute('href'),
+  }));
+  const en = await hrefs();
+  await pg.click('[data-lang="de"]');
+  const de = await hrefs();
+  check(en.imp === '/impressum' && en.pri === '/privacy' && de.imp === '/de/impressum' && de.pri === '/de/datenschutz',
+    `footer legal links follow the language (${en.imp}, ${en.pri} -> ${de.imp}, ${de.pri}) (FR-44, FR-45)`,
+    `legal links do not follow the language: ${JSON.stringify({ en, de })}`);
+  await pg.goto(SITE + 'de/datenschutz');
+  const legal = await pg.evaluate(() => {
+    const before = window.scrollY; window.scrollTo(0, 400);
+    return { lang: document.documentElement.lang, h1: document.querySelector('h1').textContent, scrolled: window.scrollY > before };
+  });
+  check(legal.lang === 'de' && legal.h1.startsWith('Datenschutz') && legal.scrolled,
+    'German privacy page renders in German and scrolls (FR-45)', `legal page wrong: ${JSON.stringify(legal)}`);
+  await pg.click('.lang a[data-set-lang="en"]');
+  await pg.waitForLoadState();
+  const after = await pg.evaluate(() => ({ path: location.pathname, stored: localStorage.getItem('lang'), lang: document.documentElement.lang }));
+  check(after.path === '/privacy' && after.stored === 'en' && after.lang === 'en',
+    'legal EN/DE switch opens the counterpart page and saves the choice (FR-21, ADR-0012)', `legal switch wrong: ${JSON.stringify(after)}`);
+  await pg.close();
+}
+
 /* Settle pause at the first card: momentum that jacks the track back to card 1 must not roll
    straight into the reverse transition (the reverse branch used to run before the settle check). */
 {

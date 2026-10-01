@@ -53,10 +53,10 @@ const { projects } = Astro.props;
     <div class="wf-more" id="wfMore">
       <div class="wf-more-inner">
         <nav aria-label="Footer">
-          <a class="cb" href="https://github.com/" target="_blank" rel="noopener">[ GitHub ]</a
-          ><!-- replace with the profile URL -->
-          <a class="cb" href="#legal-impressum" data-i18n="impressum">[ Impressum ]</a>
-          <a class="cb" href="#legal-privacy" data-i18n="privacy">[ Privacy policy ]</a>
+          <a class="cb" href="https://github.com/BeeverOne" target="_blank" rel="noopener">[ GitHub ]</a>
+          <!-- English URLs here; applyLang() points them at the /de/ pages in German (FR-44, FR-45, ADR-0012) -->
+          <a class="cb" href="/impressum" data-legal="impressum" data-i18n="impressum">[ Impressum ]</a>
+          <a class="cb" href="/privacy" data-legal="privacy" data-i18n="privacy">[ Privacy policy ]</a>
         </nav>
         <span class="copyright">© re.verb one 2026</span>
       </div>

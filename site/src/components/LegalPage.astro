@@ -1,0 +1,39 @@
+---
+/* Shared frame for the legal pages (FR-44, FR-45). Each page exists in English at the root and in
+   German under /de/ (ADR-0012); the EN/DE switch here is a plain link to the counterpart page, and
+   it saves the choice under the same 'lang' key the main page reads (FR-21). The home link goes to
+   "/" for both languages until the main page gets its /de/ route (PSP 4.2). */
+import Base from '../layouts/Base.astro';
+import Wordmark from './marks/Wordmark.astro';
+import VStack from './marks/VStack.astro';
+import '../styles/legal.css';
+
+const { lang, title, heading, enHref, deHref } = Astro.props;
+const back = lang === 'de' ? 'Zurück zur Startseite' : 'Back to the site';
+---
+
+<Base title={title} lang={lang} bodyClass="legal">
+  <script is:inline>
+    /* Same stored theme as the main page (FR-24), applied before the sheet paints. */
+    try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch { /* storage blocked */ }
+  </script>
+  <header class="site-header">
+    <a class="mark cb" href="/" aria-label="re.verb one, home"><Wordmark /><VStack /></a>
+    <div class="controls">
+      <nav class="lang" aria-label={lang === 'de' ? 'Sprache' : 'Language'}>
+        <a class="cb" href={enHref} hreflang="en" lang="en" data-set-lang="en" aria-current={lang === 'en' ? 'page' : undefined}>EN</a>
+        <a class="cb" href={deHref} hreflang="de" lang="de" data-set-lang="de" aria-current={lang === 'de' ? 'page' : undefined}>DE</a>
+      </nav>
+    </div>
+  </header>
+  <main class="legal-sheet">
+    <a class="legal-back cb" href="/">← {back}</a>
+    <h1>{heading}</h1>
+    <slot />
+  </main>
+  <script is:inline>
+    document.querySelectorAll('[data-set-lang]').forEach((a) => a.addEventListener('click', () => {
+      try { localStorage.setItem('lang', a.dataset.setLang); } catch { /* storage blocked */ }
+    }));
+  </script>
+</Base>

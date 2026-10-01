@@ -1,11 +1,12 @@
 ---
+import '../styles/fonts.css';
 import '../styles/global.css';
 
-const { title = 're.verb one - Oluwafemi Bamigboye' } = Astro.props;
+const { title = 're.verb one - Oluwafemi Bamigboye', lang = 'en', bodyClass } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -30,15 +31,14 @@ const { title = 're.verb one - Oluwafemi Bamigboye' } = Astro.props;
     <!-- summary: the image is square, so the small square card fits it without cropping. -->
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:image:alt" content="The R1 logo, light grey on black" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Unbounded:wght@400..600&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Self-hosted fonts (src/styles/fonts.css): preloaded so the page loader, which waits for
+         document.fonts.ready, is not held up by a late font request. -->
+    <link rel="preload" href="/fonts/archivo-latin-var.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/unbounded-latin-var.woff2" as="font" type="font/woff2" crossorigin />
   </head>
-  <!-- v2: the page itself never scrolls; the content island's scroller owns vertical scroll. -->
-  <body>
+  <!-- v2: the page itself never scrolls; the content island's scroller owns vertical scroll.
+       Pages that scroll normally (the legal pages) pass bodyClass. -->
+  <body class={bodyClass}>
     <slot />
   </body>
 </html>
