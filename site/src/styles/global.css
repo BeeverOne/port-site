@@ -367,3 +367,8 @@ body.mode-works .island > .plus-field { background-color: var(--works-plus); }
    our own, and the box keeps the widget's 65 px height from the start so the Send row does not jump
    when the widget appears (NFR-03). */
 .turnstile { border: 0; padding: 0; min-height: 65px; }
+
+/* While the grain transition plays, site.js sets the scroller to overflow-y: hidden to stop native
+   momentum; a stable gutter keeps platforms with classic scrollbars from shifting the layout sideways
+   when the scrollbar is hidden for those 1.8 s. */
+.scroller { scrollbar-gutter: stable; }

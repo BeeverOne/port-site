@@ -491,6 +491,39 @@ for (const vp of [{ width: 1280, height: 777 }, { width: 1440, height: 900 }]) {
   await pg.close();
 }
 
+/* Mobile regression (CR-22, NFR-04): a touch flick that crosses the trigger line must carry
+   straight into the transition. Before the fix, the browser's fling momentum fought the clock (the
+   view jerked backwards) and the clock restarted from standstill (a dead spot of -8 px per 100 ms). */
+{
+  const pg = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  await pg.goto(SITE);
+  await pg.waitForTimeout(3500);
+  await pg.evaluate(() => {
+    window.__log = []; const s = document.querySelector('#scroller'); const t0 = performance.now();
+    const tick = () => { window.__log.push([performance.now() - t0, s.scrollTop]); if (performance.now() - t0 < 3500) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+  const cdp = await pg.context().newCDPSession(pg);
+  await cdp.send('Input.synthesizeScrollGesture', { x: 195, y: 600, yDistance: -900, speed: 3000, gestureSourceType: 'touch', preventFling: false });
+  await pg.waitForTimeout(3600);
+  const { log, max } = await pg.evaluate(() => { const s = document.querySelector('#scroller'); return { log: window.__log, max: s.scrollHeight - s.clientHeight }; });
+  let reversals = 0, minWin = Infinity;
+  for (let i = 2; i < log.length; i++) {
+    const d1 = log[i - 1][1] - log[i - 2][1], d2 = log[i][1] - log[i - 1][1];
+    if (d1 > 1 && d2 < -1) reversals++;
+  }
+  const end = log.findIndex((r) => r[1] >= max * 0.95);
+  for (let i = 0; i < end; i++) {
+    const j = log.findIndex((r) => r[0] >= log[i][0] + 100);
+    if (j < 0 || j > end) break;
+    minWin = Math.min(minWin, log[j][1] - log[i][1]);
+  }
+  check(end > 0 && reversals === 0 && minWin > 5,
+    `touch flick carries into the transition without a pull-back or dead spot (least ${Math.round(minWin)} px per 100 ms) (CR-22)`,
+    `mobile flick glitch: ${JSON.stringify({ reached: end > 0, reversals, leastPer100ms: Math.round(minWin) })}`);
+  await pg.close();
+}
+
 /* NFR-04: while the transition runs, the canvas is cleared once per frame, not twice
    (animTick renders; the scroll event its scrollTop write fires must not render again). */
 {

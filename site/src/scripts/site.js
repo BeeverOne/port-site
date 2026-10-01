@@ -298,11 +298,15 @@ function render() {
   if (anim) {
     // the transition is its own animation: progress runs on the clock and drives the view
     const t = clamp((performance.now() - anim.start) / anim.dur);
-    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    // cubic Hermite from the incoming speed (anim.m, in units of the whole travel) to rest: with
+    // m = 0 this is the plain S-curve; after a touch flick the view keeps the finger's speed
+    // instead of stalling at the trigger line and starting again from zero (mobile glitch)
+    const e = anim.m * (t * t * t - 2 * t * t + t) + (3 * t * t - 2 * t * t * t);
     p = anim.from + (anim.to - anim.from) * e;
     scroller.scrollTop = runwayStart + p * R;
     if (t >= 1) {
       anim = null;
+      scroller.style.overflowY = '';   // native scrolling back (see startAnim)
       if (pendingHome) { pendingHome = false; scroller.scrollTo({ top: 0, behavior: reduce.matches ? 'auto' : 'smooth' }); }
     }
   } else {
@@ -363,24 +367,35 @@ function render() {
 }
 let rq = 0, settleUntil = 0, wasBottom = false, wasFirstCard = true;
 let flowLockMs = 0, lockUntil = 0, wasArrived = false, flowSettleAt = 0;
-let anim = null, wasSt = -1, pendingHome = false, animRaf = 0;
+let anim = null, wasSt = -1, wasT = 0, scrollVel = 0, pendingHome = false, animRaf = 0;
 function animTick() {
   render();
   animRaf = anim ? requestAnimationFrame(animTick) : 0;
 }
-function startAnim(to) {
+/* vel: the scroll speed that started the transition, in px per ms in the direction of travel (0 for
+   wheel ticks, keys and buttons). */
+function startAnim(to, vel = 0) {
   const p0 = clamp((scroller.scrollTop - runwayStart) / R);
   if (Math.abs(to - p0) < 0.01) { scroller.scrollTop = runwayStart + to * R; render(); return; }
-  anim = { from: p0, to, start: performance.now(), dur: Math.max(160, (reduce.matches ? 300 : TRANSITION_MS) * Math.abs(to - p0)) };
+  const dur = Math.max(160, (reduce.matches ? 300 : TRANSITION_MS) * Math.abs(to - p0));
+  // starting slope in units of the whole travel; at most 3 keeps the curve from overshooting the end
+  const m = reduce.matches ? 0 : clamp((Math.max(0, vel) * dur) / (R * Math.abs(to - p0)), 0, 3);
+  anim = { from: p0, to, start: performance.now(), dur, m };
+  // stop the browser's own momentum: after a touch flick it would keep scrolling and fight the clock
+  // (the view jerked backwards on phones). Code can still set scrollTop on an overflow:hidden box.
+  scroller.style.overflowY = 'hidden';
   if (!animRaf) animRaf = requestAnimationFrame(animTick);   // the clock drives the transition, not scroll events
 }
 scroller.addEventListener('scroll', () => {
-  const st = scroller.scrollTop;
+  const st = scroller.scrollTop, now = performance.now();
   const max = scroller.scrollHeight - scroller.clientHeight;
+  // scroll speed from consecutive events (one per frame during a flick); hands the flick's speed to the clock
+  if (!anim && wasSt >= 0 && now > wasT) scrollVel = (st - wasSt) / (now - wasT);
+  wasT = now;
   // crossing the trigger line downwards starts the transition as one fluid motion. A reverse ends
   // by setting scrollTop to runwayStart, which the browser rounds, sometimes to just above it; the
   // 1 px band counts that resting position as "at the line", so the next nudge down re-triggers.
-  if (!anim && wasSt >= 0 && wasSt <= runwayStart + 1 && st > runwayStart + 1 && st < max - 1) startAnim(1);
+  if (!anim && wasSt >= 0 && wasSt <= runwayStart + 1 && st > runwayStart + 1 && st < max - 1) startAnim(1, scrollVel);
   wasSt = st;
   const bottom = atBottom();
   if (bottom && !wasBottom) settleUntil = performance.now() + SETTLE_MS;      // pause before the jack takes over
