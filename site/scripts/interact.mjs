@@ -503,6 +503,33 @@ for (const vp of [{ width: 1280, height: 777 }, { width: 1440, height: 900 }]) {
   await pg.close();
 }
 
+/* CR-15, NFR-08: when the transition makes a half inert, keyboard focus inside it moves across
+   instead of falling back to <body> (which sent the next Tab to the top of the page). */
+{
+  const pg = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  pg.on('pageerror', (e) => bad(`page error (focus): ${e.message}`));
+  await pg.goto(SITE);
+  await pg.waitForTimeout(3500);
+  const focused = () => pg.evaluate(() => { const a = document.activeElement; return a === document.body ? 'body' : (a.id ? '#' + a.id : '.' + a.classList[0]); });
+  await pg.focus('#enterWorks');
+  await pg.keyboard.press('Enter');
+  await pg.waitForTimeout(4000);
+  const forward = await focused();
+  check(forward === '.card', `keyboard focus moves to the current card on arrival (${forward}) (CR-15)`, `focus after the forward transition: ${forward}`);
+  await pg.keyboard.press('ArrowUp');   // focus is on the first card: plays the reverse
+  await pg.waitForTimeout(3000);
+  const back = await focused();
+  check(back === '#enterWorks', `keyboard focus returns to the enter arrow after the reverse (${back}) (CR-15)`, `focus after the reverse: ${back}`);
+  await pg.close();
+
+  const rm = await browser.newPage({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
+  await rm.goto(SITE);
+  await rm.waitForTimeout(1500);
+  const scan = await rm.evaluate(() => getComputedStyle(document.querySelector('.btn-contact'), '::before').animationName);
+  check(scan === 'none', 'no scan animation under reduced motion (FR-52, CR-12)', `scan still animates under reduced motion (${scan})`);
+  await rm.close();
+}
+
 /* Mobile regression (CR-22, NFR-04): a touch flick that crosses the trigger line must carry
    straight into the transition. Before the fix, the browser's fling momentum fought the clock (the
    view jerked backwards) and the clock restarted from standstill (a dead spot of -8 px per 100 ms). */

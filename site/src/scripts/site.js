@@ -321,10 +321,19 @@ function render() {
   const st = scroller.scrollTop;
   let f = clamp((p - (0.5 - LOOK.fade / 2)) / LOOK.fade); f = f * f * (3 - 2 * f);
   const mw = f >= 0.5;
-  document.body.classList.toggle('mode-works', mw);
-  // CR-15: the off-stage half is inert, so keyboard and screen-reader focus stay on what shows
-  $('#intro').inert = mw;
-  works.inert = !mw;
+  if (mw !== wasModeWorks) {   // only on a flip: re-setting inert every frame re-runs style work
+    wasModeWorks = mw;
+    document.body.classList.toggle('mode-works', mw);
+    // CR-15: the off-stage half is inert, so keyboard and screen-reader focus stay on what shows.
+    // Focus inside the half that goes inert would fall back to <body> (the next Tab then starts at
+    // the top of the page), so it moves across: to the current card going forward, back to the
+    // enter arrow going in reverse. Only when focus was in that half, so pointer users are unaffected.
+    const intro = $('#intro'), active = document.activeElement;
+    const handOff = (mw ? intro : works).contains(active);
+    intro.inert = mw;
+    works.inert = !mw;
+    if (handOff) (mw ? cards()[currentIndex()] || $('#worksTitle') : $('#enterWorks')).focus({ preventScroll: true });
+  }
 
   // the flow-in starts just before the transition ends and locks scrolling until it settles;
   // scrolling back below the trigger plays the softer exit and unlocks
@@ -376,7 +385,7 @@ function render() {
   }
 }
 let rq = 0, settleUntil = 0, wasBottom = false, wasFirstCard = true;
-let flowLockMs = 0, lockUntil = 0, wasArrived = false, flowSettleAt = 0;
+let flowLockMs = 0, lockUntil = 0, wasArrived = false, flowSettleAt = 0, wasModeWorks = null;
 let anim = null, wasSt = -1, wasT = 0, scrollVel = 0, pendingHome = false, animRaf = 0;
 function animTick() {
   render();
