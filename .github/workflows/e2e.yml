@@ -27,10 +27,10 @@ jobs:
       run:
         working-directory: site
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
         with:
           node-version: 24
           cache: npm
@@ -39,10 +39,14 @@ jobs:
       # Google Chrome is preinstalled on the runner (the chromium project uses it); WebKit and
       # Firefox come from Playwright, with their system libraries.
       - run: npx playwright install --with-deps webkit firefox
+      # Cloudflare's public test site key (always passes, safe to publish): without a key the contact
+      # form never loads the widget, and the suite stubs Turnstile anyway. No secret is needed to build.
       - run: npm run build
+        env:
+          PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
       - run: npm test
       - run: npx playwright test
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         if: ${{ failure() }}
         with:
           name: playwright-report
