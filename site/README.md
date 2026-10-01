@@ -9,11 +9,18 @@ The build is intended to be indistinguishable from the prototype; everything bel
 ```sh
 npm install
 npm run dev        # http://localhost:4321 (includes the prototype control panel)
-npm run build      # static output in dist/
-npm run preview    # serve dist/ on :4322
+npm run build      # static pages + the contact function in .vercel/output (Vercel adapter)
+npm run preview    # serve .vercel/output/static on :4322 (the adapter has no `astro preview`)
 npm run verify     # build + faithfulness checks against the prototype
-npm run test:e2e   # browser smoke test of the interactive flows (needs Chrome)
+npm test           # unit tests of the contact endpoint logic (Vitest, no network)
+npm run test:e2e   # browser smoke test of the interactive flows (needs Chrome; Turnstile and /api/contact stubbed)
 ```
+
+Local `.env` (git-ignored) needs `PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` set to
+Cloudflare's test keys (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`): the
+real site key only allows reverb-one.space and fails on localhost with error 110200. Production
+reads the real keys, `RESEND_API_KEY`, `CONTACT_FROM` and `CONTACT_TO` from the Vercel project's
+environment variables at runtime (astro:env, `src/pages/api/contact.js`).
 
 ## Layout
 

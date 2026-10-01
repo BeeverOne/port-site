@@ -1,5 +1,5 @@
 ---
-/* Datenschutzerklärung, Deutsch (FR-45). Siehe die Notiz zu PSP 5.2 in src/pages/privacy.astro. */
+/* Datenschutzerklärung, Deutsch (FR-45). Inhaltlich gleich mit src/pages/privacy.astro halten. */
 import LegalPage from '../../components/LegalPage.astro';
 import { OPERATOR, UPDATED } from '../../i18n/legal.js';
 ---
@@ -17,7 +17,8 @@ import { OPERATOR, UPDATED } from '../../i18n/legal.js';
   <p>
     Diese Website setzt keine Cookies, nutzt keine Analyse- oder Tracking-Werkzeuge und zeigt keine
     Werbung. Personenbezogene Daten werden nur verarbeitet, soweit das nötig ist, um die Website
-    auszuliefern und Ihnen zu antworten, wenn Sie uns schreiben.
+    auszuliefern, das Kontaktformular vor Spam zu schützen und Ihnen zu antworten, wenn Sie uns
+    schreiben.
   </p>
 
   <h2>3. Hosting und Server-Logs</h2>
@@ -60,22 +61,52 @@ import { OPERATOR, UPDATED } from '../../i18n/legal.js';
     (TDDDG): Die Speicherung ist für die von Ihnen gewünschte Funktion unbedingt erforderlich.
   </p>
 
-  <h2>6. Kontakt per E-Mail</h2>
+  <h2>6. Kontaktformular und E-Mail</h2>
   <p>
-    Wenn Sie uns eine E-Mail schreiben, verarbeiten wir Ihre E-Mail-Adresse, Ihren Namen, sofern Sie
-    ihn angeben, und Ihre Nachricht, um Ihnen zu antworten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b
-    DSGVO, wenn Ihre Anfrage einen Vertrag oder dessen Anbahnung betrifft, sonst Art. 6 Abs. 1 lit. f
-    DSGVO (berechtigtes Interesse an der Beantwortung von Anfragen). Wir löschen die Daten, sobald sie
-    nicht mehr erforderlich sind, sofern keine gesetzliche Aufbewahrungspflicht besteht.
+    Wenn Sie das Kontaktformular senden, verarbeiten wir Ihren Namen, Ihre E-Mail-Adresse, Ihre
+    Nachricht und die Sprache der Website. Der Server prüft die Felder und leitet die Nachricht über
+    den E-Mail-Dienst Resend (Plus Five Five, Inc., 2261 Market Street #5039, San Francisco, CA 94114,
+    USA) an unser Postfach weiter. Resend verarbeitet die Nachricht in unserem Auftrag auf Grundlage
+    eines Auftragsverarbeitungsvertrags (Art. 28 DSGVO). Dabei kann eine Übermittlung in die USA
+    stattfinden; Resend ist nach dem EU-U.S. Data Privacy Framework zertifiziert (Art. 45 DSGVO), und
+    der Vertrag enthält zusätzlich die EU-Standardvertragsklauseln. Ihre E-Mail-Adresse wird als
+    Antwortadresse gesetzt, damit wir Ihnen antworten können. Die Website selbst speichert keine
+    Nachrichten, und Sie erhalten keine Bestätigungs-E-Mail. Dasselbe gilt, wenn Sie uns direkt per
+    E-Mail schreiben.
+  </p>
+  <p>
+    Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO, wenn Ihre Anfrage einen Vertrag oder dessen
+    Anbahnung betrifft, sonst Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Beantwortung
+    von Anfragen). Wir löschen die Daten, sobald sie nicht mehr erforderlich sind, sofern keine
+    gesetzliche Aufbewahrungspflicht besteht.
   </p>
 
-  <h2>7. Link zu GitHub</h2>
+  <h2>7. Spam-Schutz (Cloudflare Turnstile)</h2>
+  <p>
+    Zum Schutz des Kontaktformulars vor Spam und Missbrauch nutzt die Website Turnstile von Cloudflare,
+    Inc., 101 Townsend St., San Francisco, CA 94107, USA. Turnstile wird erst geladen, wenn Sie das
+    Kontaktformular öffnen. Es wertet technische Merkmale Ihres Browsers aus, etwa Ihre IP-Adresse,
+    den TLS-Fingerabdruck, den User-Agent und die Seite, auf der das Formular liegt, um Menschen von
+    automatisierten Programmen zu unterscheiden. Wenn Sie das Formular senden, prüft unser Server das
+    Ergebnis bei Cloudflare und übermittelt dabei Ihre IP-Adresse.
+  </p>
+  <p>
+    Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am Schutz des Formulars vor
+    Spam und Missbrauch). Das Auslesen der Browsermerkmale ist für die Sicherheitsprüfung des von Ihnen
+    genutzten Formulars unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Cloudflare verarbeitet diese
+    Daten in unserem Auftrag und nutzt sie außerdem als Verantwortlicher, um die Bot-Erkennung zu
+    verbessern. Dabei kann eine Übermittlung in die USA stattfinden; Cloudflare ist nach dem EU-U.S.
+    Data Privacy Framework zertifiziert (Art. 45 DSGVO). Mehr:
+    <a href="https://www.cloudflare.com/turnstile-privacy-policy/" rel="noopener">Turnstile Privacy Addendum</a>.
+  </p>
+
+  <h2>8. Link zu GitHub</h2>
   <p>
     Die Website verlinkt auf das Profil des Betreibers bei GitHub. GitHub erhält Daten über Sie erst,
     wenn Sie diesem Link folgen. Dann gilt die Datenschutzerklärung von GitHub.
   </p>
 
-  <h2>8. Ihre Rechte</h2>
+  <h2>9. Ihre Rechte</h2>
   <p>
     Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17),
     Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und auf Widerspruch gegen

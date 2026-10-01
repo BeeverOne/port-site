@@ -6,15 +6,18 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
+    "preview": "node scripts/serve-static.mjs",
     "astro": "astro",
     "verify": "npm run build && node scripts/verify.mjs",
-    "test:e2e": "node scripts/interact.mjs"
+    "test:e2e": "node scripts/interact.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@astrojs/vercel": "^11.0.11",
     "astro": "^7.3.5"
   },
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
   }
 }

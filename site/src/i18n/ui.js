@@ -18,7 +18,7 @@ export const T = {
     blockText: '[Text block: project description from the CMS]', blockImage: '[Image block]', blockVideo: '[Video block]',
     blockDemo: '[Interactive component preview]', demoLabel: 'Circle size', turnstile: '[Cloudflare Turnstile check goes here]',
     errName: 'Enter your name.', errEmail: 'Enter a valid email address.', errMessage: 'Enter a message.',
-    sending: 'Sending…', sent: 'Thank you. Your message is on its way.', failed: 'The message could not be sent. Your text is still here. Please try again.',
+    sending: 'Sending…', sent: 'Thank you. Your message is on its way.', errVerify: 'The spam check has not finished. Please wait a moment and try again.', failed: 'The message could not be sent. Your text is still here. Please try again.',
     toDark: 'Switch to dark mode', toLight: 'Switch to light mode', projects: 'Projects'
   },
   de: {
@@ -36,7 +36,7 @@ export const T = {
     blockText: '[Textblock: Projektbeschreibung aus dem CMS]', blockImage: '[Bildblock]', blockVideo: '[Videoblock]',
     blockDemo: '[Interaktive Komponentenvorschau]', demoLabel: 'Kreisgröße', turnstile: '[Hier kommt die Cloudflare-Turnstile-Prüfung]',
     errName: 'Bitte gib deinen Namen ein.', errEmail: 'Bitte gib eine gültige E-Mail-Adresse ein.', errMessage: 'Bitte gib eine Nachricht ein.',
-    sending: 'Wird gesendet…', sent: 'Danke. Deine Nachricht ist unterwegs.', failed: 'Die Nachricht konnte nicht gesendet werden. Dein Text ist noch da. Bitte versuche es erneut.',
+    sending: 'Wird gesendet…', sent: 'Danke. Deine Nachricht ist unterwegs.', errVerify: 'Die Spam-Prüfung ist noch nicht fertig. Bitte warte einen Moment und versuche es erneut.', failed: 'Die Nachricht konnte nicht gesendet werden. Dein Text ist noch da. Bitte versuche es erneut.',
     toDark: 'Zum dunklen Modus wechseln', toLight: 'Zum hellen Modus wechseln', projects: 'Projekte'
   }
 };

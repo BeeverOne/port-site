@@ -7,9 +7,12 @@ const ROOT = '/Volumes/BEE1/Users/beever/Documents/DEV/R1/Port-Site';
 const proto = readFileSync(`${ROOT}/docs/v2/portfolio-prototype-v2.html`, 'utf8');
 const js = readFileSync(`${ROOT}/site/src/scripts/site.js`, 'utf8');
 
-const distIndex = `${ROOT}/site/dist/index.html`;
+/* With the Vercel adapter (ADR-0001) the static pages are written to .vercel/output/static, the
+   Build Output API layout Vercel deploys; dist/ only keeps the client build. */
+const OUT = `${ROOT}/site/.vercel/output/static`;
+const distIndex = `${OUT}/index.html`;
 if (!existsSync(distIndex)) {
-  console.error('dist/index.html missing — run `npm run build` first.');
+  console.error('.vercel/output/static/index.html missing — run `npm run build` first.');
   process.exit(1);
 }
 const built = readFileSync(distIndex, 'utf8');
@@ -143,7 +146,7 @@ const builtCssFiles = [...built.matchAll(/href="(\/_astro\/[^"]+\.css)"/g)].map(
 if (builtCssFiles.length === 0) bad('no stylesheet linked in built page');
 
 for (const href of builtCssFiles) {
-  const p = `${ROOT}/site/dist${href}`;
+  const p = `${OUT}${href}`;
   if (!existsSync(p)) {
     bad(`stylesheet missing on disk: ${href}`);
     continue;
@@ -241,7 +244,7 @@ const legalPages = [
   ['privacy/index.html', 'en', '/de/datenschutz'], ['de/datenschutz/index.html', 'de', '/privacy'],
 ];
 for (const [file, lang, other] of legalPages) {
-  const path = `${ROOT}/site/dist/${file}`;
+  const path = `${OUT}/${file}`;
   const html = existsSync(path) ? readFileSync(path, 'utf8') : '';
   check(
     html.includes(`<html lang="${lang}"`) && html.includes('Oluwafemi Bamigboye') && html.includes('mailto:thebeeverone@gmail.com')
@@ -250,14 +253,21 @@ for (const [file, lang, other] of legalPages) {
     `legal page /${file.replace('/index.html', '')} missing or incomplete`,
   );
 }
+/* FR-45: both privacy pages need a contact-form section (naming Resend) and a Turnstile section. */
+for (const file of ['privacy/index.html', 'de/datenschutz/index.html']) {
+  const html = readFileSync(`${OUT}/${file}`, 'utf8');
+  check(/Plus Five Five, Inc\./.test(html) && /Resend/.test(html) && /Turnstile/.test(html) && /turnstile-privacy-policy/.test(html),
+    `/${file.replace('/index.html', '')} covers the contact form (Resend) and Turnstile (FR-45)`,
+    `/${file.replace('/index.html', '')} lacks the contact-form or Turnstile section (FR-45)`);
+}
 /* The dev LOOK panel's saved values (localStorage key "look") must not reach prod: the block is
    behind import.meta.env.DEV, so the bundles must not read or write that key. */
-const builtJs = [built, ...readdirSync(`${ROOT}/site/dist/_astro`).filter((f) => f.endsWith('.js'))
-  .map((f) => readFileSync(`${ROOT}/site/dist/_astro/${f}`, 'utf8'))].join('\n');
+const builtJs = [built, ...readdirSync(`${OUT}/_astro`).filter((f) => f.endsWith('.js'))
+  .map((f) => readFileSync(`${OUT}/_astro/${f}`, 'utf8'))].join('\n');
 /* Fonts are self-hosted: no request may go to Google (it would send visitors' IP addresses there,
    which the privacy policy does not cover), and both @font-face rules must reach the built CSS. */
-const builtCss = readdirSync(`${ROOT}/site/dist/_astro`).filter((f) => f.endsWith('.css'))
-  .map((f) => readFileSync(`${ROOT}/site/dist/_astro/${f}`, 'utf8')).join('\n');
+const builtCss = readdirSync(`${OUT}/_astro`).filter((f) => f.endsWith('.css'))
+  .map((f) => readFileSync(`${OUT}/_astro/${f}`, 'utf8')).join('\n');
 check(
   !/fonts\.(googleapis|gstatic)\.com/.test(built + builtCss + builtJs),
   'no Google Fonts requests in prod',

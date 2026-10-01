@@ -1,7 +1,7 @@
 ---
-/* Privacy policy, English (FR-45). It describes what the site does today. When the contact form
-   starts sending (PSP 5.2), add the sections for the form, Cloudflare Turnstile and Resend here and
-   in de/datenschutz.astro (FT-45 checks for the form and Turnstile sections). */
+/* Privacy policy, English (FR-45). It describes what the site does: hosting, fonts, browser
+   storage, the contact form with Resend, Cloudflare Turnstile and the GitHub link. Keep it in step
+   with de/datenschutz.astro; FT-45 checks for the contact-form and Turnstile sections. */
 import LegalPage from '../components/LegalPage.astro';
 import { OPERATOR, UPDATED } from '../i18n/legal.js';
 ---
@@ -18,8 +18,8 @@ import { OPERATOR, UPDATED } from '../i18n/legal.js';
   <h2>2. In short</h2>
   <p>
     This site sets no cookies, uses no analytics or tracking tools and shows no advertising. Personal
-    data is processed only as far as it is needed to deliver the site and to answer you when you
-    write to us.
+    data is processed only as far as it is needed to deliver the site, to protect the contact form
+    against spam and to answer you when you write to us.
   </p>
 
   <h2>3. Hosting and server logs</h2>
@@ -59,21 +59,49 @@ import { OPERATOR, UPDATED } from '../i18n/legal.js';
     Services Data Protection Act (TDDDG): the storage is strictly necessary for the function you asked for.
   </p>
 
-  <h2>6. Contact by email</h2>
+  <h2>6. Contact form and email</h2>
   <p>
-    If you email us, we process your email address, your name if you give it, and your message to
-    answer you. The legal basis is Art. 6(1)(b) GDPR if your request concerns a contract or its
-    preparation, otherwise Art. 6(1)(f) GDPR (legitimate interest in answering enquiries). We delete
-    the data when it is no longer needed, unless a legal retention period applies.
+    When you send the contact form, we process your name, your email address, your message and the
+    language of the site. The server checks the fields and passes the message to our mailbox through
+    the email service Resend (Plus Five Five, Inc., 2261 Market Street #5039, San Francisco, CA 94114,
+    USA). Resend processes the message on our behalf under a data processing agreement (Art. 28
+    GDPR). Data may be transferred to the USA; Resend is certified under the EU-U.S. Data Privacy
+    Framework (Art. 45 GDPR), and its agreement includes the EU Standard Contractual Clauses. Your
+    email address is set as the reply address so that we can answer you. The website itself does not
+    store messages, and you receive no confirmation email. The same applies if you write to us
+    directly by email.
+  </p>
+  <p>
+    The legal basis is Art. 6(1)(b) GDPR if your request concerns a contract or its preparation,
+    otherwise Art. 6(1)(f) GDPR (legitimate interest in answering enquiries). We delete the data when
+    it is no longer needed, unless a legal retention period applies.
   </p>
 
-  <h2>7. Link to GitHub</h2>
+  <h2>7. Spam protection (Cloudflare Turnstile)</h2>
+  <p>
+    To protect the contact form against spam and abuse, the site uses Turnstile by Cloudflare, Inc.,
+    101 Townsend St., San Francisco, CA 94107, USA. Turnstile loads only when you open the contact
+    form. It evaluates technical signals from your browser, such as your IP address, the TLS
+    fingerprint, the user agent and the page the form is on, to tell people from automated programs.
+    When you send the form, our server checks the result with Cloudflare and passes your IP address
+    along.
+  </p>
+  <p>
+    The legal basis is Art. 6(1)(f) GDPR (legitimate interest in protecting the form against spam and
+    abuse). Reading the browser signals is strictly necessary for the security check of the form you
+    want to use (§ 25(2) no. 2 TDDDG). Cloudflare processes this data on our behalf; it also uses it
+    as a controller to improve its bot detection. Data may be transferred to the USA; Cloudflare is
+    certified under the EU-U.S. Data Privacy Framework (Art. 45 GDPR). More:
+    <a href="https://www.cloudflare.com/turnstile-privacy-policy/" rel="noopener">Turnstile Privacy Addendum</a>.
+  </p>
+
+  <h2>8. Link to GitHub</h2>
   <p>
     The site links to the owner's profile on GitHub. GitHub receives data about you only when you
     follow that link. Its own privacy statement then applies.
   </p>
 
-  <h2>8. Your rights</h2>
+  <h2>9. Your rights</h2>
   <p>
     You have the right of access (Art. 15 GDPR), rectification (Art. 16), erasure (Art. 17),
     restriction of processing (Art. 18), data portability (Art. 20) and to object to processing based

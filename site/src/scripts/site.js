@@ -1,4 +1,5 @@
 import { T } from '../i18n/ui.js';
+import { PUBLIC_TURNSTILE_SITE_KEY } from 'astro:env/client';
 
 (() => {
 'use strict';
@@ -483,7 +484,25 @@ $('#demoRange').addEventListener('input', (e) => { const v = e.target.value + 'p
 /* ---------- Contact overlay and form (FR-25 to FR-37) ---------- */
 const dlg = $('#contact'), form = $('#contactForm');
 let returnFocus = null;
-$$('[data-open-contact]').forEach((b) => b.addEventListener('click', () => { returnFocus = b; $('#status').textContent = ''; dlg.showModal(); $('#name').focus(); }));
+$$('[data-open-contact]').forEach((b) => b.addEventListener('click', () => { returnFocus = b; $('#status').textContent = ''; dlg.showModal(); $('#name').focus(); loadTurnstile(); }));
+
+/* Cloudflare Turnstile (FR-32, ADR-0005): the script loads the first time the overlay opens, so
+   visitors who never open the form never contact Cloudflare. Managed mode usually passes without
+   a click; the token is single-use, so the widget resets after every submission. */
+let tsWidget = null, tsLoading = false;
+function loadTurnstile() {
+  if (tsLoading || !PUBLIC_TURNSTILE_SITE_KEY) return;
+  tsLoading = true;
+  window.onTurnstileLoad = () => {
+    tsWidget = window.turnstile.render('.turnstile', { sitekey: PUBLIC_TURNSTILE_SITE_KEY, language: lang, theme: isDark() ? 'dark' : 'light', size: 'flexible' });
+  };
+  const s = document.createElement('script');
+  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad';
+  s.async = true;
+  document.head.append(s);
+}
+const tsToken = () => (tsWidget !== null && window.turnstile ? window.turnstile.getResponse(tsWidget) || '' : '');
+const tsReset = () => { if (tsWidget !== null && window.turnstile) window.turnstile.reset(tsWidget); };
 $('#contactClose').addEventListener('click', () => dlg.close());
 dlg.addEventListener('close', () => { if (returnFocus) returnFocus.focus({ preventScroll: true }); });   // FR-27: same position
 dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
@@ -502,17 +521,35 @@ function validate() {
   return a && b && c;
 }
 ['name', 'email', 'message'].forEach((id) => $('#' + id).addEventListener('blur', () => { if ($('#f-' + id).dataset.invalid === 'true') validate(); }));
-form.addEventListener('submit', (e) => {
+const FIELD_ERR = { name: 'errName', email: 'errEmail', message: 'errMessage' };
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!validate()) { const first = $('.field[data-invalid="true"] input, .field[data-invalid="true"] textarea'); if (first) first.focus(); return; }
-  // Real build: POST to a server function that verifies the Turnstile token, sanitizes input,
-  // applies the rate limit (3 per 10 min) and sends the mail (FR-31 to FR-35).
-  const status = $('#status'); status.className = 'status'; status.textContent = T[lang].sending; $('#sendBtn').disabled = true;
-  setTimeout(() => {
-    $('#sendBtn').disabled = false;
-    if ($('#simFail')?.checked) { status.textContent = T[lang].failed; return; }   // FR-37: text stays
+  const status = $('#status'); status.className = 'status';
+  const token = tsToken();
+  if (!token) { status.textContent = T[lang].errVerify; return; }   // the widget has not passed yet
+  status.textContent = T[lang].sending; $('#sendBtn').disabled = true;
+  let res = null, out = {};
+  try {
+    res = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: $('#name').value, email: $('#email').value, message: $('#message').value, lang, token }),
+    });
+    out = await res.json().catch(() => ({}));
+  } catch { /* network failure: handled as a failed send below */ }
+  $('#sendBtn').disabled = false;
+  tsReset();
+  if (res && res.ok) {   // FR-35: on-screen confirmation, no email to the sender
     status.className = 'status ok'; status.textContent = T[lang].sent; form.reset(); $('#count').textContent = '0 / 3000';
-  }, 700);
+    return;
+  }
+  if (res && res.status === 400 && Array.isArray(out.fields)) {   // the server's field check (FR-29, FR-30)
+    out.fields.forEach((f) => { if (FIELD_ERR[f]) check(f, false, FIELD_ERR[f]); });
+    status.textContent = '';
+    return;
+  }
+  status.textContent = res && res.status === 403 ? T[lang].errVerify : T[lang].failed;   // FR-36: the text stays
 });
 
 /* ---------- Mobile footer collapse (owner direction; collapsed by default, CR-25) ---------- */

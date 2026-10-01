@@ -18,7 +18,8 @@ async function ensureServer() {
     }
   };
   if (await up()) return null;
-  const child = spawn('npx', ['astro', 'preview', '--port', String(PORT)], { stdio: 'ignore', detached: true });
+  // the Vercel adapter has no `astro preview`; serve the deployed static output directly
+  const child = spawn('node', ['scripts/serve-static.mjs', String(PORT)], { stdio: 'ignore', detached: true });
   for (let i = 0; i < 60; i++) {
     if (await up()) return child;
     await new Promise((r) => setTimeout(r, 500));
@@ -33,6 +34,21 @@ const bad = (m) => { console.log(`  FAIL  ${m}`); fail++; };
 function check(cond, pass, failMsg) { if (cond) ok(pass); else bad(failMsg); }
 
 const browser = await chromium.launch({ channel: 'chrome' });
+
+/* Every page gets a stand-in for Cloudflare Turnstile that passes and hands out a fixed token: the
+   suite stays offline, and the result does not depend on which site key the build carries (a real
+   key is refused on localhost with error 110200). Routes registered later on a page take priority,
+   so the contact block below can still count and inspect these requests. */
+const TURNSTILE_STUB = `window.turnstile = {
+  render: (el, o) => { window.__tsRender = { sitekey: o.sitekey, language: o.language }; return 'w1'; },
+  getResponse: () => 'test-token', reset: () => { window.__tsResets = (window.__tsResets || 0) + 1; } };
+window.onTurnstileLoad && window.onTurnstileLoad();`;
+const newPage = browser.newPage.bind(browser);
+browser.newPage = async (options) => {
+  const page = await newPage(options);
+  await page.route('https://challenges.cloudflare.com/**', (route) => route.fulfill({ contentType: 'text/javascript', body: TURNSTILE_STUB }));
+  return page;
+};
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 page.on('pageerror', (e) => bad(`page error: ${e.message}`));
 page.on('console', (m) => { if (m.type() === 'error') bad(`console error: ${m.text()}`); });
@@ -283,6 +299,67 @@ for (const vp of [{ width: 1280, height: 777 }, { width: 1440, height: 900 }]) {
   check(back && s2 > s1 + 5 && (await inWorks()),
     `nudge after a reverse re-triggers the transition at ${vp.width}x${vp.height} (${s1} -> ${s2}) (FR-02, CR-22)`,
     `no re-trigger after a reverse at ${vp.width}x${vp.height} (back ${back}, ${s1} -> ${s2}, works ${await inWorks()})`);
+  await pg.close();
+}
+
+/* PSP 5.2 contact flow (FT-32 to FT-36, browser side). Cloudflare's script is replaced by a stub
+   that passes and hands out a fixed token, and /api/contact is answered per case, so the run needs
+   no network and sends no mail; the endpoint itself is covered by tests/contact.test.js. */
+{
+  const pg = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  pg.on('pageerror', (e) => bad(`page error (contact): ${e.message}`));
+  const cloudflare = [];
+  await pg.route('https://challenges.cloudflare.com/**', (route) => {
+    cloudflare.push(route.request().url());
+    route.fulfill({ contentType: 'text/javascript', body: TURNSTILE_STUB });
+  });
+  let reply = { status: 200, body: { ok: true } };
+  const posted = [];
+  await pg.route('**/api/contact', (route) => {
+    let body = {};
+    try { body = JSON.parse(route.request().postData() || '{}'); } catch { bad('the contact form posted a body that is not JSON'); }
+    posted.push(body);
+    route.fulfill({ status: reply.status, contentType: 'application/json', body: JSON.stringify(reply.body) });
+  });
+  await pg.goto(SITE);
+  await pg.waitForTimeout(3500);
+  check(cloudflare.length === 0, 'no Cloudflare request before the contact overlay opens (privacy)', `Cloudflare contacted before the form opened (${cloudflare.length})`);
+  await pg.click('.site-header [data-open-contact]');
+  await pg.waitForFunction(() => window.__tsRender, null, { timeout: 3000 }).catch(() => {});
+  const render = await pg.evaluate(() => window.__tsRender || null);
+  check(cloudflare.length === 1 && render && render.sitekey && render.language === 'en',
+    'Turnstile loads on first open and renders with the site key (FR-32)', `Turnstile not rendered: ${JSON.stringify({ requests: cloudflare.length, render })}`);
+  const fill = async () => {
+    await pg.fill('#name', 'Ada Lovelace');
+    await pg.fill('#email', 'ada@example.com');
+    await pg.fill('#message', 'Hello from the e2e run.');
+  };
+  const send = async () => { await pg.click('#sendBtn'); await pg.waitForTimeout(300); };
+  const state = () => pg.evaluate(() => ({
+    status: document.querySelector('#status').textContent, ok: document.querySelector('#status').classList.contains('ok'),
+    name: document.querySelector('#name').value, message: document.querySelector('#message').value,
+    emailErr: document.querySelector('#e-email').textContent, resets: window.__tsResets || 0,
+  }));
+
+  await fill(); reply = { status: 502, body: { error: 'delivery' } }; await send();
+  let st = await state();
+  check(st.status.startsWith('The message could not be sent') && st.name === 'Ada Lovelace' && st.message.length > 0,
+    'delivery failure shows the error and keeps the text (FR-36)', `502 handling wrong: ${JSON.stringify(st)}`);
+
+  reply = { status: 403, body: { error: 'verification' } }; await send();
+  st = await state();
+  check(st.status.startsWith('The spam check') && st.name === 'Ada Lovelace', 'failed verification asks to retry and keeps the text (FR-32)', `403 handling wrong: ${JSON.stringify(st)}`);
+
+  reply = { status: 400, body: { error: 'invalid', fields: ['email'] } }; await send();
+  st = await state();
+  check(st.emailErr === 'Enter a valid email address.', 'server field check marks the named field (FR-29)', `400 handling wrong: ${JSON.stringify(st)}`);
+
+  reply = { status: 200, body: { ok: true } }; await send();
+  st = await state();
+  const last = posted[posted.length - 1] || {};
+  check(st.ok && st.status === 'Thank you. Your message is on its way.' && st.name === '' && st.message === ''
+      && last.token === 'test-token' && last.name === 'Ada Lovelace' && last.lang === 'en' && st.resets >= 4,
+    'successful send confirms on screen, clears the form and posts the token (FR-34, FR-35)', `200 handling wrong: ${JSON.stringify({ st, last })}`);
   await pg.close();
 }
 
