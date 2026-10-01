@@ -202,6 +202,7 @@ function updateIndicator() {
   $('#barFill').style.width = (100 / n) + '%';
   $('#barFill').style.left = (track.scrollLeft / max * (100 - 100 / n)) + '%';
   $('#bar').setAttribute('aria-valuenow', String(i + 1));
+  $('#bar').setAttribute('aria-valuetext', T[lang].sliderValue.replace('{a}', String(i + 1)).replace('{b}', String(n)));
 }
 track.addEventListener('scroll', () => {
   const first = track.scrollLeft <= 2;
@@ -231,17 +232,22 @@ function goToCard(i, focus) {
 
 /* draggable scroll bar (pointer and touch) */
 const bar = $('#bar');
+let barPointer = null;   // multi-touch guard: one finger drives the drag
 function barTo(clientX) {
   const r = bar.getBoundingClientRect(), n = PROJECTS.length, w = r.width * (1 / n);
   const ratio = clamp((clientX - r.left - w / 2) / (r.width - w));
   target = null; track.scrollLeft = ratio * trackMax();
 }
-bar.addEventListener('pointerdown', (e) => { bar.setPointerCapture(e.pointerId); barTo(e.clientX); });
-bar.addEventListener('pointermove', (e) => { if (bar.hasPointerCapture(e.pointerId)) barTo(e.clientX); });
+bar.addEventListener('pointerdown', (e) => { if (barPointer !== null) return; barPointer = e.pointerId; bar.setPointerCapture(e.pointerId); barTo(e.clientX); });
+bar.addEventListener('pointermove', (e) => { if (barPointer === e.pointerId) barTo(e.clientX); });
+bar.addEventListener('pointerup', (e) => { if (barPointer === e.pointerId) barPointer = null; });
+bar.addEventListener('pointercancel', (e) => { if (barPointer === e.pointerId) barPointer = null; });
 bar.addEventListener('keydown', (e) => {
   const i = currentIndex();
   if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); goToCard(Math.min(i + 1, PROJECTS.length - 1)); }
   if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); goToCard(Math.max(i - 1, 0)); }
+  if (e.key === 'Home') { e.preventDefault(); e.stopPropagation(); goToCard(0); }
+  if (e.key === 'End') { e.preventDefault(); e.stopPropagation(); goToCard(PROJECTS.length - 1); }
 });
 
 /* ---------- Scroll-driven grain transition (FR-02, FR-03, FR-18) ----------
@@ -314,7 +320,11 @@ function render() {
   }
   const st = scroller.scrollTop;
   let f = clamp((p - (0.5 - LOOK.fade / 2)) / LOOK.fade); f = f * f * (3 - 2 * f);
-  document.body.classList.toggle('mode-works', f >= 0.5);
+  const mw = f >= 0.5;
+  document.body.classList.toggle('mode-works', mw);
+  // CR-15: the off-stage half is inert, so keyboard and screen-reader focus stay on what shows
+  $('#intro').inert = mw;
+  works.inert = !mw;
 
   // the flow-in starts just before the transition ends and locks scrolling until it settles;
   // scrolling back below the trigger plays the softer exit and unlocks

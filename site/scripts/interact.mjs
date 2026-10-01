@@ -67,6 +67,8 @@ check(await page.evaluate(() => document.body.classList.contains('ready')), 'pag
 check(await page.evaluate(() => !!document.querySelector('.lmark .fillmark')), 'loader is the v-stack fill mark (FR-47, CR-07)', 'fillmark missing');
 check(await page.evaluate(() => getComputedStyle(document.querySelector('.enter svg')).animationName === 'enterNudge'), 'enter arrow nudges on a loop: more to see below (owner direction)', 'enter arrow has no nudge animation');
 check(await page.evaluate(() => getComputedStyle(document.body).overflow === 'hidden'), 'page scroll is owned by the island scroller', 'body still scrolls');
+check(await page.evaluate(() => document.querySelector('#works').inert === true && document.querySelector('#intro').inert === false), 'works is inert while the intro shows (CR-15)', 'works focusable during intro');
+check(await page.evaluate(() => getComputedStyle(document.querySelector('.btn-contact'), '::before').animationDuration === '7s'), 'scan cycle is 7s with hover neutralised (CR-12)', 'scan duration not 7s');
 
 /* FR-10/FR-22: cards localized from the island, with the stagger class */
 const card = await page.evaluate(() => {
@@ -85,6 +87,7 @@ check(auto2 > auto1, `the transition drives the view on its own clock (${auto1} 
 await page.waitForTimeout(1600);   // rest of the transition + the flow-in lock
 check(await atBottom(), 'enter works scrolled the island to the bottom', 'scroller not at bottom');
 check(await page.evaluate(() => document.body.classList.contains('mode-works')), 'scroll-driven transition reached works mode (FR-02)', 'mode-works never set');
+check(await page.evaluate(() => document.querySelector('#intro').inert === true && document.querySelector('#works').inert === false), 'off-stage half is inert in works mode (CR-15)', 'inert not split at the mode-works boundary');
 check(await page.evaluate(() => document.querySelector('#works').classList.contains('flow')), 'flow-in triggered at the end of the transition (owner direction)', 'works never got .flow');
 check(await page.evaluate(() => getComputedStyle(document.querySelector('.works-footer')).opacity === '1'), 'flow-in settled: last item fully in (owner direction)', 'last flow item not settled');
 check(await page.evaluate(() => getComputedStyle(document.querySelector('#works')).backgroundColor === 'rgba(0, 0, 0, 0)'), 'works paints no own background: the canvas is the single background (F2)', 'works still paints a background');
@@ -172,6 +175,15 @@ await page.mouse.up();
 await page.waitForTimeout(400);
 const dragged = await page.evaluate(() => document.querySelector('#track').scrollLeft);
 check(dragged > backLeft, `dragging the slider moved the track (${backLeft} -> ${dragged}) (FR-05, CR-04)`, `bar drag did not move track (${dragged})`);
+await page.focus('#bar');
+await page.keyboard.press('End');
+await page.waitForTimeout(700);
+check(await page.evaluate(() => { const t = document.querySelector('#track'); return t.scrollLeft >= t.scrollWidth - t.clientWidth - 2; }), 'End key jumps the slider to the last card (CR-04)', 'End did not reach the last card');
+const vt = await page.evaluate(() => document.querySelector('#bar').getAttribute('aria-valuetext'));
+check(typeof vt === 'string' && vt.endsWith('5') && vt.toLowerCase().startsWith('project'), `aria-valuetext speaks the position ("${vt}") (CR-11)`, `aria-valuetext wrong: "${vt}"`);
+await page.keyboard.press('Home');
+await page.waitForTimeout(700);
+check(await page.evaluate(() => document.querySelector('#track').scrollLeft <= 2), 'Home key returns the slider to the first card (CR-04)', 'Home did not return to the first card');
 await page.keyboard.press('ArrowLeft');
 await page.waitForTimeout(600);
 

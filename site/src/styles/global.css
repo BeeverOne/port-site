@@ -372,3 +372,26 @@ body.mode-works .island > .plus-field { background-color: var(--works-plus); }
    momentum; a stable gutter keeps platforms with classic scrollbars from shifting the layout sideways
    when the scrollbar is hidden for those 1.8 s. */
 .scroller { scrollbar-gutter: stable; }
+
+/* ---------- WP2 owner-approved deltas (2026-10-01) ---------- */
+/* CR-12: slower ambient scan with a real pause between sweeps; hover no longer shortens the
+   period, because changing the duration of a running animation moves it to another point. */
+.btn-primary::before { animation: scan 7s ease-in-out infinite; }
+.btn-primary:hover::before { animation-duration: 7s; }
+@keyframes scan { 0%, 40% { background-position: 160% 0; } 61%, 100% { background-position: -60% 0; } }
+
+/* Press feedback on the small controls (not the bar: it spans the footer, so a scale would
+   move its ends under the finger mid-drag). */
+.btn, .enter, .icon-btn, .lang button { transition: transform 160ms ease-out; }
+.btn:active, .enter:active, .icon-btn:active, .lang button:active { transform: scale(0.96); }
+
+/* Small surface fixes: stable-width counter, no dead radius on the transparent card,
+   and an honest linear fill for the loader progress (FR-48). */
+.indicator { font-variant-numeric: tabular-nums; }
+.card { border-radius: 0; }
+.loader.run .fillmark, .loader.loop .fillmark { animation-timing-function: linear; }
+
+/* WP4 measurement (2026-10-01): 235 sampled frames across the transition at 1440x900 and
+   360x780, zero above 32 ms, worst 16.8 ms - no first-frame stutter, so the permanent layer
+   promotions are not earning their memory cost on phones (make-interfaces-feel-better #15). */
+.outro, .stagger { will-change: auto; }

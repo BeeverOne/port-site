@@ -173,6 +173,8 @@ for (const href of builtCssFiles) {
     ['corner-mark hover gradients', /linear-gradient\(var\(--cb\),\s*var\(--cb\)\)/],
     ['loader rise keyframes', /@keyframes rise/],
     ['scan keyframes', /@keyframes scan/],
+    ['scan cycle 7s with hover neutralised (CR-12)', /animation:scan 7s/],
+    ['tabular numerals on the indicator', /tabular-nums/],
     ['enter arrow nudge keyframes', /@keyframes enterNudge/],
     ['dark-mode media query', /prefers-color-scheme:dark/],
     ['reduced-motion media query', /prefers-reduced-motion:reduce/],

@@ -89,6 +89,10 @@ against the previous language's text lengths.
   site/src/scripts/site.js.
 - Enter arrow nudge: the arrow below the trigger line dips 7 px on a 2.4 s loop with a hold between
   dips, signalling more content below; static under reduced motion.
+- WP2 deltas (2026-10-01): scan 7 s cycle with the hover speed-up neutralised (CR-12), inert
+  off-stage half of the island (CR-15), :active scale on the small controls, slider aria-valuetext
+  plus Home/End and a multi-touch drag guard (CR-04, CR-11), tabular numerals on the indicator, the
+  dead card radius dropped, and a linear loader fill (FR-48).
 - Mobile footer collapse (CR-24): below 768 px the works footer carries an animated chevron at the
   far right of Contact; tapping it folds the GitHub/Impressum/privacy links and the copyright away
   through a grid-rows animation, and the chevron rotates 180 degrees between states. The footer
