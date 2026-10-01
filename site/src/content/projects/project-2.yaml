@@ -1,0 +1,22 @@
+name: Project 2
+order: 2
+draft: false
+thumbnail: null
+thumbnailAlt:
+  en: ''
+  de: ''
+en:
+  headline: Short project headline
+  title: Project 2 title
+  year: Year
+  tags:
+    - Tag
+    - Tag
+de:
+  headline: Short project headline
+  title: Project 2 title
+  year: Year
+  tags:
+    - Tag
+    - Tag
+blocks: []

@@ -1,11 +1,10 @@
 ---
 /* /works/<id>: one pre-rendered page per published project (FR-14, FR-15, ADR-0006). */
-import { getCollection } from 'astro:content';
 import SitePage from '../../components/SitePage.astro';
+import { siteProjects } from '../../lib/projects.js';
 
 export async function getStaticPaths() {
-  const projects = await getCollection('projects', ({ data }) => !data.draft);
-  return projects.map((p) => ({ params: { id: p.id } }));
+  return (await siteProjects()).map((p) => ({ params: { id: p.id } }));
 }
 const { id } = Astro.params;
 ---

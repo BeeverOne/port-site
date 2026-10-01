@@ -1,0 +1,14 @@
+en:
+  about: "[ about ]"
+  statement: "I’m {Oluwafemi Bamigboye}, a [software] [developer] with a background spanning medicine, civil engineering and art."
+  p2: "I take a user-centric approach to building solutions, which is why I focus on the experience design of the systems I create. These include websites and web apps, full-stack software, interactive systems and unified systems that combine hardware and software."
+  p3: "The rapid development of AI over the past couple of years has made writing code more accessible, but it doesn’t replace the need for sound, well-designed architecture. Over the past year, I’ve been refining workflows built on software development standards and best practices, giving AI tools a grounded framework for integration and execution."
+  p4: "Another theme is the steadily improving cybersecurity capabilities of these models, and the resulting need to harden both current systems and the new ones we build."
+  trigger: "Here’s some of my work"
+de:
+  about: "[ über mich ]"
+  statement: "Ich bin {Oluwafemi Bamigboye}, [Software&shy;entwickler|200|1100] mit einem Hintergrund in Medizin, Bauingenieurwesen und Kunst."
+  p2: "Ich entwickle Lösungen nutzerzentriert. Deshalb liegt mein Fokus auf dem Experience Design der Systeme, die ich baue: Websites und Web-Apps, Full-Stack-Software, interaktive Systeme und integrierte Systeme aus Hardware und Software."
+  p3: "Die rasante Entwicklung von KI in den letzten Jahren hat das Programmieren zugänglicher gemacht, ersetzt aber keine solide, gut durchdachte Architektur. Im letzten Jahr habe ich Workflows verfeinert, die auf Standards und Best Practices der Softwareentwicklung aufbauen und KI-Werkzeugen einen verlässlichen Rahmen für Integration und Umsetzung geben."
+  p4: "Ein weiteres Thema sind die stetig wachsenden Cybersecurity-Fähigkeiten dieser Modelle und die daraus folgende Notwendigkeit, bestehende und neue Systeme abzusichern."
+  trigger: "Hier sind einige meiner Arbeiten"

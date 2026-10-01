@@ -399,3 +399,38 @@ body.mode-works .island > .plus-field { background-color: var(--works-plus); }
    360x780, zero above 32 ms, worst 16.8 ms - no first-frame stutter, so the permanent layer
    promotions are not earning their memory cost on phones (make-interfaces-feel-better #15). */
 .outro, .stagger { will-change: auto; }
+
+/* ---------- Media items and their loaders (FR-17, FR-50 to FR-52) ---------- */
+/* A media box holds its final aspect ratio before anything loads, so the swap shifts nothing (NFR-03).
+   site.js sets data-state: loading (default) -> loaded | failed. */
+.media-box { position: relative; overflow: hidden; border-radius: var(--radius); background: var(--works-fill); color: var(--works-sub); }
+.media-box > :is(img, video, iframe) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; opacity: 0; transition: opacity 240ms ease-out; }
+.media-box[data-state="loaded"] > :is(img, video, iframe) { opacity: 1; }
+.media-box[data-state="loaded"] > .media-loader,
+.media-box:not([data-state="failed"]) > .media-failed { display: none; }
+.media-box[data-state="failed"] > .media-loader { display: none; }
+.media-loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.media-loader svg { position: absolute; width: min(28%, 120px); height: auto; aspect-ratio: 5163 / 2480; fill: currentColor; }
+.media-loader .mbase { opacity: 0.18; }
+.media-loader .mfill { animation: rise 1100ms linear infinite; }
+.media-failed {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  padding: 16px; text-align: center; font-size: 15px; color: var(--works-ink);
+}
+.media-retry {
+  min-height: 44px; padding: 0 18px; border: 1px solid var(--works-rule); border-radius: var(--radius);
+  background: transparent; color: var(--works-ink); font-weight: 600; --cb: var(--works-ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .media-loader .mfill { animation: none; clip-path: inset(0 0 0 0); }   /* FR-52: a static full mark */
+  .media-box > :is(img, video, iframe) { transition: none; }
+}
+.thumb.media-box { padding: 0; flex-shrink: 0; }   /* overflow: hidden would otherwise let the card's flex column shrink it below its aspect ratio */
+
+/* Detail blocks from the CMS (FR-17): text paragraphs and media figures in the owner's order. */
+.detail-blocks { display: flex; flex-direction: column; gap: 32px; }
+.detail-blocks[hidden] { display: none; }
+.block-text p { margin: 0 0 1em; max-width: 68ch; font-size: 18px; line-height: 1.6; color: var(--works-ink); }
+.block-text p:last-child { margin-bottom: 0; }
+.block-media { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.block-media figcaption { font-size: 14px; color: var(--works-sub); }

@@ -348,7 +348,7 @@ for (const vp of [{ width: 1280, height: 777 }, { width: 1440, height: 900 }]) {
   check(v.path === '/de/' && v.lang === 'de' && v.trigger === DE_TRIGGER, 'a /de/ URL shows German with an English browser (FR-20)', `/de/ with English browser: ${JSON.stringify(v)}`);
   await pg.close();
 
-  pg = await at('/works', { locale: 'en-US' }, () => localStorage.setItem('lang', 'de'));
+  pg = await at('/works', { locale: 'en-US' }, () => { if (window === window.top) localStorage.setItem('lang', 'de'); });   // init scripts also run in the sandboxed preview iframe, which has no storage
   v = await view(pg);
   check(v.path === '/de/works' && v.lang === 'de', 'a saved German choice moves /works to /de/works (FR-20)', `saved de at /works: ${JSON.stringify(v)}`);
   await pg.close();
@@ -381,6 +381,110 @@ for (const vp of [{ width: 1280, height: 777 }, { width: 1440, height: 900 }]) {
   v = await view(pg);
   check(cardHref.startsWith('/de/works/') && opened.path === cardHref && v.path === '/de/works' && v.detail === null,
     `German card opens ${cardHref}; Back returns to /de/works (FR-14, FR-16)`, `German card/back: ${JSON.stringify({ cardHref, opened, v })}`);
+  await pg.close();
+}
+
+/* PSP 2.2: CMS blocks and media items. FT-17 (blocks in the CMS order, sandboxed interactive preview),
+   FT-21 (a language switch swaps the open project's blocks), FT-50 (loader at final size, no shift),
+   FT-51 (error and 15 s timeout show the retry, retry reloads), FT-52 (static loader), NFT-05. */
+{
+  /* the detail view is its own scroll container: media below its fold arm only when scrolled near */
+  const scrollDetail = async (page) => {
+    for (let i = 0; i < 6; i++) { await page.evaluate(() => { const d = document.querySelector('#detail'); d.scrollTop += d.clientHeight * 0.8; }); await page.waitForTimeout(250); }
+  };
+  const mediaUrl = (u) => /\/_astro\/.*\.(webp|png|jpe?g|avif)|\/media\/|\/previews\//.test(u);
+  let pg = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  pg.on('pageerror', (e) => bad(`page error (blocks): ${e.message}`));
+  const early = [];
+  pg.on('request', (r) => { if (mediaUrl(r.url())) early.push(r.url()); });
+  await pg.goto(SITE);
+  await pg.waitForFunction(() => document.body.classList.contains('ready'), null, { timeout: 8000 });
+  check(early.length === 0, 'no works media requested before the intro is ready (NFT-05)', `works media loaded early: ${early.join(', ')}`);
+  const thumbs = await pg.evaluate(() => [...document.querySelectorAll('.card .thumb')].map((t) => Math.round(t.getBoundingClientRect().height)));
+  check(new Set(thumbs).size === 1, `image and placeholder thumbnails share one height (${thumbs.join('/')} px) (FR-10)`, `thumbnail heights differ: ${thumbs.join('/')}`);
+  await pg.close();
+
+  pg = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  pg.on('pageerror', (e) => bad(`page error (blocks): ${e.message}`));
+  await pg.goto(SITE + 'works/project-1');
+  await pg.waitForTimeout(4000);
+  await scrollDetail(pg);
+  await pg.waitForTimeout(800);
+  const blocks = await pg.evaluate(() => {
+    const set = document.querySelector('.detail-blocks:not([hidden])');
+    return set && {
+      project: set.dataset.project, lang: set.dataset.lang,
+      kinds: [...set.children].map((c) => c.classList.contains('block-text') ? 'text' : c.querySelector('img') ? 'image' : c.querySelector('video') ? 'video' : c.querySelector('iframe') ? 'preview' : '?'),
+      states: [...set.querySelectorAll('[data-media]')].map((m) => m.dataset.state),
+      sandbox: set.querySelector('iframe')?.getAttribute('sandbox'),
+      otherSetsMediaArmed: [...document.querySelectorAll('.detail-blocks[hidden] [data-media][data-state]')].length,
+    };
+  });
+  check(blocks && blocks.project === 'project-1' && blocks.kinds.join() === 'text,image,video,preview' && blocks.states.every((s) => s === 'loaded'),
+    `project blocks show in CMS order and load (${blocks?.kinds.join(', ')}; ${blocks?.states.join(', ')}) (FR-17)`, `blocks wrong: ${JSON.stringify(blocks)}`);
+  check(blocks?.sandbox === 'allow-scripts' && blocks.otherSetsMediaArmed === 0,
+    'preview iframe is sandboxed without allow-same-origin; hidden blocks load nothing (ADR-0008, NFR-05)', `sandbox/hidden: ${JSON.stringify(blocks)}`);
+  const frame = pg.frameLocator('.detail-blocks:not([hidden]) iframe');
+  await frame.locator('#size').fill('50');
+  const dot = await frame.locator('#dot').evaluate((d) => d.style.width);
+  check(dot === '50px', `interactive preview responds to input (dot ${dot}) (FR-17)`, `preview did not respond (dot ${dot})`);
+  await pg.click('[data-lang="de"]');
+  await pg.waitForTimeout(400);
+  const de = await pg.evaluate(() => { const s = document.querySelector('.detail-blocks:not([hidden])'); return s && { lang: s.dataset.lang, text: s.querySelector('.block-text p').textContent.slice(0, 20) }; });
+  check(de?.lang === 'de' && de.text.startsWith('Platzhalter'), `language switch swaps the open project's blocks (${de?.text}) (FR-21)`, `blocks after switch: ${JSON.stringify(de)}`);
+  await pg.close();
+
+  /* FT-50: delayed media show the loader at the final size, and nothing moves when they arrive */
+  pg = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await pg.route(/\/_astro\/.*\.webp|\/media\//, async (route) => { await new Promise((r) => setTimeout(r, 7000)); await route.continue(); });
+  await pg.goto(SITE + 'works/project-1');
+  await pg.waitForTimeout(3400);
+  await scrollDetail(pg);
+  const during = await pg.evaluate(() => [...document.querySelectorAll('.detail-blocks:not([hidden]) [data-media]')].map((m) => ({
+    state: m.dataset.state, h: Math.round(m.getBoundingClientRect().height), loader: getComputedStyle(m.querySelector('.media-loader')).display,
+    anim: getComputedStyle(m.querySelector('.mfill')).animationName })));
+  await pg.waitForTimeout(7000);
+  const after = await pg.evaluate(() => [...document.querySelectorAll('.detail-blocks:not([hidden]) [data-media]')].map((m) => ({
+    state: m.dataset.state, h: Math.round(m.getBoundingClientRect().height) })));
+  check(during.slice(0, 2).every((m) => m.state === 'loading' && m.loader === 'flex' && m.anim === 'rise') && after.every((m) => m.state === 'loaded')
+      && during.every((m, i) => m.h === after[i].h && m.h > 0),
+    `media loaders show at the final size and nothing shifts (${during.map((m) => m.h).join('/')} px) (FR-50, NFR-03)`, `media loading: ${JSON.stringify({ during, after })}`);
+  await pg.close();
+
+  /* FT-51: an error shows the message and retry at once; a stalled item after 15 s; retry reloads */
+  pg = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  let blockImg = true, holdPreview = true;
+  await pg.route(/\/_astro\/.*\.webp/, (route) => (blockImg && route.request().url().includes('image') ? route.abort() : route.continue()));
+  await pg.route(/\/previews\//, async (route) => { if (holdPreview) return; await route.continue(); });   // held: never answers
+  await pg.goto(SITE + 'works/project-1');
+  await pg.waitForTimeout(4000);
+  await scrollDetail(pg);
+  await pg.waitForTimeout(500);
+  const state = () => pg.evaluate(() => [...document.querySelectorAll('.detail-blocks:not([hidden]) [data-media]')].map((m) => m.dataset.state));
+  let s1 = await state();
+  check(s1[0] === 'failed', `a media error shows the message and retry (${s1.join(', ')}) (FR-51)`, `after an image error: ${s1.join(', ')}`);
+  blockImg = false;
+  await pg.click('.detail-blocks:not([hidden]) [data-state="failed"] .media-retry');
+  await pg.waitForTimeout(1500);
+  s1 = await state();
+  check(s1[0] === 'loaded', 'retry starts a new load and the item shows (FR-51)', `after retry: ${s1.join(', ')}`);
+  await pg.waitForTimeout(12000);   // the preview has been held for over 15 s now
+  const s2 = await state();
+  holdPreview = false;
+  await pg.unroute(/\/previews\//);
+  await pg.click('.detail-blocks:not([hidden]) [data-state="failed"] .media-retry').catch(() => {});
+  await pg.waitForTimeout(1500);
+  const s3 = await state();
+  check(s2[2] === 'failed' && s3[2] === 'loaded', `a stalled item fails after 15 s and retries (${s2[2]} -> ${s3[2]}) (FR-51)`, `timeout path: ${JSON.stringify({ s2, s3 })}`);
+  await pg.close();
+
+  /* FT-52: reduced motion shows a static full mark */
+  pg = await browser.newPage({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
+  await pg.route(/\/_astro\/.*\.webp|\/media\//, async (route) => { await new Promise((r) => setTimeout(r, 2500)); await route.continue(); });
+  await pg.goto(SITE + 'works/project-1');
+  await pg.waitForTimeout(2500);
+  const rm = await pg.evaluate(() => { const f = document.querySelector('.detail-blocks:not([hidden]) .mfill'); const c = getComputedStyle(f); return { anim: c.animationName, clip: c.clipPath }; });
+  check(rm.anim === 'none', `media loader is static under reduced motion (${rm.anim}) (FR-52)`, `media loader animates under reduced motion: ${JSON.stringify(rm)}`);
   await pg.close();
 }
 

@@ -1,5 +1,7 @@
 import { defineConfig, envField } from 'astro/config';
 import vercel from '@astrojs/vercel';
+import react from '@astrojs/react';
+import keystatic from '@keystatic/astro';
 
 // FR-46: served at https://reverb-one.space
 export default defineConfig({
@@ -8,6 +10,9 @@ export default defineConfig({
   // `export const prerender = false` (the contact endpoint, later the Keystatic admin) run as
   // Vercel functions.
   adapter: vercel(),
+  // ADR-0003: Keystatic's admin UI is React; the integration adds /keystatic and /api/keystatic as
+  // on-demand routes. Public pages ship no React.
+  integrations: [react(), keystatic()],
   env: {
     // NFR-11: secrets are read at runtime on the server through astro:env/server and never
     // inlined into a bundle. Only PUBLIC_TURNSTILE_SITE_KEY reaches the browser (it is public by

@@ -1,0 +1,57 @@
+name: Project 1
+order: 1
+draft: false
+thumbnail: ../../assets/projects/project-1/thumbnail.png
+thumbnailAlt:
+  en: Placeholder thumbnail with the R1 logo
+  de: Platzhalter-Vorschaubild mit dem R1-Logo
+en:
+  headline: Short project headline
+  title: Project 1 title
+  year: Year
+  tags:
+    - Tag
+    - Tag
+de:
+  headline: Short project headline
+  title: Project 1 title
+  year: Year
+  tags:
+    - Tag
+    - Tag
+blocks:
+  - discriminant: text
+    value:
+      en: |-
+        Placeholder text block. The project description from the CMS goes here, one paragraph per blank line.
+
+        A second paragraph shows the spacing between paragraphs.
+      de: |-
+        Platzhalter-Textblock. Hier steht die Projektbeschreibung aus dem CMS, ein Absatz pro Leerzeile.
+
+        Ein zweiter Absatz zeigt den Abstand zwischen Absätzen.
+  - discriminant: image
+    value:
+      image: ../../assets/projects/project-1/blocks/image.png
+      alt:
+        en: Placeholder image with the R1 logo
+        de: Platzhalterbild mit dem R1-Logo
+      caption:
+        en: Placeholder image block
+        de: Platzhalter-Bildblock
+  - discriminant: video
+    value:
+      url: /media/placeholder.mp4
+      poster: ../../assets/projects/project-1/blocks/poster.png
+      width: 640
+      height: 360
+      caption:
+        en: Placeholder video block (replace with a Vercel Blob URL)
+        de: Platzhalter-Videoblock (durch eine Vercel-Blob-URL ersetzen)
+  - discriminant: preview
+    value:
+      slug: circle-size
+      aspect: 16 / 9
+      title:
+        en: Interactive component preview
+        de: Interaktive Komponentenvorschau

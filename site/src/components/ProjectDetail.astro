@@ -1,13 +1,42 @@
 ---
-/* Project detail view (FR-13 to FR-17). One shared element: openDetail() fills it
-   in place, so opening a project makes no document request (FR-13).
-   The four blocks are placeholders until the CMS supplies block content (FR-17).
-   On a project page (/works/<id>) the title and meta are pre-rendered for that project, so the
-   page names it without JavaScript; openDetail() writes the same values on open. */
+/* Project detail view (FR-13 to FR-17). One shared element: openDetail() fills the title and meta and
+   shows the opened project's blocks in place, so opening a project makes no document request (FR-13).
+
+   Every project's blocks are pre-rendered here in both languages, each set hidden until its project
+   opens (and the language matches), so a language switch can swap them in place (FR-21). Hidden media
+   do not load: images are loading="lazy", and videos and preview iframes carry their address in
+   data-src (and videos their poster in data-poster, since a poster attribute loads even while hidden)
+   until site.js arms them (NFR-05, FR-50). On a project page (/works/<id>) the title and meta
+   are pre-rendered for that project, so the page names it without JavaScript.
+
+   Block types (Keystatic, FR-17): text paragraphs, an optimised image (ADR-0007), a video with a
+   poster (ADR-0007), and an interactive preview in a sandboxed iframe (ADR-0008). */
+import { Image, getImage } from 'astro:assets';
+import MediaBox from './MediaBox.astro';
 import { dict } from '../i18n/server.js';
 
-const { lang = 'en', project } = Astro.props;
+const { lang = 'en', project, projects = [] } = Astro.props;
 const t = dict(lang);
+const LANGS = ['en', 'de'];
+const currentId = projects.find((p) => p.data[lang] === project)?.id;
+
+/* srcset widths up to the source width (Astro warns about upscaling) */
+const widthsFor = (img, wanted) => {
+  const ws = wanted.filter((w) => w <= img.width);
+  return ws.length ? ws : [img.width];
+};
+const paragraphs = (text) => text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+
+/* video posters: optimised once per block, shared by both languages */
+const posters = new Map();
+for (const p of projects) {
+  for (const [i, b] of p.data.blocks.entries()) {
+    if (b.discriminant === 'video') {
+      const img = await getImage({ src: b.value.poster, width: Math.min(1600, b.value.poster.width), format: 'webp' });
+      posters.set(`${p.id}:${i}`, img.src);
+    }
+  }
+}
 ---
 
 <article class="detail" id="detail" aria-labelledby="detailTitle" tabindex="-1">
@@ -15,16 +44,62 @@ const t = dict(lang);
     <button class="close cb" type="button" id="detailClose" data-i18n="close">{t.close}</button>
     <div class="label" style="color: var(--works-sub)" id="detailMeta">{project && `${project.title}   ${project.year}`}</div>
     <h2 id="detailTitle">{project?.headline}</h2>
-    <div class="block" data-i18n="blockText">{t.blockText}</div>
-    <div class="block media" data-i18n="blockImage">{t.blockImage}</div>
-    <div class="block media" data-i18n="blockVideo">{t.blockVideo}</div>
-    <div class="block">
-      <div data-i18n="blockDemo" style="margin-bottom: 14px">{t.blockDemo}</div>
-      <div class="demo">
-        <label for="demoRange" data-i18n="demoLabel">{t.demoLabel}</label>
-        <input type="range" id="demoRange" min="4" max="56" value="24" />
-        <div class="swatch" aria-hidden="true"><i id="demoDot" style="width: 24px; height: 24px"></i></div>
-      </div>
-    </div>
+    {
+      projects.map((p) =>
+        LANGS.map((l) => (
+          <div class="detail-blocks" data-project={p.id} data-lang={l} lang={l} hidden={!(p.id === currentId && l === lang)}>
+            {p.data.blocks.map((b, i) => {
+              const v = b.value;
+              if (b.discriminant === 'text')
+                return <div class="block-text">{paragraphs(v[l]).map((para) => <p>{para}</p>)}</div>;
+              if (b.discriminant === 'image')
+                return (
+                  <figure class="block-media">
+                    <MediaBox aspect={`${v.image.width} / ${v.image.height}`} lang={l}>
+                      <Image
+                        src={v.image}
+                        alt={v.alt[l]}
+                        widths={widthsFor(v.image, [640, 980, 1600])}
+                        sizes="(max-width: 1023px) 100vw, 868px"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </MediaBox>
+                    {v.caption[l] && <figcaption>{v.caption[l]}</figcaption>}
+                  </figure>
+                );
+              if (b.discriminant === 'video')
+                return (
+                  <figure class="block-media">
+                    <MediaBox aspect={`${v.width} / ${v.height}`} lang={l}>
+                      <video
+                        controls
+                        playsinline
+                        preload="none"
+                        width={v.width}
+                        height={v.height}
+                        data-poster={posters.get(`${p.id}:${i}`)}
+                        data-src={v.url}
+                        aria-label={v.caption[l] || undefined}
+                      />
+                    </MediaBox>
+                    {v.caption[l] && <figcaption>{v.caption[l]}</figcaption>}
+                  </figure>
+                );
+              if (b.discriminant === 'preview')
+                return (
+                  <figure class="block-media">
+                    <MediaBox aspect={v.aspect} lang={l}>
+                      <iframe data-src={`/previews/${v.slug}/?lang=${l}`} sandbox="allow-scripts" title={v.title[l]} />
+                    </MediaBox>
+                    <figcaption>{v.title[l]}</figcaption>
+                  </figure>
+                );
+              return null;
+            })}
+          </div>
+        )),
+      )
+    }
   </div>
 </article>

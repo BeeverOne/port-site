@@ -2,11 +2,12 @@
 /* Intro (FR-01). The title blocks are gone (CR-08); the outro is just the trigger
    line and the enter control, and it fades out upwards as the transition starts.
    All text is pre-rendered in the page's language (ADR-0012); renderStatement() and applyLang()
-   in site.js write the same structure when the visitor switches language. */
+   in site.js write the same structure when the visitor switches language. The copy is content the
+   owner edits in Keystatic (src/content/intro.yaml); SitePage passes it in already parsed. */
 import { dict } from '../i18n/server.js';
 
-const { lang = 'en' } = Astro.props;
-const t = dict(lang);
+const { lang = 'en', copy } = Astro.props;
+const t = { ...dict(lang), ...copy };
 ---
 
 <main class="intro" id="intro">

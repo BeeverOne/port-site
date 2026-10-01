@@ -22,6 +22,42 @@ real site key only allows reverb-one.space and fails on localhost with error 110
 reads the real keys, `RESEND_API_KEY`, `CONTACT_FROM` and `CONTACT_TO` from the Vercel project's
 environment variables at runtime (astro:env, `src/pages/api/contact.js`).
 
+## Content and the CMS (Keystatic, ADR-0003)
+
+The owner edits content at `/keystatic`. Two kinds of entry, both YAML in the repository:
+
+| Entry | File | What it holds |
+| --- | --- | --- |
+| Projects (collection) | `src/content/projects/<id>.yaml` | Card fields in EN and DE, thumbnail and alt text, track order, draft flag, and the detail blocks (text, image, video, interactive preview) in order. `<id>` is the URL: `/works/<id>`. |
+| Intro (singleton, CR-27) | `src/content/intro.yaml` | Section label, statement, three paragraphs and the heading before the works, in EN and DE. |
+
+Images go to `src/assets/projects/<id>/` and are optimised at build time. Videos are uploaded to Vercel
+Blob; the block stores the URL, a poster image and the size. Interactive previews are pages in
+`src/pages/previews/<slug>/` (sandboxed iframe, ADR-0008) and need a code change plus an option in
+`keystatic.config.ts`. `src/content.config.ts` must describe the same fields as `keystatic.config.ts`.
+
+Statement markup: `{Name}` = the name in the second font, `[word]` = a highlighter stroke (each later
+stroke starts and ends later), `[word|delay|duration]` = a stroke with its own timing in ms,
+`&shy;` = a soft hyphen. Anything malformed stays plain text.
+
+Drafts show in `npm run dev` and on Vercel preview deployments, never on reverb-one.space (FR-40).
+
+Storage: `npm run dev` edits the local files. Production builds use GitHub mode: a save is a commit to
+`BeeverOne/port-site`, which starts a Vercel deployment (FR-43).
+
+### One-time GitHub App setup
+
+1. Add `PUBLIC_KEYSTATIC_STORAGE=github` to `.env` and run `npm run dev`.
+2. Open `http://127.0.0.1:4321/keystatic`, choose to create a GitHub App, enter
+   `https://reverb-one.space` as the deployed URL, pick an app name, and install the app on
+   `BeeverOne/port-site` only.
+3. Keystatic writes `KEYSTATIC_GITHUB_CLIENT_ID`, `KEYSTATIC_GITHUB_CLIENT_SECRET`, `KEYSTATIC_SECRET`
+   and `PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` to `.env`. Copy all four into the Vercel project's
+   environment variables (Production), then remove `PUBLIC_KEYSTATIC_STORAGE` from `.env` again.
+4. If sign-in on the live site reports a redirect_uri error, add
+   `https://reverb-one.space/api/keystatic/github/oauth/callback` under the app's Callback URLs
+   (github.com/settings/apps/<app slug>).
+
 ## Routes (ADR-0006, ADR-0012)
 
 `src/components/SitePage.astro` is the whole one-page site. Six routes render it, each pre-rendered

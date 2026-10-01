@@ -14,7 +14,18 @@ const legal = lang === 'de' ? { impressum: '/de/impressum', privacy: '/de/datens
   <div class="works-main">
     <div class="works-head stagger"><h2 id="worksTitle" data-i18n="works">{t.works}</h2></div>
     <div class="track" id="track" aria-label={t.projects}>
-      {projects.map((p) => <ProjectCard id={p.id} href={`${prefix(lang)}/works/${p.id}`} {...p.data[lang]} />)}
+      {
+        projects.map((p) => (
+          <ProjectCard
+            id={p.id}
+            href={`${prefix(lang)}/works/${p.id}`}
+            lang={lang}
+            thumbnail={p.data.thumbnail}
+            thumbnailAlt={p.data.thumbnailAlt[lang]}
+            {...p.data[lang]}
+          />
+        ))
+      }
     </div>
     <div class="indicator stagger">
       <span id="pos" aria-hidden="true">1 / {projects.length}</span>

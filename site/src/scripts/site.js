@@ -1,6 +1,14 @@
 import { T } from '../i18n/ui.js';
 import { PUBLIC_TURNSTILE_SITE_KEY } from 'astro:env/client';
 
+/* The intro copy is CMS content (Keystatic, src/content/intro.yaml): the page carries both languages
+   as JSON, and they join the interface strings so applyLang() and renderStatement() can switch it. */
+try {
+  const intro = JSON.parse(document.getElementById('intro-data').textContent);
+  const KEYS = ['about', 'statement', 'p2', 'p3', 'p4', 'trigger'];   // copy known keys only, never the whole object
+  for (const l of ['en', 'de']) for (const k of KEYS) if (intro?.[l]?.[k] != null) T[l][k] = intro[l][k];
+} catch (e) { console.error('intro data island unreadable', e); }
+
 (() => {
 'use strict';
 
@@ -87,6 +95,7 @@ function renderStatement() {
 }
 function applyLang() {
   localizeCards();
+  if (openId) showBlocks(openId);   // an open detail view switches to the blocks in the new language
   document.documentElement.lang = lang;
   renderStatement();
   $$('[data-i18n]').forEach((el) => { const v = T[lang][el.dataset.i18n]; if (v != null) el.textContent = v; });
@@ -182,6 +191,9 @@ function localizeCards() {
     if (!a) return;
     a.href = prefix() + '/works/' + p.id;   // FR-14: the project's own URL in the active language
     a.querySelector('h3').textContent = p.headline;
+    a.querySelector('.hover-title').textContent = p.headline;
+    const thumb = a.querySelector('.thumb img');
+    if (thumb) thumb.alt = p.thumbAlt || '';
     a.querySelector('.t').textContent = p.title;
     a.querySelector('.year').textContent = p.year;
     const tags = a.querySelector('.tags');
@@ -500,8 +512,18 @@ function setClip(r) {
   detail.style.setProperty('--cr', Math.max(0, box.right - r.right) + 'px');
   detail.style.setProperty('--cb2', Math.max(0, box.bottom - r.bottom) + 'px');
 }
+/* The detail view holds every project's blocks in both languages (ProjectDetail.astro); only the open
+   project's set in the active language shows, and hidden sets never load their media (FR-17, NFR-05). */
+let openId = null;
+function showBlocks(id) {
+  openId = id;
+  $$('.detail-blocks').forEach((b) => { b.hidden = !(b.dataset.project === id && b.dataset.lang === lang); });
+  const p = PROJECTS.find((x) => x.id === id);
+  if (p) { $('#detailTitle').textContent = p.headline; $('#detailMeta').textContent = p.title + '   ' + p.year; }
+}
 function openDetail(id, fromCard) {
   const p = PROJECTS.find((x) => x.id === id); if (!p) return;
+  showBlocks(id);
   $('#detailTitle').textContent = p.headline;
   $('#detailMeta').textContent = p.title + '   ' + p.year;
   lastCard = cards().find((c) => c.dataset.id === id) || null;
@@ -518,6 +540,7 @@ function closeDetail() {
   history.replaceState(null, '', prefix() + '/works'); hideDetail();
 }
 function hideDetail() {
+  openId = null;
   const done = () => { detail.classList.remove('open'); if (lastCard) lastCard.focus({ preventScroll: true }); };
   if (lastCard && !reduce.matches) { setClip(lastCard.getBoundingClientRect()); setTimeout(done, 520); } else done();
 }
@@ -539,7 +562,50 @@ function route() {
   if (!atBottom()) { scroller.scrollTop = scroller.scrollHeight; render(); }
   if (m[1]) openDetail(m[1], false); else if (detail.classList.contains('open')) hideDetail();
 }
-$('#demoRange').addEventListener('input', (e) => { const v = e.target.value + 'px'; $('#demoDot').style.width = v; $('#demoDot').style.height = v; });
+
+/* ---------- Media items (FR-50 to FR-52) ----------
+   Each [data-media] box (MediaBox.astro) arms when it comes near the view: images are lazy, videos and
+   preview iframes only get their address then. Until the item loads, the box shows the looping v-stack
+   loader at the item's final size; after 15 s or an error it shows a message and a retry button. */
+const MEDIA_TIMEOUT_MS = 15000;
+function watchMedia(box, el) {
+  let timer = 0;
+  const settle = (ok) => { clearTimeout(timer); box.dataset.state = ok ? 'loaded' : 'failed'; };
+  box.dataset.state = 'loading';
+  timer = setTimeout(() => { if (box.dataset.state === 'loading') settle(false); }, MEDIA_TIMEOUT_MS);
+  if (el.tagName === 'IMG') {
+    el.addEventListener('load', () => settle(true), { once: true });
+    el.addEventListener('error', () => settle(false), { once: true });
+    if (el.complete) settle(el.naturalWidth > 0);   // finished (or failed) before the box armed
+  } else if (el.tagName === 'VIDEO') {
+    el.addEventListener('loadedmetadata', () => settle(true), { once: true });
+    el.addEventListener('error', () => settle(false), { once: true });
+    if (el.dataset.poster) el.poster = el.dataset.poster;
+    el.preload = 'metadata';
+    el.src = el.dataset.src;
+  } else {
+    el.addEventListener('load', () => settle(true), { once: true });
+    el.src = el.dataset.src;
+  }
+}
+function armMedia(box) {
+  if (box.dataset.state) return;
+  const el = box.querySelector('img, video, iframe');
+  if (el) watchMedia(box, el);
+}
+const mediaObserver = new IntersectionObserver((entries) => entries.forEach((e) => {
+  if (e.isIntersecting) { mediaObserver.unobserve(e.target); armMedia(e.target); }
+}), { rootMargin: '200px' });
+$$('[data-media]').forEach((box) => mediaObserver.observe(box));
+document.addEventListener('click', (e) => {   // FR-51: retry starts a new load of that item
+  const btn = e.target.closest('.media-retry'); if (!btn) return;
+  const box = btn.closest('[data-media]'), old = box.querySelector('img, video, iframe');
+  const fresh = old.cloneNode(true);   // a new element makes a new request, not a replay of the cached failure
+  fresh.removeAttribute('src');
+  if (fresh.tagName === 'IMG') fresh.src = old.getAttribute('src');
+  old.replaceWith(fresh);
+  watchMedia(box, fresh);
+});
 
 /* ---------- Contact overlay and form (FR-25 to FR-37) ---------- */
 const dlg = $('#contact'), form = $('#contactForm');

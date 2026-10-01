@@ -4,7 +4,9 @@
    hreflang alternates; site.js reads the address to decide where the view starts (intro, works, or
    a project's detail view) and moves between these URLs with the History API, so in-page
    navigation never loads a new document (FR-13, FR-21). */
-import { getCollection } from 'astro:content';
+import { getEntry } from 'astro:content';
+import { siteProjects } from '../lib/projects.js';
+import { introCopy } from '../lib/statement.js';
 import Base from '../layouts/Base.astro';
 import PageLoader from './PageLoader.astro';
 import SiteHeader from './SiteHeader.astro';
@@ -13,19 +15,25 @@ import Works from './Works.astro';
 import ProjectDetail from './ProjectDetail.astro';
 import ContactOverlay from './ContactOverlay.astro';
 import ProtoControls from './ProtoControls.astro';
+import VStack from './marks/VStack.astro';
 
 /* lang: 'en' | 'de'. view: 'intro' | 'works' | 'project'. projectId: set when view is 'project'. */
 const { lang = 'en', view = 'intro', projectId } = Astro.props;
 
-/* Published projects in the owner's order (FR-11, FR-40). */
-const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort(
-  (a, b) => a.data.order - b.data.order,
-);
+/* Projects in the owner's order; drafts only in development and preview builds (FR-11, FR-40). */
+const projects = await siteProjects();
 const project = projectId ? projects.find((p) => p.id === projectId)?.data[lang] : undefined;
 
 /* The cards are server-rendered; this island carries the same fields in both
    languages so the client can localise the track and the detail view (FR-10, FR-22). */
-const projectData = projects.map(({ id, data }) => ({ id, en: data.en, de: data.de }));
+const projectData = projects.map(({ id, data }) => ({
+  id,
+  en: { ...data.en, thumbAlt: data.thumbnailAlt.en },
+  de: { ...data.de, thumbAlt: data.thumbnailAlt.de },
+}));
+
+/* The intro copy from Keystatic, both languages, statement markup already parsed into parts. */
+const intro = introCopy((await getEntry('intro', 'intro')).data);
 
 const site = 're.verb one';
 const title =
@@ -39,6 +47,8 @@ const alternates = { en: path, de: path === '/' ? '/de/' : `/de${path}` };
 ---
 
 <Base title={title} lang={lang} alternates={alternates}>
+  <!-- one copy of the v-stack paths for every media loader (FR-50) -->
+  <VStack symbolId="vstack-sym" />
   <PageLoader lang={lang} />
   <SiteHeader lang={lang} />
 
@@ -49,13 +59,13 @@ const alternates = { en: path, de: path === '/' ? '/de/' : `/de${path}` };
     <!-- grain transition (FR-02, FR-03), an animation of its own triggered by the scroll (CR-22) -->
     <canvas id="grain" aria-hidden="true"></canvas>
     <div class="scroller" id="scroller" tabindex="-1">
-      <Intro lang={lang} />
+      <Intro lang={lang} copy={intro[lang]} />
       <!-- runway: layout() sizes this spacer to the transition's scroll distance -->
       <div class="runway" id="runway" aria-hidden="true"></div>
       <Works projects={projects} lang={lang} />
     </div>
     <div class="edge-blur" id="edgeBlur" aria-hidden="true"><div></div><div></div><div></div></div>
-    <ProjectDetail lang={lang} project={project} />
+    <ProjectDetail lang={lang} project={project} projects={projects} />
   </div>
 
   <ContactOverlay lang={lang} />
@@ -63,6 +73,7 @@ const alternates = { en: path, de: path === '/' ? '/de/' : `/de${path}` };
 
   <!-- is:inline: a JSON payload, not a module — Astro must not try to bundle it. -->
   <script type="application/json" id="projects-data" is:inline set:html={JSON.stringify(projectData)} />
+  <script type="application/json" id="intro-data" is:inline set:html={JSON.stringify(intro)} />
   <script>
     import '../scripts/site.js';
   </script>

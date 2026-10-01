@@ -1,0 +1,22 @@
+name: Project 3
+order: 3
+draft: false
+thumbnail: null
+thumbnailAlt:
+  en: ''
+  de: ''
+en:
+  headline: Short project headline
+  title: Project 3 title
+  year: Year
+  tags:
+    - Tag
+    - Tag
+de:
+  headline: Short project headline
+  title: Project 3 title
+  year: Year
+  tags:
+    - Tag
+    - Tag
+blocks: []

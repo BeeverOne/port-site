@@ -1,0 +1,22 @@
+name: Project 5
+order: 5
+draft: false
+thumbnail: null
+thumbnailAlt:
+  en: ''
+  de: ''
+en:
+  headline: Short project headline
+  title: Project 5 title
+  year: Year
+  tags:
+    - Tag
+    - Tag
+de:
+  headline: Short project headline
+  title: Project 5 title
+  year: Year
+  tags:
+    - Tag
+    - Tag
+blocks: []

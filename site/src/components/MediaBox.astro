@@ -1,0 +1,24 @@
+---
+/* One media item: a card thumbnail, or an image, video or interactive preview in the detail view
+   (FR-50 to FR-52). The box has the item's final aspect ratio from the start, so nothing shifts when the
+   item arrives (NFR-03). Until it loads, a small v-stack mark fills on a loop (static under reduced
+   motion); after 15 s or an error, a short message and a retry button replace it. site.js
+   (armMedia) runs the states through data-state: loading -> loaded | failed. The v-stack paths come
+   from the page's single <symbol id="vstack-sym"> (SitePage.astro). */
+import { dict } from '../i18n/server.js';
+
+const { aspect, lang = 'en', class: className = '' } = Astro.props;
+const t = dict(lang);
+---
+
+<div class:list={['media-box', className]} style={`aspect-ratio: ${aspect}`} data-media>
+  <slot />
+  <div class="media-loader" aria-hidden="true">
+    <svg class="mbase" viewBox="0 0 5163 2480"><use href="#vstack-sym"></use></svg>
+    <svg class="mfill" viewBox="0 0 5163 2480"><use href="#vstack-sym"></use></svg>
+  </div>
+  <div class="media-failed">
+    <span data-i18n="mediaFailed">{t.mediaFailed}</span>
+    <button class="media-retry cb" type="button" data-i18n="mediaRetry">{t.mediaRetry}</button>
+  </div>
+</div>

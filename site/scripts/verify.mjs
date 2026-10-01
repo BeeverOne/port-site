@@ -216,7 +216,8 @@ const mustHave = [
   ['id="wfToggle"', 'mobile footer collapse chevron (owner direction)'],
   ['id="detail"', 'detail view (FR-13)'],
   ['id="contact"', 'contact overlay (FR-26)'],
-  ['id="demoRange"', 'interactive component preview (FR-17)'],
+  ['sandbox="allow-scripts"', 'interactive preview in a sandboxed iframe (FR-17, ADR-0008)'],
+  ['data-media', 'media items carry their loader (FR-50)'],
   ['href="/impressum" data-legal="impressum"', 'Impressum link (FR-44)'],
   ['href="/privacy" data-legal="privacy"', 'privacy link (FR-45)'],
   ['href="https://github.com/BeeverOne"', 'GitHub profile link (FR-37)'],
@@ -297,7 +298,9 @@ for (const file of ['privacy/index.html', 'de/datenschutz/index.html']) {
 }
 /* The dev LOOK panel's saved values (localStorage key "look") must not reach prod: the block is
    behind import.meta.env.DEV, so the bundles must not read or write that key. */
-const builtJs = [built, ...readdirSync(`${OUT}/_astro`).filter((f) => f.endsWith('.js'))
+/* keystatic-* bundles are the CMS admin UI (ADR-0003): loaded only at /keystatic by the owner, never by
+   a visitor's page, and it links Google's Inter for its own interface, so they are not public code. */
+const builtJs = [built, ...readdirSync(`${OUT}/_astro`).filter((f) => f.endsWith('.js') && !f.startsWith('keystatic'))
   .map((f) => readFileSync(`${OUT}/_astro/${f}`, 'utf8'))].join('\n');
 /* Fonts are self-hosted: no request may go to Google (it would send visitors' IP addresses there,
    which the privacy policy does not cover), and both @font-face rules must reach the built CSS. */
@@ -337,6 +340,10 @@ function skeleton(html) {
   let s = bodyOf(html);
   s = s.replace(/<!--[\s\S]*?-->/g, '');
   s = s.replace(/<script[\s\S]*?<\/script>/g, '');
+  /* the hidden v-stack <symbol> the media loaders reuse (FR-50) is not in the prototype */
+  s = s.replace(/<svg class="sym"[\s\S]*?<\/svg>/g, '');
+  /* the detail view's content: the prototype's four placeholder blocks, the build's CMS blocks (FR-17) */
+  s = s.replace(/(<h2 id="detailTitle"[^>]*>[\s\S]*?<\/h2>)[\s\S]*?(<\/div>\s*<\/article>)/, '$1$2');
   s = s.replace(/<svg[\s\S]*?<\/svg>/g, '<svg>'); /* svg innards come from the extracted marks */
   s = s.replace(/<details class="proto">[\s\S]*?<\/details>/g, '');
   /* the statement is pre-rendered now (ADR-0012); the prototype fills it at runtime */
@@ -386,7 +393,7 @@ if (protoSkel.length === builtSkel.length && protoSkel.every((t, i) => t === bui
 /* Class-name multiset: catches a renamed or dropped hook the sequence check could mask. */
 /* Known, deliberate differences: the track's cards (Astro renders them, the prototype
    injects them at runtime) and the dev-only prototype control panel (checked in [6]). */
-const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger', 'hover-title', 'plus-field', 'wf-row', 'wf-toggle', 'wf-more', 'wf-more-inner', 'name', 'hl'];   // name, hl: the pre-rendered statement spans (ADR-0012)
+const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger', 'hover-title', 'plus-field', 'wf-row', 'wf-toggle', 'wf-more', 'wf-more-inner', 'name', 'hl', 'sym', 'media-box', 'media-loader', 'mbase', 'mfill', 'media-failed', 'media-retry', 'detail-blocks', 'block-text', 'block-media', 'block', 'media', 'demo', 'swatch'];   // media-*, block-*: CMS blocks and loaders (FR-17, FR-50); block, media, demo, swatch: the prototype's placeholders they replace   // name, hl: the pre-rendered statement spans (ADR-0012)
 function classBag(html) {
   const bag = new Map();
   for (const m of bodyOf(html).matchAll(/\bclass="([^"]*)"/g)) {

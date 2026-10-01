@@ -1,14 +1,36 @@
 ---
 /* One project card (FR-10). Rendered from the content collection in the page's language;
-   localizeCards() in site.js rewrites the text and the link when the visitor switches language
-   (FR-21, FR-22). href is the project's own URL (FR-14, ADR-0006), so the card also works as a
-   plain link (new tab, copy link). */
-const { id, href, headline, title, year, tags } = Astro.props;
+   localizeCards() in site.js rewrites the text, the thumbnail alt and the link when the visitor
+   switches language (FR-21, FR-22). href is the project's own URL (FR-14, ADR-0006), so the card also
+   works as a plain link (new tab, copy link). The thumbnail is a media item with its own loader
+   (FR-50); lazy, so the works images wait until the track is near (NFR-05). A project without a
+   thumbnail keeps the prototype's placeholder frame. */
+import { Image } from 'astro:assets';
+import MediaBox from './MediaBox.astro';
+
+const { id, href, headline, title, year, tags, thumbnail, thumbnailAlt = '', lang = 'en' } = Astro.props;
+const widths = [480, 720, 1120].filter((w) => !thumbnail || w <= thumbnail.width);
 ---
 
 <a class="card cb stagger" href={href} data-id={id}
   ><span class="hover-title" aria-hidden="true">{headline}</span
-  ><div class="thumb"><span>Project thumbnail</span></div><h3>{headline}</h3><div class="meta"
-    ><span class="t">{title}</span><span class="year">{year}</span></div
+  >{
+    thumbnail ? (
+      <MediaBox class="thumb" aspect="16 / 7.2" lang={lang}>
+        <Image
+          src={thumbnail}
+          alt={thumbnailAlt}
+          widths={widths.length ? widths : [thumbnail.width]}
+          sizes="(max-width: 767px) 78vw, 560px"
+          loading="lazy"
+          decoding="async"
+        />
+      </MediaBox>
+    ) : (
+      <div class="thumb">
+        <span>Project thumbnail</span>
+      </div>
+    )
+  }<h3>{headline}</h3><div class="meta"><span class="t">{title}</span><span class="year">{year}</span></div
   ><div class="tags">{tags.map((t) => <span>{t}</span>)}</div></a
 >
