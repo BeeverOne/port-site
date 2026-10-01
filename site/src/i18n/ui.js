@@ -7,12 +7,12 @@ export const T = {
       { t: 'I’m ' }, { name: 'Oluwafemi Bamigboye' }, { t: ', a ' },
       { hl: 'software', delay: 200, dur: 650 }, { t: ' ' },
       { hl: 'developer', delay: 520, dur: 900 },               // starts later and ends last
-      { t: ' with a background that spans medicine, civil engineering and art.' }
+      { t: ' with a background spanning medicine, civil engineering and art.' }
     ],
     p2: 'I take a user-centric approach to building solutions, which is why I focus on the experience design of the systems I create. These include websites and web apps, full-stack software, interactive systems and unified systems that combine hardware and software.',
     p3: 'The rapid development of AI over the past couple of years has made writing code more accessible, but it doesn’t replace the need for sound, well-designed architecture. Over the past year, I’ve been refining workflows built on software development standards and best practices, giving AI tools a grounded framework for integration and execution.',
     p4: 'Another theme is the steadily improving cybersecurity capabilities of these models, and the resulting need to harden both current systems and the new ones we build.',
-    about: '[ about ]', trigger: 'Here are some of my work', enterWorks: 'Go to my works', works: '[ Works ]',
+    about: '[ about ]', trigger: 'Here’s some of my work', enterWorks: 'Go to my works', works: '[ Works ]',
     contact: 'Contact', contactTitle: 'Contact', close: '[ Close ]', name: 'Name', email: 'Email', message: 'Message', send: 'Send',
     impressum: '[ Impressum ]', privacy: '[ Privacy policy ]', loading: 'Loading', scrollbar: 'Project position', footerToggle: 'Show or hide the footer links',
     blockText: '[Text block: project description from the CMS]', blockImage: '[Image block]', blockVideo: '[Video block]',
