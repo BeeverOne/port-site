@@ -75,7 +75,10 @@ const introFields = (L: 'EN' | 'DE') =>
   );
 
 export default config({
-  storage: github ? { kind: 'github', repo: 'BeeverOne/port-site' } : { kind: 'local' },
+  // The site lives in site/ inside the repository. Local mode resolves paths from site/ (the dev server's
+  // folder); GitHub mode resolves them from the repository root, so it needs the prefix or it finds no
+  // content at all (the admin showed empty forms). pathPrefix applies to GitHub mode only.
+  storage: github ? { kind: 'github', repo: 'BeeverOne/port-site', pathPrefix: 'site' } : { kind: 'local' },
   ui: { brand: { name: 're.verb one' } },
   singletons: {
     intro: singleton({
