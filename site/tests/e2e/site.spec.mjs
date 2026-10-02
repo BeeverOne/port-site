@@ -41,7 +41,7 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
     const scrollTop = () => page.evaluate(() => document.querySelector('#scroller').scrollTop);
 
     await page.goto(SITE);
-    await page.waitForTimeout(3500); // loader (1200ms) + fonts
+    await page.waitForTimeout(3500); // loader (LOADER_MS) + fonts
 
     /* FR-47: loader ends, intro ready, v-stack fill mark present */
     check(await page.evaluate(() => document.body.classList.contains('ready')), 'page loader ended, intro ready (FR-47)', 'loader never ended');

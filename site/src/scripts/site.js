@@ -13,7 +13,7 @@ try {
 'use strict';
 
 /* ---------- Settings ---------- */
-const LOADER_MS = 1200;        // FR-48: replace with the measured average time to "intro ready" (max 2000)
+const LOADER_MS = 1000;        // FR-48: measured average time to "intro ready", at least 1000 and at most 2000 (M-02 measured 162)
 /* Transition look parameters. Sizes and density are viewport-relative, so a value tuned on one
    display behaves the same on any other; the px clamps are only extreme safety rails.
    The dev-only control panel writes these live (ProtoControls.astro). */
