@@ -78,7 +78,7 @@ Old `#/works` links are rewritten to their paths on load.
 | `src/components/marks/` | The inline SVG brand marks, sliced out verbatim. `VStack` is parameterised: the header mark and the loader's base/fillmark pair. `R1Mark` retired with the title blocks (CR-08). |
 | `src/content/projects/` | One markdown file per project (the content model; a CMS replaces this loader later). |
 | `src/components/` | One component per prototype region: loader, header, intro, works, detail, contact. `TitleBlock` retired with CR-08. |
-| `scripts/verify.mjs` | Asserts the build still matches the prototype (DOM hooks, CSS selectors, skeleton). |
+| `scripts/verify.mjs` | Asserts the build still matches the prototype (DOM hooks, CSS selectors, skeleton). Runs locally and in CI against the frozen reference `tests/reference/portfolio-prototype-v2.html`; when the prototype changes, update it there and in `docs/v2/` together. |
 | `tests/e2e/site.spec.mjs` | End-to-end suite (Playwright Test, `playwright.config.mjs`): 11 flows, 90 checks, in Chromium (installed Chrome), WebKit and Firefox. Run `npm run build` first; it serves the build itself. One-time: `npx playwright install webkit`. Locally the suite runs Chrome and WebKit; Firefox runs in GitHub Actions (`.github/workflows/e2e.yml`) on every push, because Firefox cannot be started from the command line on macOS 27. |
 
 ## The four standing edits to `site.js` (v1 and v2 ports alike)

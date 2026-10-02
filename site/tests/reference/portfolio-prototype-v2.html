@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>re.verb one - Oluwafemi Bamigboye (prototype v2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Unbounded:wght@400..600&display=swap" rel="stylesheet">
+<!--
+  PROTOTYPE v2 - reference build for portfolio-site v1 (R1 project).
+  Single file, no framework, no build step. Open it directly in a browser.
+  Changes from v1 (Port-Site notes): islands layout, scroll-driven grain transition, staggered works entry,
+  scan effect on primary buttons, blur inside the content island, staggered highlighter, mobile headline wrap,
+  no title blocks, draggable scroll bar, scroll up from works on touch, v-stack loader.
+  Traceability: comments name the requirement IDs (FR / NFR) from specs/product/requirements.md v1.1.
+  Not in the prototype: CMS, real mail delivery, real Turnstile, server-side sanitizing and rate limit,
+  media loaders with real media (FR-50, FR-51), legal page content.
+-->
+<style>
+/* ---------- Design tokens ---------- */
+:root {
+  --bg: #DDE1DE; --ink: #12201D; --sub: #44524E; --rule: rgba(18,32,29,0.26); --plus: rgba(18,32,29,0.28);
+  --page: #CDD3CF;
+  --btn-bg: #12201D; --btn-ink: #DDE1DE; --scan: rgba(255,255,255,0.22);
+  --works: #0F5C55; --works-ink: #F1F7F4; --works-sub: #C4DDD7; --works-rule: rgba(241,247,244,0.38);
+  --works-plus: rgba(241,247,244,0.4); --works-fill: rgba(241,247,244,0.1);
+  --accent: #B6F09C; --accent-ink: #12201D; --hl-ink: #12201D; --accent-scan: rgba(255,255,255,0.45);
+  --font: Archivo, "Helvetica Neue", Arial, sans-serif;
+  --font-name: Unbounded, "Helvetica Neue", Arial, sans-serif;
+  --gap: 16px; --radius: 14px; --header-h: 64px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141518; --ink: #E6E6E8; --sub: #A5A7AD; --rule: rgba(230,230,232,0.22); --plus: rgba(230,230,232,0.26);
+    --page: #0B0C0E;
+    --btn-bg: #E6E6E8; --btn-ink: #141518; --scan: rgba(20,21,24,0.16);
+    --works: #26282C; --works-ink: #FFFFFF; --works-sub: #C9CBD1; --works-rule: rgba(255,255,255,0.38);
+    --works-plus: rgba(255,255,255,0.4); --works-fill: rgba(255,255,255,0.1);
+    --accent: #FF6A2B; --accent-ink: #16171A; --hl-ink: #16171A; --accent-scan: rgba(255,255,255,0.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141518; --ink: #E6E6E8; --sub: #A5A7AD; --rule: rgba(230,230,232,0.22); --plus: rgba(230,230,232,0.26);
+  --page: #0B0C0E;
+  --btn-bg: #E6E6E8; --btn-ink: #141518; --scan: rgba(20,21,24,0.16);
+  --works: #26282C; --works-ink: #FFFFFF; --works-sub: #C9CBD1; --works-rule: rgba(255,255,255,0.38);
+  --works-plus: rgba(255,255,255,0.4); --works-fill: rgba(255,255,255,0.1);
+  --accent: #FF6A2B; --accent-ink: #16171A; --hl-ink: #16171A; --accent-scan: rgba(255,255,255,0.35);
+  color-scheme: dark;
+}
+/* the gap and the radius scale with the breakpoint */
+@media (max-width: 1023px) { :root { --gap: 12px; --radius: 12px; } }
+@media (max-width: 767px)  { :root { --gap: 8px; --radius: 10px; --header-h: 56px; } }
+
+/* header island colours follow the active section */
+:root { --h-bg: var(--bg); --h-ink: var(--ink); --h-sub: var(--sub); --h-rule: var(--rule); }
+body.mode-works { --h-bg: var(--works); --h-ink: var(--works-ink); --h-sub: var(--works-sub); --h-rule: var(--works-rule); }
+
+/* ---------- Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; background: var(--page); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+button { font: inherit; cursor: pointer; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.plus-field {
+  position: absolute; inset: 0; pointer-events: none; background-color: var(--plus);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cpath d='M56 60h8M60 56v8' stroke='black' stroke-width='1'/%3E%3C/svg%3E");
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cpath d='M56 60h8M60 56v8' stroke='black' stroke-width='1'/%3E%3C/svg%3E");
+  -webkit-mask-size: 120px 120px; mask-size: 120px 120px;
+}
+@media (max-width: 767px) { .plus-field { -webkit-mask-size: 60px 60px; mask-size: 60px 60px; } }
+
+/* ---------- Corner-mark hover and focus ----------
+   The corner marks show only on hover and keyboard focus. */
+.cb { position: relative; --cb: currentColor; --cbl: 6px; }
+.cb:focus-visible { outline: none; }
+.cb::after {
+  content: ""; position: absolute; inset: -4px; pointer-events: none; opacity: 0;
+  transition: opacity 180ms ease-out, inset 180ms ease-out, background-size 180ms ease-out;
+  background:
+    linear-gradient(var(--cb), var(--cb)) left top / var(--cbl) 1.5px no-repeat,
+    linear-gradient(var(--cb), var(--cb)) left top / 1.5px var(--cbl) no-repeat,
+    linear-gradient(var(--cb), var(--cb)) right top / var(--cbl) 1.5px no-repeat,
+    linear-gradient(var(--cb), var(--cb)) right top / 1.5px var(--cbl) no-repeat,
+    linear-gradient(var(--cb), var(--cb)) left bottom / var(--cbl) 1.5px no-repeat,
+    linear-gradient(var(--cb), var(--cb)) left bottom / 1.5px var(--cbl) no-repeat,
+    linear-gradient(var(--cb), var(--cb)) right bottom / var(--cbl) 1.5px no-repeat,
+    linear-gradient(var(--cb), var(--cb)) right bottom / 1.5px var(--cbl) no-repeat;
+}
+.cb:hover::after, .cb:focus-visible::after { opacity: 1; inset: -6px; --cbl: 10px; }
+
+/* ---------- Buttons: rounded like the islands; primary buttons get a slow scan ---------- */
+.btn {
+  position: relative; overflow: visible; height: 44px; padding: 0 22px; border: 1px solid var(--btn-bg); border-radius: var(--radius);
+  background: var(--btn-bg); color: var(--btn-ink); font-size: 15px; font-weight: 600; --cb: var(--ink); isolation: isolate;
+}
+.btn-primary::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: linear-gradient(110deg, transparent 38%, var(--scan) 50%, transparent 62%) no-repeat;
+  background-size: 260% 100%; background-position: 160% 0;
+  animation: scan 4.2s ease-in-out infinite;
+}
+.btn-primary:hover::before { animation-duration: 1.6s; }
+@keyframes scan { 0%, 35% { background-position: 160% 0; } 75%, 100% { background-position: -60% 0; } }
+@media (max-width: 767px) { .btn { padding: 0 12px; font-size: 14px; } }
+
+/* ---------- Header island ---------- */
+.site-header {
+  position: fixed; z-index: 20; top: var(--gap); left: var(--gap); right: var(--gap); height: var(--header-h);
+  padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
+  background: var(--h-bg); color: var(--h-ink); border: 1px solid var(--h-rule); border-radius: var(--radius);
+  transition: background-color 300ms, color 300ms, border-color 300ms;
+}
+@media (max-width: 767px) { .site-header { padding: 0 8px 0 12px; } }
+.mark { display: flex; align-items: center; min-height: 44px; color: inherit; --cb: var(--h-ink); }
+.mark svg { display: block; }
+.mark .mark-vstack { display: none; }
+@media (max-width: 767px) { .mark .mark-wordmark { display: none; } .mark .mark-vstack { display: block; } }
+.controls { display: flex; align-items: center; gap: 12px; }
+@media (max-width: 767px) { .controls { gap: 2px; } }
+.lang { display: flex; gap: 4px; }
+.lang button, .icon-btn {
+  min-width: 44px; height: 44px; padding: 0 6px; background: transparent; border: 0; border-radius: var(--radius);
+  color: var(--h-sub); font-size: 14px; font-weight: 600; --cb: var(--h-ink);
+}
+.lang button[aria-pressed="true"] { color: var(--h-ink); text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
+.icon-btn { color: var(--h-ink); display: flex; align-items: center; justify-content: center; }
+.site-header .btn { --cb: var(--h-ink); }
+body.mode-works .site-header .btn-contact { visibility: hidden; }   /* works has Contact in its footer (FR-12) */
+
+/* ---------- Content island ---------- */
+.island {
+  position: fixed; z-index: 10; top: calc(var(--gap) * 2 + var(--header-h)); left: var(--gap); right: var(--gap); bottom: var(--gap);
+  border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; background: var(--bg);
+}
+.scroller { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin; outline: none; }
+#grain { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; visibility: hidden; }
+
+/* ---------- Intro (FR-01) ---------- */
+.intro { position: relative; z-index: 1; padding: 88px 56px 0; }
+@media (max-width: 767px) { .intro { padding: 32px 16px 0; } }
+.label { font-size: 15px; font-weight: 600; font-stretch: 80%; color: var(--sub); }
+.intro h1 {
+  margin: 24px 0 0; max-width: 1220px; font-size: clamp(30px, 5.8vw, 84px); line-height: 1.06; font-weight: 500;
+  font-stretch: 118%; letter-spacing: -0.015em; text-wrap: pretty; overflow-wrap: break-word; hyphens: manual;
+}
+@media (max-width: 767px) { .intro h1 { font-size: clamp(28px, 8.4vw, 40px); font-stretch: 100%; letter-spacing: -0.01em; } }
+.name { font-family: var(--font-name); font-stretch: normal; font-weight: 500; }
+.hl {
+  padding: 0 0.1em; margin: 0 -0.04em; border-radius: 0.6em 0.25em 0.7em 0.2em; color: var(--hl-ink);
+  background-image: linear-gradient(100deg, transparent 0.6%, var(--accent) 2%, var(--accent) 97.5%, transparent 99.4%);
+  background-repeat: no-repeat; background-size: 0% 64%; background-position: 0 78%;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  transition: background-size var(--hl-dur, 800ms) cubic-bezier(.3,.7,.2,1) var(--hl-delay, 200ms);
+}
+body.ready .hl { background-size: 100% 64%; }
+.copy { margin-top: 160px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; row-gap: 48px; }
+.copy p { grid-column: 5 / span 7; margin: 0; font-size: 22px; line-height: 1.55; max-width: 62ch; }
+.note { grid-column: 1 / span 4; align-self: start; padding-top: 6px; display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 600; font-stretch: 75%; color: var(--sub); }
+.note .line { flex-grow: 1; border-top: 1px solid var(--sub); }
+.note .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sub); }
+@media (max-width: 900px) {
+  .copy { margin-top: 88px; display: flex; flex-direction: column; gap: 28px; }
+  .copy p { font-size: 17px; line-height: 1.6; }
+}
+.outro { margin-top: 200px; padding-bottom: 24px; will-change: opacity, transform; }
+.outro h2 { margin: 0; font-size: clamp(30px, 4.4vw, 64px); line-height: 1.05; font-weight: 500; font-stretch: 118%; letter-spacing: -0.01em; text-wrap: balance; }
+@media (max-width: 767px) { .outro { margin-top: 120px; } .outro h2 { font-stretch: 100%; } }
+.enter { margin-top: 24px; display: flex; align-items: center; justify-content: center; width: 56px; height: 72px; background: transparent; border: 0; border-radius: var(--radius); color: var(--ink); --cb: var(--ink); }
+.runway { position: relative; z-index: 1; }
+
+/* bottom-edge blur, inside the content island (no sharp line at the edge) */
+.edge-blur { position: absolute; z-index: 4; pointer-events: none; left: 0; right: 0; bottom: 0; height: 200px; }
+@media (max-width: 767px) { .edge-blur { height: 140px; } }
+.edge-blur div { position: absolute; inset: 0; }
+.edge-blur div:nth-child(1) { backdrop-filter: blur(1px); -webkit-backdrop-filter: blur(1px); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); }
+.edge-blur div:nth-child(2) { backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); -webkit-mask-image: linear-gradient(to bottom, transparent 25%, #000 60%); mask-image: linear-gradient(to bottom, transparent 25%, #000 60%); }
+.edge-blur div:nth-child(3) { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); -webkit-mask-image: linear-gradient(to bottom, transparent 55%, #000 100%); mask-image: linear-gradient(to bottom, transparent 55%, #000 100%); }
+
+/* ---------- Works (FR-04 to FR-12) ---------- */
+.works {
+  position: relative; z-index: 3; height: 100%; display: flex; flex-direction: column;
+  background: var(--works); color: var(--works-ink);
+}
+.works > .plus-field { background-color: var(--works-plus); }
+.works-main { position: relative; flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 24px; padding: 24px 0 16px 56px; }
+@media (max-width: 767px) { .works-main { padding: 16px 0 12px 16px; gap: 16px; } }
+.works-head h2 { margin: 0; font-size: clamp(44px, 6.7vw, 96px); line-height: 0.95; font-weight: 500; font-stretch: 125%; letter-spacing: -0.02em; }
+.track { display: flex; gap: 40px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding: 10px 56px 10px 10px; margin-left: -10px; overscroll-behavior-x: contain; }
+.track::-webkit-scrollbar { display: none; }
+.card { flex: 0 0 min(560px, 78vw); display: flex; flex-direction: column; gap: 14px; text-decoration: none; color: inherit; border-radius: var(--radius); --cb: var(--works-ink); }
+.thumb {
+  aspect-ratio: 16 / 7.2; border: 1px solid var(--works-rule); border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
+  background-color: var(--works-fill); background-image: conic-gradient(var(--works-fill) 25%, transparent 0 50%, var(--works-fill) 0 75%, transparent 0); background-size: 8px 8px;
+}
+.thumb span { padding: 4px 10px; border-radius: calc(var(--radius) / 2); background: var(--works); color: var(--works-sub); font-size: 14px; }
+.card h3 { margin: 0; font-size: clamp(22px, 2.1vw, 30px); line-height: 1.1; font-weight: 500; font-stretch: 115%; }
+.meta { display: flex; justify-content: space-between; gap: 16px; font-size: 16px; }
+.meta .year { color: var(--accent); font-weight: 600; }
+.tags { display: flex; gap: 8px; }
+.tags span { padding: 4px 10px; border: 1px solid var(--works-rule); border-radius: calc(var(--radius) / 2); font-size: 13px; font-stretch: 85%; }
+.indicator { display: flex; align-items: center; gap: 20px; padding-right: 56px; font-size: 14px; font-stretch: 85%; }
+/* draggable scroll bar (fixes: could not drag on phones) */
+.bar { position: relative; flex-grow: 1; height: 32px; cursor: grab; touch-action: none; border-radius: var(--radius); --cb: var(--works-ink); }
+.bar:active { cursor: grabbing; }
+.bar::before { content: ""; position: absolute; left: 0; right: 0; top: 15px; border-top: 1px solid var(--works-rule); }
+.bar i { position: absolute; left: 0; top: 13px; height: 6px; width: 33.3%; border-radius: 3px; background: var(--accent); }
+.works-footer {
+  position: relative; flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); column-gap: 24px; align-items: center;
+  min-height: 64px; margin: 0 10px 10px; padding: 10px 20px 10px 10px; border-radius: var(--radius); background: var(--accent); color: var(--accent-ink);
+}
+.works-footer .btn { justify-self: start; background: var(--accent-ink); color: var(--accent); border-color: var(--accent-ink); --cb: var(--accent-ink); --scan: var(--accent-scan); }
+.works-footer nav { display: flex; gap: 24px; font-size: 14px; font-weight: 500; }
+.works-footer nav a { text-decoration: none; padding: 4px 2px; border-radius: 4px; --cb: var(--accent-ink); }
+.works-footer .copyright { justify-self: end; font-size: 14px; font-weight: 500; }
+@media (max-width: 767px) {
+  .works-footer { grid-template-columns: 1fr; row-gap: 8px; justify-items: start; padding: 10px 12px; margin: 0 8px 8px; }
+  .works-footer nav { gap: 14px; flex-wrap: wrap; }
+  .works-footer .copyright { justify-self: start; }
+}
+.stagger { will-change: transform, opacity; }
+
+/* ---------- Detail view (FR-13 to FR-17) ---------- */
+.detail {
+  position: absolute; z-index: 6; inset: 0; background: var(--works); color: var(--works-ink); overflow-y: auto; display: none;
+  clip-path: inset(var(--ct, 0) var(--cr, 0) var(--cb2, 0) var(--cl, 0) round var(--radius));
+  transition: clip-path 520ms cubic-bezier(.6,0,.2,1);
+}
+.detail.open { display: block; }
+.detail-inner { max-width: 980px; padding: 40px 56px 80px; display: flex; flex-direction: column; gap: 32px; }
+@media (max-width: 767px) { .detail-inner { padding: 24px 16px 60px; } }
+.detail .close { align-self: flex-start; background: transparent; border: 0; border-radius: var(--radius); color: var(--works-ink); font-size: 14px; font-weight: 600; padding: 10px 6px; --cb: var(--works-ink); }
+.detail h2 { margin: 0; font-size: clamp(30px, 4.4vw, 64px); line-height: 1.05; font-weight: 500; font-stretch: 118%; text-wrap: balance; }
+.block { border: 1px dashed var(--works-rule); border-radius: var(--radius); padding: 20px; color: var(--works-sub); font-size: 15px; }
+.block.media { aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; }
+.demo { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; color: var(--works-ink); }
+.demo input { width: 220px; accent-color: var(--accent); }
+.demo .swatch { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
+.demo .swatch i { display: block; border-radius: 50%; background: var(--accent); }
+
+/* ---------- Contact overlay (FR-25 to FR-37) ---------- */
+dialog.contact { border: 1px solid var(--rule); border-radius: var(--radius); padding: 0; width: min(560px, calc(100vw - 2 * var(--gap))); background: var(--bg); color: var(--ink); }
+dialog.contact::backdrop { background: rgba(10, 12, 14, 0.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.contact-inner { padding: 28px; display: flex; flex-direction: column; gap: 18px; }
+@media (max-width: 767px) { .contact-inner { padding: 20px 16px; } }
+.contact-head { display: flex; justify-content: space-between; align-items: center; }
+.contact-head h2 { margin: 0; font-size: 28px; font-weight: 500; font-stretch: 115%; }
+.contact .close { background: transparent; border: 0; border-radius: var(--radius); color: var(--ink); font-weight: 600; font-size: 14px; padding: 10px 6px; --cb: var(--ink); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 14px; font-weight: 600; }
+.field input, .field textarea { font: inherit; font-size: 16px; padding: 10px 12px; border: 1px solid var(--sub); border-radius: calc(var(--radius) * 0.6); background: transparent; color: var(--ink); }
+.field textarea { min-height: 140px; resize: vertical; }
+.field input:focus-visible, .field textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.field[data-invalid="true"] input, .field[data-invalid="true"] textarea { border-color: #C0392B; border-width: 2px; }
+.err { font-size: 13px; color: #B3261E; min-height: 1em; }
+:root[data-theme="dark"] .err { color: #FF9C8A; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .err { color: #FF9C8A; } }
+.counter { font-size: 13px; color: var(--sub); align-self: flex-end; }
+.turnstile { border: 1px dashed var(--sub); border-radius: calc(var(--radius) * 0.6); padding: 12px; font-size: 13px; color: var(--sub); }
+.status { font-size: 15px; min-height: 1.2em; }
+.status.ok { font-weight: 600; }
+
+/* ---------- Page loader: v-stack fills from bottom to top (FR-47 to FR-49, FR-52) ---------- */
+.loader { position: fixed; inset: 0; z-index: 100; background: var(--page); color: var(--ink); display: flex; align-items: center; justify-content: center; transition: opacity 450ms; }
+.loader.done { opacity: 0; pointer-events: none; }
+.loader .lmark { position: relative; width: 200px; height: 96px; }
+.loader .lmark svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.loader .base { opacity: 0.18; }
+.loader .fillmark { clip-path: inset(100% 0 0 0); }
+.loader.run .fillmark { animation: rise var(--fill-ms, 1200ms) cubic-bezier(.45,0,.3,1) forwards; }
+.loader.loop .fillmark { animation: rise 1100ms cubic-bezier(.45,0,.3,1) infinite; }
+@keyframes rise { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* ---------- Prototype controls (not part of the site) ---------- */
+.proto { position: fixed; z-index: 90; left: calc(var(--gap) + 10px); bottom: calc(var(--gap) + 10px); font-size: 12px; background: #fff; color: #222; border: 1px solid #999; border-radius: 6px; max-width: 260px; }
+.proto summary { cursor: pointer; padding: 6px 10px; font-weight: 600; }
+.proto div { padding: 6px 10px 10px; display: flex; flex-direction: column; gap: 8px; }
+.proto button { font-size: 12px; padding: 4px 8px; }
+body.mode-works .proto { bottom: calc(var(--gap) + 96px); }
+
+/* ---------- Reduced motion (FR-18 to FR-20, FR-52) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .cb::after, .hl, .detail, .site-header { transition: none !important; }
+  .btn-primary::before { animation: none; background: none; }
+  .loader.run .fillmark, .loader.loop .fillmark { animation: none; clip-path: inset(0 0 0 0); }
+}
+</style>
+</head>
+<body>
+
+<!-- Page loader -->
+<div class="loader run" id="loader" role="status" aria-live="polite">
+  <div class="lmark" aria-hidden="true"><svg class="base" width="200" height="96" aria-hidden="true" focusable="false" viewBox="0 0 5163 2480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M3097.78 2052.58C3097.78 2106.9 3107.54 2160.5 3128.2 2210.38C3148.92 2260.41 3179.3 2305.87 3217.59 2344.16C3255.88 2382.45 3301.34 2412.83 3351.37 2433.55C3399.85 2453.63 3444.07 2450.45 3501.45 2450.45V2479.42C3446.72 2479.42 3395.38 2483.14 3340.28 2460.32C3286.74 2438.14 3238.08 2405.63 3197.1 2364.65C3156.12 2323.67 3123.61 2275.01 3101.43 2221.47C3079.19 2167.77 3068.8 2110.36 3068.8 2052.58C3068.8 1996.01 3079.94 1940 3101.59 1887.75C3123.24 1835.49 3154.96 1788.01 3194.96 1748.02C3234.95 1708.02 3282.43 1676.29 3334.69 1654.65C3386.95 1633 3442.96 1621.86 3499.52 1621.86C3556.08 1621.86 3612.09 1633 3664.34 1654.65C3716.6 1676.29 3764.08 1708.02 3804.08 1748.02C3844.07 1788.01 3875.8 1835.49 3897.44 1887.75C3919.09 1940 3930.23 1996.01 3930.23 2052.58H3097.78Z" fill="currentColor"/>
+<path d="M2583.05 1621.86C2752.4 1621.86 2859.91 1681.77 2924.81 1766.37C2989.39 1850.56 3010.86 1958 3010.86 2051.83V2479.64H2993.48V2051.83C2993.48 1960.23 2972.46 1857.04 2911.01 1776.95C2849.88 1697.26 2747.83 1639.25 2583.05 1639.25H2541.52V1639.46C2325.2 1639.46 2166.82 1825.94 2166.82 2048.93V2479.64H2151.37V1622.08H2244.08V1621.86H2583.05Z" fill="currentColor"/>
+<path d="M2093.42 2048.71C2093.42 2286.59 1900.59 2479.42 1662.71 2479.42C1424.84 2479.42 1232 2286.59 1232 2048.71C1232 1810.84 1424.84 1618 1662.71 1618C1900.59 1618 2093.42 1810.84 2093.42 2048.71Z" fill="currentColor"/>
+<path d="M4332.23 425.884H4695.34C4707.9 425.884 4719.68 425.884 4732.04 425.884C4969.92 425.884 5162.75 618.72 5162.75 856.596C5162.75 1094.47 4969.92 1287.31 4732.04 1287.31C4719.68 1287.31 4707.44 1286.78 4695.34 1285.76V1287.31H4301.33V0H4332.23V425.884Z" fill="currentColor"/>
+<path d="M4291.67 440.388C3838.08 443.376 3467.72 796.942 3437.97 1243.71V1294.07H3436.08C3436.07 1294.71 3436.06 1295.36 3436.06 1296H3430.25V432.644H4291.67V440.388Z" fill="currentColor"/>
+<path d="M2588.14 861.425C2588.14 915.748 2597.9 969.351 2618.56 1019.23C2639.28 1069.26 2669.66 1114.72 2707.95 1153.01C2746.24 1191.3 2791.7 1221.68 2841.73 1242.4C2890.21 1262.48 2934.43 1259.3 2991.81 1259.3V1288.27C2937.08 1288.27 2885.74 1291.99 2830.64 1269.17C2777.1 1246.99 2728.44 1214.48 2687.46 1173.5C2646.48 1132.51 2613.97 1083.86 2591.79 1030.32C2569.55 976.62 2559.17 919.211 2559.17 861.425C2559.17 804.863 2570.31 748.854 2591.95 696.597C2613.6 644.341 2645.32 596.861 2685.32 556.866C2725.31 516.87 2772.79 485.143 2825.05 463.498C2877.31 441.853 2933.32 430.712 2989.88 430.712C3046.44 430.712 3102.45 441.853 3154.71 463.498C3206.96 485.143 3254.44 516.87 3294.44 556.866C3334.43 596.861 3366.16 644.341 3387.8 696.597C3409.45 748.854 3420.59 804.863 3420.59 861.425H2588.14Z" fill="currentColor"/>
+<path d="M2549.51 448.096L1740.23 448.479L2143.9 1256.08L2549.51 448.096Z" fill="currentColor"/>
+<circle cx="1516.18" cy="1073.88" r="112.024" fill="currentColor"/>
+<path d="M898.122 861.425C898.122 915.748 907.886 969.351 928.546 1019.23C949.269 1069.26 979.643 1114.72 1017.93 1153.01C1056.23 1191.3 1101.68 1221.68 1151.71 1242.4C1200.19 1262.48 1244.42 1259.3 1301.79 1259.3V1288.27C1247.06 1288.27 1195.73 1291.99 1140.63 1269.17C1087.08 1246.99 1038.43 1214.48 997.448 1173.5C956.466 1132.51 923.959 1083.86 901.779 1030.32C879.538 976.62 869.15 919.211 869.15 861.425C869.15 804.863 880.291 748.854 901.936 696.597C923.581 644.341 955.308 596.861 995.304 556.866C1035.3 516.87 1082.78 485.143 1135.04 463.498C1187.29 441.853 1243.3 430.712 1299.86 430.712C1356.42 430.712 1412.43 441.853 1464.69 463.498C1516.95 485.143 1564.43 516.87 1604.42 556.866C1644.42 596.861 1676.14 644.341 1697.79 696.597C1719.43 748.854 1730.58 804.863 1730.58 861.425H898.122Z" fill="currentColor"/>
+<path d="M861.425 440.388C407.831 443.376 37.4738 796.942 7.72578 1243.71V1294.07H5.83206C5.8264 1294.71 5.81744 1295.36 5.8132 1296H0V432.644H861.425V440.388Z" fill="currentColor"/>
+</svg><svg class="fillmark" width="200" height="96" aria-hidden="true" focusable="false" viewBox="0 0 5163 2480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M3097.78 2052.58C3097.78 2106.9 3107.54 2160.5 3128.2 2210.38C3148.92 2260.41 3179.3 2305.87 3217.59 2344.16C3255.88 2382.45 3301.34 2412.83 3351.37 2433.55C3399.85 2453.63 3444.07 2450.45 3501.45 2450.45V2479.42C3446.72 2479.42 3395.38 2483.14 3340.28 2460.32C3286.74 2438.14 3238.08 2405.63 3197.1 2364.65C3156.12 2323.67 3123.61 2275.01 3101.43 2221.47C3079.19 2167.77 3068.8 2110.36 3068.8 2052.58C3068.8 1996.01 3079.94 1940 3101.59 1887.75C3123.24 1835.49 3154.96 1788.01 3194.96 1748.02C3234.95 1708.02 3282.43 1676.29 3334.69 1654.65C3386.95 1633 3442.96 1621.86 3499.52 1621.86C3556.08 1621.86 3612.09 1633 3664.34 1654.65C3716.6 1676.29 3764.08 1708.02 3804.08 1748.02C3844.07 1788.01 3875.8 1835.49 3897.44 1887.75C3919.09 1940 3930.23 1996.01 3930.23 2052.58H3097.78Z" fill="currentColor"/>
+<path d="M2583.05 1621.86C2752.4 1621.86 2859.91 1681.77 2924.81 1766.37C2989.39 1850.56 3010.86 1958 3010.86 2051.83V2479.64H2993.48V2051.83C2993.48 1960.23 2972.46 1857.04 2911.01 1776.95C2849.88 1697.26 2747.83 1639.25 2583.05 1639.25H2541.52V1639.46C2325.2 1639.46 2166.82 1825.94 2166.82 2048.93V2479.64H2151.37V1622.08H2244.08V1621.86H2583.05Z" fill="currentColor"/>
+<path d="M2093.42 2048.71C2093.42 2286.59 1900.59 2479.42 1662.71 2479.42C1424.84 2479.42 1232 2286.59 1232 2048.71C1232 1810.84 1424.84 1618 1662.71 1618C1900.59 1618 2093.42 1810.84 2093.42 2048.71Z" fill="currentColor"/>
+<path d="M4332.23 425.884H4695.34C4707.9 425.884 4719.68 425.884 4732.04 425.884C4969.92 425.884 5162.75 618.72 5162.75 856.596C5162.75 1094.47 4969.92 1287.31 4732.04 1287.31C4719.68 1287.31 4707.44 1286.78 4695.34 1285.76V1287.31H4301.33V0H4332.23V425.884Z" fill="currentColor"/>
+<path d="M4291.67 440.388C3838.08 443.376 3467.72 796.942 3437.97 1243.71V1294.07H3436.08C3436.07 1294.71 3436.06 1295.36 3436.06 1296H3430.25V432.644H4291.67V440.388Z" fill="currentColor"/>
+<path d="M2588.14 861.425C2588.14 915.748 2597.9 969.351 2618.56 1019.23C2639.28 1069.26 2669.66 1114.72 2707.95 1153.01C2746.24 1191.3 2791.7 1221.68 2841.73 1242.4C2890.21 1262.48 2934.43 1259.3 2991.81 1259.3V1288.27C2937.08 1288.27 2885.74 1291.99 2830.64 1269.17C2777.1 1246.99 2728.44 1214.48 2687.46 1173.5C2646.48 1132.51 2613.97 1083.86 2591.79 1030.32C2569.55 976.62 2559.17 919.211 2559.17 861.425C2559.17 804.863 2570.31 748.854 2591.95 696.597C2613.6 644.341 2645.32 596.861 2685.32 556.866C2725.31 516.87 2772.79 485.143 2825.05 463.498C2877.31 441.853 2933.32 430.712 2989.88 430.712C3046.44 430.712 3102.45 441.853 3154.71 463.498C3206.96 485.143 3254.44 516.87 3294.44 556.866C3334.43 596.861 3366.16 644.341 3387.8 696.597C3409.45 748.854 3420.59 804.863 3420.59 861.425H2588.14Z" fill="currentColor"/>
+<path d="M2549.51 448.096L1740.23 448.479L2143.9 1256.08L2549.51 448.096Z" fill="currentColor"/>
+<circle cx="1516.18" cy="1073.88" r="112.024" fill="currentColor"/>
+<path d="M898.122 861.425C898.122 915.748 907.886 969.351 928.546 1019.23C949.269 1069.26 979.643 1114.72 1017.93 1153.01C1056.23 1191.3 1101.68 1221.68 1151.71 1242.4C1200.19 1262.48 1244.42 1259.3 1301.79 1259.3V1288.27C1247.06 1288.27 1195.73 1291.99 1140.63 1269.17C1087.08 1246.99 1038.43 1214.48 997.448 1173.5C956.466 1132.51 923.959 1083.86 901.779 1030.32C879.538 976.62 869.15 919.211 869.15 861.425C869.15 804.863 880.291 748.854 901.936 696.597C923.581 644.341 955.308 596.861 995.304 556.866C1035.3 516.87 1082.78 485.143 1135.04 463.498C1187.29 441.853 1243.3 430.712 1299.86 430.712C1356.42 430.712 1412.43 441.853 1464.69 463.498C1516.95 485.143 1564.43 516.87 1604.42 556.866C1644.42 596.861 1676.14 644.341 1697.79 696.597C1719.43 748.854 1730.58 804.863 1730.58 861.425H898.122Z" fill="currentColor"/>
+<path d="M861.425 440.388C407.831 443.376 37.4738 796.942 7.72578 1243.71V1294.07H5.83206C5.8264 1294.71 5.81744 1295.36 5.8132 1296H0V432.644H861.425V440.388Z" fill="currentColor"/>
+</svg></div>
+  <span class="sr-only" data-i18n="loading">Loading</span>
+</div>
+
+<!-- Header island -->
+<header class="site-header">
+  <a class="mark cb" href="#" id="home" aria-label="re.verb one, home"><svg class="mark-wordmark" width="198" height="30" aria-hidden="true" focusable="false" viewBox="0 0 8549 1296" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M7716.13 861.425C7716.12 915.748 7725.89 969.351 7746.55 1019.23C7767.27 1069.26 7797.65 1114.72 7835.94 1153.01C7874.23 1191.3 7919.69 1221.68 7969.72 1242.4C8018.19 1262.48 8062.42 1259.3 8119.8 1259.3V1288.27C8065.06 1288.27 8013.73 1291.99 7958.63 1269.17C7905.09 1246.99 7856.43 1214.48 7815.45 1173.5C7774.47 1132.51 7741.96 1083.86 7719.78 1030.32C7697.54 976.62 7687.15 919.211 7687.15 861.425C7687.15 804.863 7698.29 748.854 7719.94 696.597C7741.58 644.341 7773.31 596.861 7813.31 556.866C7853.3 516.87 7900.78 485.143 7953.04 463.498C8005.29 441.853 8061.3 430.712 8117.87 430.712C8174.43 430.712 8230.44 441.853 8282.69 463.498C8334.95 485.143 8382.43 516.87 8422.42 556.866C8462.42 596.861 8494.15 644.341 8515.79 696.597C8537.44 748.854 8548.58 804.863 8548.58 861.425H7716.13Z" fill="currentColor"/>
+<path d="M7201.39 430.712C7370.75 430.713 7478.26 490.624 7543.16 575.218C7607.74 659.408 7629.21 766.855 7629.21 860.678V1288.49H7611.83V860.678C7611.83 769.082 7590.8 665.892 7529.36 585.8C7468.23 506.112 7366.18 448.096 7201.39 448.095H7159.87V448.314C6943.55 448.314 6785.17 634.785 6785.17 857.781V1288.49H6769.72V430.931H6862.43V430.712H7201.39Z" fill="currentColor"/>
+<path d="M6711.77 857.562C6711.77 1095.44 6518.94 1288.27 6281.06 1288.27C6043.19 1288.27 5850.35 1095.44 5850.35 857.562C5850.35 619.686 6043.19 426.849 6281.06 426.849C6518.94 426.849 6711.77 619.686 6711.77 857.562Z" fill="currentColor"/>
+<path d="M4332.23 425.884H4695.34C4707.9 425.884 4719.68 425.884 4732.04 425.884C4969.92 425.884 5162.75 618.72 5162.75 856.596C5162.75 1094.47 4969.92 1287.31 4732.04 1287.31C4719.68 1287.31 4707.44 1286.78 4695.34 1285.76V1287.31H4301.33V0H4332.23V425.884Z" fill="currentColor"/>
+<path d="M4291.67 440.388C3838.08 443.376 3467.72 796.943 3437.97 1243.71V1294.07H3436.08C3436.07 1294.71 3436.06 1295.36 3436.06 1296H3430.25V432.644H4291.67V440.388Z" fill="currentColor"/>
+<path d="M2588.14 861.425C2588.14 915.748 2597.9 969.351 2618.56 1019.23C2639.28 1069.26 2669.66 1114.72 2707.95 1153.01C2746.24 1191.3 2791.7 1221.68 2841.73 1242.4C2890.21 1262.48 2934.43 1259.3 2991.81 1259.3V1288.27C2937.08 1288.27 2885.74 1291.99 2830.64 1269.17C2777.1 1246.99 2728.44 1214.48 2687.46 1173.5C2646.48 1132.51 2613.97 1083.86 2591.79 1030.32C2569.55 976.62 2559.17 919.211 2559.17 861.425C2559.17 804.863 2570.31 748.854 2591.95 696.597C2613.6 644.341 2645.32 596.861 2685.32 556.866C2725.31 516.87 2772.79 485.143 2825.05 463.498C2877.31 441.853 2933.32 430.712 2989.88 430.712C3046.44 430.712 3102.45 441.853 3154.71 463.498C3206.96 485.143 3254.44 516.87 3294.44 556.866C3334.43 596.861 3366.16 644.341 3387.8 696.597C3409.45 748.854 3420.59 804.863 3420.59 861.425H2588.14Z" fill="currentColor"/>
+<path d="M2549.51 448.095L1740.23 448.479L2143.9 1256.08L2549.51 448.095Z" fill="currentColor"/>
+<circle cx="1516.18" cy="1073.88" r="112.024" fill="currentColor"/>
+<path d="M898.122 861.425C898.122 915.748 907.886 969.351 928.546 1019.23C949.269 1069.26 979.643 1114.72 1017.93 1153.01C1056.23 1191.3 1101.68 1221.68 1151.71 1242.4C1200.19 1262.48 1244.42 1259.3 1301.79 1259.3V1288.27C1247.06 1288.27 1195.73 1291.99 1140.63 1269.17C1087.08 1246.99 1038.43 1214.48 997.448 1173.5C956.466 1132.51 923.959 1083.86 901.779 1030.32C879.538 976.62 869.15 919.211 869.15 861.425C869.15 804.863 880.291 748.854 901.936 696.597C923.581 644.341 955.308 596.861 995.304 556.866C1035.3 516.87 1082.78 485.143 1135.04 463.498C1187.29 441.853 1243.3 430.712 1299.86 430.712C1356.42 430.712 1412.43 441.853 1464.69 463.498C1516.95 485.143 1564.43 516.87 1604.42 556.866C1644.42 596.861 1676.14 644.341 1697.79 696.597C1719.43 748.854 1730.58 804.863 1730.58 861.425H898.122Z" fill="currentColor"/>
+<path d="M861.425 440.388C407.831 443.376 37.4738 796.943 7.72578 1243.71V1294.07H5.83206C5.8264 1294.71 5.81744 1295.36 5.8132 1296H0V432.644H861.425V440.388Z" fill="currentColor"/>
+</svg><svg class="mark-vstack" width="75" height="36" aria-hidden="true" focusable="false" viewBox="0 0 5163 2480" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M3097.78 2052.58C3097.78 2106.9 3107.54 2160.5 3128.2 2210.38C3148.92 2260.41 3179.3 2305.87 3217.59 2344.16C3255.88 2382.45 3301.34 2412.83 3351.37 2433.55C3399.85 2453.63 3444.07 2450.45 3501.45 2450.45V2479.42C3446.72 2479.42 3395.38 2483.14 3340.28 2460.32C3286.74 2438.14 3238.08 2405.63 3197.1 2364.65C3156.12 2323.67 3123.61 2275.01 3101.43 2221.47C3079.19 2167.77 3068.8 2110.36 3068.8 2052.58C3068.8 1996.01 3079.94 1940 3101.59 1887.75C3123.24 1835.49 3154.96 1788.01 3194.96 1748.02C3234.95 1708.02 3282.43 1676.29 3334.69 1654.65C3386.95 1633 3442.96 1621.86 3499.52 1621.86C3556.08 1621.86 3612.09 1633 3664.34 1654.65C3716.6 1676.29 3764.08 1708.02 3804.08 1748.02C3844.07 1788.01 3875.8 1835.49 3897.44 1887.75C3919.09 1940 3930.23 1996.01 3930.23 2052.58H3097.78Z" fill="currentColor"/>
+<path d="M2583.05 1621.86C2752.4 1621.86 2859.91 1681.77 2924.81 1766.37C2989.39 1850.56 3010.86 1958 3010.86 2051.83V2479.64H2993.48V2051.83C2993.48 1960.23 2972.46 1857.04 2911.01 1776.95C2849.88 1697.26 2747.83 1639.25 2583.05 1639.25H2541.52V1639.46C2325.2 1639.46 2166.82 1825.94 2166.82 2048.93V2479.64H2151.37V1622.08H2244.08V1621.86H2583.05Z" fill="currentColor"/>
+<path d="M2093.42 2048.71C2093.42 2286.59 1900.59 2479.42 1662.71 2479.42C1424.84 2479.42 1232 2286.59 1232 2048.71C1232 1810.84 1424.84 1618 1662.71 1618C1900.59 1618 2093.42 1810.84 2093.42 2048.71Z" fill="currentColor"/>
+<path d="M4332.23 425.884H4695.34C4707.9 425.884 4719.68 425.884 4732.04 425.884C4969.92 425.884 5162.75 618.72 5162.75 856.596C5162.75 1094.47 4969.92 1287.31 4732.04 1287.31C4719.68 1287.31 4707.44 1286.78 4695.34 1285.76V1287.31H4301.33V0H4332.23V425.884Z" fill="currentColor"/>
+<path d="M4291.67 440.388C3838.08 443.376 3467.72 796.942 3437.97 1243.71V1294.07H3436.08C3436.07 1294.71 3436.06 1295.36 3436.06 1296H3430.25V432.644H4291.67V440.388Z" fill="currentColor"/>
+<path d="M2588.14 861.425C2588.14 915.748 2597.9 969.351 2618.56 1019.23C2639.28 1069.26 2669.66 1114.72 2707.95 1153.01C2746.24 1191.3 2791.7 1221.68 2841.73 1242.4C2890.21 1262.48 2934.43 1259.3 2991.81 1259.3V1288.27C2937.08 1288.27 2885.74 1291.99 2830.64 1269.17C2777.1 1246.99 2728.44 1214.48 2687.46 1173.5C2646.48 1132.51 2613.97 1083.86 2591.79 1030.32C2569.55 976.62 2559.17 919.211 2559.17 861.425C2559.17 804.863 2570.31 748.854 2591.95 696.597C2613.6 644.341 2645.32 596.861 2685.32 556.866C2725.31 516.87 2772.79 485.143 2825.05 463.498C2877.31 441.853 2933.32 430.712 2989.88 430.712C3046.44 430.712 3102.45 441.853 3154.71 463.498C3206.96 485.143 3254.44 516.87 3294.44 556.866C3334.43 596.861 3366.16 644.341 3387.8 696.597C3409.45 748.854 3420.59 804.863 3420.59 861.425H2588.14Z" fill="currentColor"/>
+<path d="M2549.51 448.096L1740.23 448.479L2143.9 1256.08L2549.51 448.096Z" fill="currentColor"/>
+<circle cx="1516.18" cy="1073.88" r="112.024" fill="currentColor"/>
+<path d="M898.122 861.425C898.122 915.748 907.886 969.351 928.546 1019.23C949.269 1069.26 979.643 1114.72 1017.93 1153.01C1056.23 1191.3 1101.68 1221.68 1151.71 1242.4C1200.19 1262.48 1244.42 1259.3 1301.79 1259.3V1288.27C1247.06 1288.27 1195.73 1291.99 1140.63 1269.17C1087.08 1246.99 1038.43 1214.48 997.448 1173.5C956.466 1132.51 923.959 1083.86 901.779 1030.32C879.538 976.62 869.15 919.211 869.15 861.425C869.15 804.863 880.291 748.854 901.936 696.597C923.581 644.341 955.308 596.861 995.304 556.866C1035.3 516.87 1082.78 485.143 1135.04 463.498C1187.29 441.853 1243.3 430.712 1299.86 430.712C1356.42 430.712 1412.43 441.853 1464.69 463.498C1516.95 485.143 1564.43 516.87 1604.42 556.866C1644.42 596.861 1676.14 644.341 1697.79 696.597C1719.43 748.854 1730.58 804.863 1730.58 861.425H898.122Z" fill="currentColor"/>
+<path d="M861.425 440.388C407.831 443.376 37.4738 796.942 7.72578 1243.71V1294.07H5.83206C5.8264 1294.71 5.81744 1295.36 5.8132 1296H0V432.644H861.425V440.388Z" fill="currentColor"/>
+</svg></a>
+  <div class="controls">
+    <div class="lang" role="group" aria-label="Language">
+      <button class="cb" type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button class="cb" type="button" data-lang="de" aria-pressed="false">DE</button>
+    </div>
+    <button class="icon-btn cb" type="button" id="themeBtn" aria-label="Switch to dark mode">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10" cy="10" r="7"></circle><path d="M10 3a7 7 0 0 1 0 14z" fill="currentColor"></path></svg>
+    </button>
+    <button class="btn btn-primary cb btn-contact" type="button" data-open-contact data-i18n="contact">Contact</button>
+  </div>
+</header>
+
+<!-- Content island -->
+<div class="island" id="island">
+  <div class="plus-field" aria-hidden="true"></div>
+  <canvas id="grain" aria-hidden="true"></canvas>
+  <div class="scroller" id="scroller" tabindex="-1">
+    <main class="intro" id="intro">
+      <div class="label" data-i18n="about">[ about ]</div>
+      <h1 id="statement"></h1>
+      <div class="copy">
+        <p data-i18n="p2"></p>
+        <div class="note"><span>[ AI ]</span><span class="line"></span><span class="dot"></span></div>
+        <p data-i18n="p3"></p>
+        <p data-i18n="p4"></p>
+      </div>
+      <div class="outro" id="outro">
+        <h2 data-i18n="trigger">Here are some of my work</h2>
+        <button class="enter cb" type="button" id="enterWorks" data-i18n-label="enterWorks" aria-label="Go to my works">
+          <svg width="40" height="64" viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20 0v62M6 48l14 14 14-14"></path></svg>
+        </button>
+      </div>
+    </main>
+    <div class="runway" id="runway" aria-hidden="true"></div>
+    <section class="works" id="works" aria-labelledby="worksTitle">
+      <div class="plus-field" aria-hidden="true"></div>
+      <div class="works-main">
+        <div class="works-head stagger"><h2 id="worksTitle" data-i18n="works">[ Works ]</h2></div>
+        <div class="track" id="track" aria-label="Projects"></div>
+        <div class="indicator stagger">
+          <span id="pos" aria-hidden="true">1 / 3</span>
+          <div class="bar cb" id="bar" role="slider" tabindex="0" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" data-i18n-label="scrollbar" aria-label="Project position"><i id="barFill"></i></div>
+          <svg width="28" height="12" viewBox="0 0 28 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M0 6h26M21 1l5 5-5 5"></path></svg>
+        </div>
+      </div>
+      <footer class="works-footer stagger">
+        <button class="btn btn-primary cb" type="button" data-open-contact data-i18n="contact">Contact</button>
+        <nav aria-label="Footer">
+          <a class="cb" href="https://github.com/" target="_blank" rel="noopener">[ GitHub ]</a><!-- replace with the profile URL -->
+          <a class="cb" href="#legal-impressum" data-i18n="impressum">[ Impressum ]</a>
+          <a class="cb" href="#legal-privacy" data-i18n="privacy">[ Privacy policy ]</a>
+        </nav>
+        <span class="copyright">© re.verb one 2026</span>
+      </footer>
+    </section>
+  </div>
+  <div class="edge-blur" id="edgeBlur" aria-hidden="true"><div></div><div></div><div></div></div>
+
+  <!-- Project detail view -->
+  <article class="detail" id="detail" aria-labelledby="detailTitle" tabindex="-1">
+    <div class="detail-inner">
+      <button class="close cb" type="button" id="detailClose" data-i18n="close">[ Close ]</button>
+      <div class="label" style="color: var(--works-sub)" id="detailMeta"></div>
+      <h2 id="detailTitle"></h2>
+      <div class="block" data-i18n="blockText">[Text block: project description from the CMS]</div>
+      <div class="block media" data-i18n="blockImage">[Image block]</div>
+      <div class="block media" data-i18n="blockVideo">[Video block]</div>
+      <div class="block">
+        <div data-i18n="blockDemo" style="margin-bottom: 14px">[Interactive component preview]</div>
+        <div class="demo">
+          <label for="demoRange" data-i18n="demoLabel">Circle size</label>
+          <input type="range" id="demoRange" min="4" max="56" value="24">
+          <div class="swatch" aria-hidden="true"><i id="demoDot" style="width: 24px; height: 24px"></i></div>
+        </div>
+      </div>
+    </div>
+  </article>
+</div>
+
+<!-- Contact overlay -->
+<dialog class="contact" id="contact" aria-labelledby="contactTitle">
+  <form class="contact-inner" id="contactForm" novalidate>
+    <div class="contact-head">
+      <h2 id="contactTitle" data-i18n="contactTitle">Contact</h2>
+      <button class="close cb" type="button" id="contactClose" data-i18n="close">[ Close ]</button>
+    </div>
+    <div class="field" id="f-name"><label for="name" data-i18n="name">Name</label><input id="name" name="name" autocomplete="name" aria-describedby="e-name"><span class="err" id="e-name"></span></div>
+    <div class="field" id="f-email"><label for="email" data-i18n="email">Email</label><input id="email" name="email" type="email" autocomplete="email" aria-describedby="e-email"><span class="err" id="e-email"></span></div>
+    <div class="field" id="f-message"><label for="message" data-i18n="message">Message</label><textarea id="message" name="message" maxlength="3000" aria-describedby="e-message count"></textarea><span class="counter" id="count">0 / 3000</span><span class="err" id="e-message"></span></div>
+    <div class="turnstile" data-i18n="turnstile">[Cloudflare Turnstile check goes here]</div>
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+      <button class="btn btn-primary cb" type="submit" id="sendBtn" data-i18n="send">Send</button>
+      <span class="status" id="status" role="status" aria-live="polite"></span>
+    </div>
+  </form>
+</dialog>
+
+<details class="proto">
+  <summary>Prototype controls</summary>
+  <div>
+    <label><input type="checkbox" id="simFail"> Simulate send failure (FR-37)</label>
+    <label><input type="checkbox" id="simSlow"> Slow page load (FR-49 loop)</label>
+    <button type="button" id="replayLoader">Replay page loader</button>
+    <span>Not part of the site.</span>
+  </div>
+</details>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Settings ---------- */
+const LOADER_MS = 1200;        // FR-48: replace with the measured average time to "intro ready" (max 2000)
+const FADE_WIDTH = 0.30;       // background cross-fade takes 30% of the transition, centred on its middle
+const STREAM = 1.6;            // height of the circle stream, in island heights
+const SPEED = 1.3;             // circles move 1.3 px for every 1 px of scroll
+const TRIGGER_OFFSET = 24;     // the transition starts when the trigger line is this far below the top of the island
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+/* ---------- Content (placeholder until the CMS supplies it) ---------- */
+const PROJECTS = [
+  { id: 'project-1', headline: 'Short project headline', title: 'Project 1 title', year: 'Year', tags: ['Tag', 'Tag'] },
+  { id: 'project-2', headline: 'Short project headline', title: 'Project 2 title', year: 'Year', tags: ['Tag', 'Tag'] },
+  { id: 'project-3', headline: 'Short project headline', title: 'Project 3 title', year: 'Year', tags: ['Tag', 'Tag'] }
+];
+
+/* Statement parts: plain text, the name (second font), and highlighter strokes with their own timing.
+   EN copy from portfolio-intro-copy.md. DE copy is a DRAFT translation for review.
+   \u00AD is a soft hyphen: "Softwareentwickler" can break as "Software-" / "entwickler" when space is short. */
+const T = {
+  en: {
+    statement: [
+      { t: 'I’m ' }, { name: 'Oluwafemi Bamigboye' }, { t: ', a ' },
+      { hl: 'software', delay: 200, dur: 650 }, { t: ' ' },
+      { hl: 'developer', delay: 520, dur: 900 },               // starts later and ends last
+      { t: ' with a background that spans medicine, civil engineering and art.' }
+    ],
+    p2: 'I take a user-centric approach to building solutions, which is why I focus on the experience design of the systems I create. These include websites and web apps, full-stack software, interactive systems and unified systems that combine hardware and software.',
+    p3: 'The rapid development of AI over the past couple of years has made writing code more accessible, but it doesn’t replace the need for sound, well-designed architecture. Over the past year, I’ve been refining workflows built on software development standards and best practices, giving AI tools a grounded framework for integration and execution.',
+    p4: 'Another theme is the steadily improving cybersecurity capabilities of these models, and the resulting need to harden both current systems and the new ones we build.',
+    about: '[ about ]', trigger: 'Here are some of my work', enterWorks: 'Go to my works', works: '[ Works ]',
+    contact: 'Contact', contactTitle: 'Contact', close: '[ Close ]', name: 'Name', email: 'Email', message: 'Message', send: 'Send',
+    impressum: '[ Impressum ]', privacy: '[ Privacy policy ]', loading: 'Loading', scrollbar: 'Project position',
+    blockText: '[Text block: project description from the CMS]', blockImage: '[Image block]', blockVideo: '[Video block]',
+    blockDemo: '[Interactive component preview]', demoLabel: 'Circle size', turnstile: '[Cloudflare Turnstile check goes here]',
+    errName: 'Enter your name.', errEmail: 'Enter a valid email address.', errMessage: 'Enter a message.',
+    sending: 'Sending…', sent: 'Thank you. Your message is on its way.', failed: 'The message could not be sent. Your text is still here. Please try again.',
+    toDark: 'Switch to dark mode', toLight: 'Switch to light mode', projects: 'Projects'
+  },
+  de: {
+    statement: [
+      { t: 'Ich bin ' }, { name: 'Oluwafemi Bamigboye' }, { t: ', ' },
+      { hl: 'Software\u00ADentwickler', delay: 200, dur: 1100 },
+      { t: ' mit einem Hintergrund in Medizin, Bauingenieurwesen und Kunst.' }
+    ],
+    p2: 'Ich entwickle Lösungen nutzerzentriert. Deshalb liegt mein Fokus auf dem Experience Design der Systeme, die ich baue: Websites und Web-Apps, Full-Stack-Software, interaktive Systeme und integrierte Systeme aus Hardware und Software.',
+    p3: 'Die rasante Entwicklung von KI in den letzten Jahren hat das Programmieren zugänglicher gemacht, ersetzt aber keine solide, gut durchdachte Architektur. Im letzten Jahr habe ich Workflows verfeinert, die auf Standards und Best Practices der Softwareentwicklung aufbauen und KI-Werkzeugen einen verlässlichen Rahmen für Integration und Umsetzung geben.',
+    p4: 'Ein weiteres Thema sind die stetig wachsenden Cybersecurity-Fähigkeiten dieser Modelle und die daraus folgende Notwendigkeit, bestehende und neue Systeme abzusichern.',
+    about: '[ über mich ]', trigger: 'Hier sind einige meiner Arbeiten', enterWorks: 'Zu meinen Arbeiten', works: '[ Arbeiten ]',
+    contact: 'Kontakt', contactTitle: 'Kontakt', close: '[ Schließen ]', name: 'Name', email: 'E-Mail', message: 'Nachricht', send: 'Senden',
+    impressum: '[ Impressum ]', privacy: '[ Datenschutz ]', loading: 'Wird geladen', scrollbar: 'Projektposition',
+    blockText: '[Textblock: Projektbeschreibung aus dem CMS]', blockImage: '[Bildblock]', blockVideo: '[Videoblock]',
+    blockDemo: '[Interaktive Komponentenvorschau]', demoLabel: 'Kreisgröße', turnstile: '[Hier kommt die Cloudflare-Turnstile-Prüfung]',
+    errName: 'Bitte gib deinen Namen ein.', errEmail: 'Bitte gib eine gültige E-Mail-Adresse ein.', errMessage: 'Bitte gib eine Nachricht ein.',
+    sending: 'Wird gesendet…', sent: 'Danke. Deine Nachricht ist unterwegs.', failed: 'Die Nachricht konnte nicht gesendet werden. Dein Text ist noch da. Bitte versuche es erneut.',
+    toDark: 'Zum dunklen Modus wechseln', toLight: 'Zum hellen Modus wechseln', projects: 'Projekte'
+  }
+};
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage can be blocked */ } }
+};
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const scroller = $('#scroller'), track = $('#track'), works = $('#works');
+
+/* ---------- Language (FR-21, FR-22) ---------- */
+const prefs = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || 'en'];
+let lang = store.get('lang') || (String(prefs[0]).toLowerCase().startsWith('de') ? 'de' : 'en');
+function renderStatement() {
+  const h1 = $('#statement'); h1.textContent = '';
+  T[lang].statement.forEach((part) => {
+    if (part.t != null) { h1.append(part.t); return; }
+    const s = document.createElement('span');
+    if (part.name) { s.className = 'name'; s.textContent = part.name; }
+    else { s.className = 'hl'; s.textContent = part.hl; s.style.setProperty('--hl-delay', part.delay + 'ms'); s.style.setProperty('--hl-dur', part.dur + 'ms'); }
+    h1.append(s);
+  });
+}
+function applyLang() {
+  document.documentElement.lang = lang;
+  renderStatement();
+  $$('[data-i18n]').forEach((el) => { const v = T[lang][el.dataset.i18n]; if (v != null) el.textContent = v; });
+  $$('[data-i18n-label]').forEach((el) => el.setAttribute('aria-label', T[lang][el.dataset.i18nLabel]));
+  $$('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  track.setAttribute('aria-label', T[lang].projects);
+  updateThemeLabel();
+  requestAnimationFrame(layout);   // text length changes the intro height
+}
+$$('.lang button').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; store.set('lang', lang); applyLang(); }));
+
+/* ---------- Theme (FR-24, FR-25) ---------- */
+const sysDark = window.matchMedia('(prefers-color-scheme: dark)');
+const savedTheme = store.get('theme');
+if (savedTheme === 'light' || savedTheme === 'dark') document.documentElement.dataset.theme = savedTheme;
+const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : sysDark.matches;
+function updateThemeLabel() { $('#themeBtn').setAttribute('aria-label', isDark() ? T[lang].toLight : T[lang].toDark); }
+function readColours() { const cs = getComputedStyle(document.documentElement); colA = rgb(cs.getPropertyValue('--bg')); colB = rgb(cs.getPropertyValue('--works')); }
+$('#themeBtn').addEventListener('click', () => {
+  const next = isDark() ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next; store.set('theme', next); updateThemeLabel(); readColours(); render();
+});
+sysDark.addEventListener('change', () => { updateThemeLabel(); readColours(); render(); });
+
+/* ---------- Page loader (FR-47 to FR-49, FR-52) ---------- */
+function runLoader() {
+  const el = $('#loader');
+  el.classList.remove('done', 'loop'); el.classList.add('run'); document.body.classList.remove('ready');
+  el.style.setProperty('--fill-ms', LOADER_MS + 'ms');
+  const fill = el.querySelector('.fillmark'); fill.style.animation = 'none'; fill.offsetHeight; fill.style.animation = '';
+  let filled = false, ready = false;
+  const finish = () => { el.classList.add('done'); document.body.classList.add('ready'); };
+  const slow = $('#simSlow').checked ? 3500 : 0;
+  Promise.all([document.fonts ? document.fonts.ready : Promise.resolve(), new Promise((r) => setTimeout(r, slow))])
+    .then(() => { ready = true; if (filled) finish(); });
+  setTimeout(() => { filled = true; if (ready) finish(); else { el.classList.remove('run'); el.classList.add('loop'); } }, reduce.matches ? 0 : LOADER_MS);
+}
+$('#replayLoader').addEventListener('click', runLoader);
+
+/* ---------- Works track ---------- */
+function renderCards() {
+  track.textContent = '';
+  PROJECTS.forEach((p) => {
+    const a = document.createElement('a');
+    a.className = 'card cb stagger'; a.href = '#/works/' + p.id; a.dataset.id = p.id;
+    a.innerHTML = '<div class="thumb"><span>Project thumbnail</span></div><h3></h3><div class="meta"><span class="t"></span><span class="year"></span></div><div class="tags"></div>';
+    a.querySelector('h3').textContent = p.headline;
+    a.querySelector('.t').textContent = p.title;
+    a.querySelector('.year').textContent = p.year;
+    p.tags.forEach((t) => { const s = document.createElement('span'); s.textContent = t; a.querySelector('.tags').append(s); });
+    track.append(a);
+  });
+}
+const cards = () => $$('.card', track);
+const trackMax = () => Math.max(0, track.scrollWidth - track.clientWidth);
+const cardStep = () => { const c = cards(); return c.length > 1 ? c[1].offsetLeft - c[0].offsetLeft : track.clientWidth; };
+function currentIndex() {
+  if (track.scrollLeft >= trackMax() - 2) return PROJECTS.length - 1;
+  return clamp(Math.round(track.scrollLeft / cardStep()), 0, PROJECTS.length - 1);
+}
+function updateIndicator() {
+  const i = currentIndex(), n = PROJECTS.length, max = Math.max(1, trackMax());
+  $('#pos').textContent = (i + 1) + ' / ' + n;
+  $('#barFill').style.width = (100 / n) + '%';
+  $('#barFill').style.left = (track.scrollLeft / max * (100 - 100 / n)) + '%';
+  $('#bar').setAttribute('aria-valuenow', String(i + 1));
+}
+track.addEventListener('scroll', updateIndicator, { passive: true });
+
+let target = null, raf = 0;
+function jack(delta) {                                   // FR-06: vertical input moves the track sideways
+  if (target === null) target = track.scrollLeft;
+  target = clamp(target + delta, 0, trackMax());
+  if (!raf) raf = requestAnimationFrame(tick);
+}
+function tick() {
+  const cur = track.scrollLeft, next = cur + (target - cur) * 0.2;
+  track.scrollLeft = Math.abs(target - next) < 2 ? target : next;
+  const moved = Math.abs(track.scrollLeft - cur) >= 0.5;
+  if (moved && Math.abs(track.scrollLeft - target) > 0.5) raf = requestAnimationFrame(tick);
+  else { raf = 0; target = null; }
+}
+function goToCard(i, focus) {
+  const c = cards()[i]; if (!c) return;
+  track.scrollTo({ left: c.offsetLeft - cards()[0].offsetLeft, behavior: reduce.matches ? 'auto' : 'smooth' });
+  if (focus) c.focus({ preventScroll: true });
+}
+
+/* draggable scroll bar (pointer and touch) */
+const bar = $('#bar');
+function barTo(clientX) {
+  const r = bar.getBoundingClientRect(), n = PROJECTS.length, w = r.width * (1 / n);
+  const ratio = clamp((clientX - r.left - w / 2) / (r.width - w));
+  target = null; track.scrollLeft = ratio * trackMax();
+}
+bar.addEventListener('pointerdown', (e) => { bar.setPointerCapture(e.pointerId); barTo(e.clientX); });
+bar.addEventListener('pointermove', (e) => { if (bar.hasPointerCapture(e.pointerId)) barTo(e.clientX); });
+bar.addEventListener('keydown', (e) => {
+  const i = currentIndex();
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); goToCard(Math.min(i + 1, PROJECTS.length - 1)); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); goToCard(Math.max(i - 1, 0)); }
+});
+
+/* ---------- Scroll-driven grain transition (FR-02, FR-03, FR-18) ----------
+   The trigger line fades out upwards when it reaches the top of the island. At the same moment, a stream of circles
+   moves in from the bottom. The circles move with the scroll. Along the stream, the circle size goes small -> large -> small,
+   so the largest circles are in the middle of the screen at the middle of the transition. The background cross-fades
+   (circles use the inverted colours). Then the works section scrolls in from the bottom with a staggered entry.
+   Scrolling up plays everything in reverse. */
+const canvas = $('#grain'), ctx = canvas.getContext('2d');
+let W = 0, H = 0, S = 0, R = 1, runwayStart = 0, pts = [], colA = [0, 0, 0], colB = [0, 0, 0];
+function mulberry(s) { return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function rgb(h) { h = h.trim(); if (h.startsWith('#')) return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); const m = h.match(/\d+(\.\d+)?/g); return m ? m.slice(0, 3).map(Number) : [0, 0, 0]; }
+const mix = (a, b, f) => 'rgb(' + a.map((v, i) => Math.round(v + (b[i] - v) * f)).join(',') + ')';
+const offsetIn = (el) => el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+
+function layout() {
+  W = scroller.clientWidth; H = scroller.clientHeight;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  S = H * STREAM; R = (S + H) / SPEED;
+  const outro = $('#outro');
+  const prevTransform = outro.style.transform; outro.style.transform = 'none';
+  runwayStart = offsetIn(outro) - TRIGGER_OFFSET;
+  outro.style.transform = prevTransform;
+  const introEnd = offsetIn($('#runway'));
+  // the works section reaches the bottom of the island exactly when the circle stream ends
+  $('#runway').style.height = Math.max(0, Math.round(runwayStart + R + H - introEnd)) + 'px';
+  // circle stream: jittered grid, radius capped by the nearest neighbour so circles never overlap
+  const cell = clamp(W / 11, 56, 130), rnd = mulberry(7);
+  pts = [];
+  for (let gy = 0; gy < S / cell; gy++) for (let gx = -1; gx < W / cell + 1; gx++) {
+    pts.push({ x: gx * cell + cell * (0.12 + 0.76 * rnd()) + (gy % 2 ? cell / 2 : 0), sy: gy * cell + cell * (0.12 + 0.76 * rnd()), k: 0.6 + 0.4 * rnd() });
+  }
+  for (const p of pts) {
+    let m = Infinity;
+    for (const q of pts) if (q !== p) { const d = (p.x - q.x) ** 2 + (p.sy - q.sy) ** 2; if (d < m) m = d; }
+    p.maxR = Math.max(0, Math.sqrt(m) / 2 - cell * 0.06);
+  }
+  readColours();
+  render();
+}
+
+let lastWorksHash = null;
+function render() {
+  const st = scroller.scrollTop;
+  const p = clamp((st - runwayStart) / R);                       // transition progress
+  const q = clamp((st - runwayStart - R) / H);                   // works entry progress
+  let f = clamp((p - (0.5 - FADE_WIDTH / 2)) / FADE_WIDTH); f = f * f * (3 - 2 * f);
+  document.body.classList.toggle('mode-works', f >= 0.5);
+
+  // trigger line fades out upwards
+  const u = clamp((st - runwayStart) / (H * 0.22));
+  const outro = $('#outro');
+  outro.style.opacity = String(1 - u);
+  outro.style.transform = reduce.matches ? 'none' : 'translateY(' + (-u * 48) + 'px)';
+
+  // canvas: background cross-fade + circle stream
+  if (p <= 0) { canvas.style.visibility = 'hidden'; }
+  else {
+    canvas.style.visibility = 'visible';
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalAlpha = clamp(p / 0.3); ctx.fillStyle = mix(colA, colB, f); ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+    if (!reduce.matches && p < 1) {
+      ctx.fillStyle = mix(colB, colA, f); ctx.beginPath();
+      const shift = H - p * (S + H);
+      for (const c of pts) {
+        const y = c.sy + shift;
+        const env = Math.pow(Math.sin(Math.PI * clamp(c.sy / S)), 0.9);   // small -> large -> small along the stream
+        const r = c.maxR * c.k * env;
+        if (r < 0.5 || y < -r || y > H + r) continue;
+        ctx.moveTo(c.x + r, y); ctx.arc(c.x, y, r, 0, Math.PI * 2);
+      }
+      ctx.fill();
+    }
+  }
+
+  // works section enters from the bottom with a staggered flow
+  const items = $$('.stagger', works).filter((el) => !el.classList.contains('card')).slice(0, 1).concat(cards(), $$('.indicator, .works-footer', works));
+  items.forEach((el, i) => {
+    if (reduce.matches) { el.style.transform = ''; el.style.opacity = ''; return; }
+    const t = clamp(q * 1.5 - i * 0.1), e = 1 - Math.pow(1 - t, 3);
+    el.style.transform = 'translateY(' + ((1 - e) * 90).toFixed(1) + 'px)';
+    el.style.opacity = String(0.15 + 0.85 * e);
+  });
+  $('#edgeBlur').style.opacity = String(1 - clamp(p * 3));
+
+  // works overview URL while the works section fills the island (FR-11, FR-16)
+  const atWorks = atBottom();
+  if (atWorks !== lastWorksHash && !$('#detail').classList.contains('open')) {
+    lastWorksHash = atWorks;
+    if (atWorks && !location.hash.startsWith('#/works')) history.replaceState(null, '', '#/works');
+    if (!atWorks && location.hash.startsWith('#/works')) history.replaceState(null, '', location.pathname + location.search);
+  }
+}
+let rq = 0;
+scroller.addEventListener('scroll', () => { if (!rq) rq = requestAnimationFrame(() => { rq = 0; render(); }); }, { passive: true });
+const atBottom = () => scroller.scrollTop >= scroller.scrollHeight - scroller.clientHeight - 2;
+
+/* ---------- Input in the works section ---------- */
+// Wheel: at the bottom, vertical input moves the track (FR-06). Upward input at the first card scrolls the page up (FR-03).
+scroller.addEventListener('wheel', (e) => {
+  if (!atBottom() || reduce.matches) return;                 // FR-19: no scroll-jacking with reduced motion
+  if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;       // FR-07: native horizontal input
+  const dy = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaY;
+  if (dy < 0 && track.scrollLeft <= 2 && (target === null || target <= 2)) return;   // native scroll up
+  e.preventDefault(); jack(dy);
+}, { passive: false });
+
+// Touch: at the bottom, a vertical swipe moves the track. A downward swipe at the first card scrolls the page up.
+let tx = 0, ty = 0, gesture = null;
+scroller.addEventListener('touchstart', (e) => { const t = e.touches[0]; tx = t.clientX; ty = t.clientY; gesture = null; }, { passive: true });
+scroller.addEventListener('touchmove', (e) => {
+  const t = e.touches[0], dx = tx - t.clientX, dy = ty - t.clientY;
+  if (gesture === null) {
+    if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+    if (!atBottom() || reduce.matches || Math.abs(dx) > Math.abs(dy)) gesture = 'native';
+    else if (dy < 0 && track.scrollLeft <= 2) gesture = 'native';   // swipe down at the first card: page scrolls up
+    else gesture = 'jack';
+  }
+  if (gesture !== 'jack') return;
+  e.preventDefault();
+  track.scrollLeft = clamp(track.scrollLeft + dy, 0, trackMax());
+  tx = t.clientX; ty = t.clientY;
+}, { passive: false });
+
+// Keyboard (FR-08, FR-03)
+window.addEventListener('keydown', (e) => {
+  if (document.querySelector('dialog[open]')) return;
+  if ($('#detail').classList.contains('open')) { if (e.key === 'Escape') closeDetail(); return; }
+  if (!atBottom()) return;
+  const tag = document.activeElement ? document.activeElement.tagName : '';
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+  const i = currentIndex();
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goToCard(Math.min(i + 1, PROJECTS.length - 1), true); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (i === 0 && track.scrollLeft <= 2) scroller.scrollBy({ top: -H * 0.6, behavior: reduce.matches ? 'auto' : 'smooth' });
+    else goToCard(Math.max(i - 1, 0), true);
+  }
+});
+$('#enterWorks').addEventListener('click', () => scroller.scrollTo({ top: scroller.scrollHeight, behavior: reduce.matches ? 'auto' : 'smooth' }));
+$('#home').addEventListener('click', (e) => {
+  e.preventDefault();
+  if ($('#detail').classList.contains('open')) closeDetail();
+  scroller.scrollTo({ top: 0, behavior: reduce.matches ? 'auto' : 'smooth' });
+});
+
+/* ---------- Detail view with its own URL (FR-13 to FR-17) ---------- */
+const detail = $('#detail');
+let lastCard = null, pushed = false;
+function setClip(r) {
+  const box = detail.getBoundingClientRect();
+  detail.style.setProperty('--ct', Math.max(0, r.top - box.top) + 'px');
+  detail.style.setProperty('--cl', Math.max(0, r.left - box.left) + 'px');
+  detail.style.setProperty('--cr', Math.max(0, box.right - r.right) + 'px');
+  detail.style.setProperty('--cb2', Math.max(0, box.bottom - r.bottom) + 'px');
+}
+function openDetail(id, fromCard) {
+  const p = PROJECTS.find((x) => x.id === id); if (!p) return;
+  $('#detailTitle').textContent = p.headline;
+  $('#detailMeta').textContent = p.title + '   ' + p.year;
+  lastCard = cards().find((c) => c.dataset.id === id) || null;
+  detail.classList.add('open');
+  if (lastCard && fromCard && !reduce.matches) {
+    detail.style.transition = 'none'; setClip(lastCard.getBoundingClientRect()); detail.offsetHeight; detail.style.transition = '';
+  }
+  requestAnimationFrame(() => ['--ct', '--cl', '--cr', '--cb2'].forEach((v) => detail.style.setProperty(v, '0px')));
+  detail.scrollTop = 0; detail.focus({ preventScroll: true });
+}
+function closeDetail() {
+  if (!detail.classList.contains('open')) return;
+  if (pushed) { pushed = false; history.back(); return; }  // Back behaves like close (FR-16)
+  history.replaceState(null, '', '#/works'); hideDetail();
+}
+function hideDetail() {
+  const done = () => { detail.classList.remove('open'); if (lastCard) lastCard.focus({ preventScroll: true }); };
+  if (lastCard && !reduce.matches) { setClip(lastCard.getBoundingClientRect()); setTimeout(done, 520); } else done();
+}
+track.addEventListener('click', (e) => {
+  const a = e.target.closest('.card'); if (!a) return;
+  e.preventDefault(); pushed = true;
+  history.pushState(null, '', '#/works/' + a.dataset.id);
+  openDetail(a.dataset.id, true);
+});
+$('#detailClose').addEventListener('click', closeDetail);
+window.addEventListener('popstate', () => { pushed = false; route(); });
+function route() {
+  const m = location.hash.match(/^#\/works(?:\/([\w-]+))?/);
+  if (!m) { if (detail.classList.contains('open')) hideDetail(); return; }
+  if (!atBottom()) { scroller.scrollTop = scroller.scrollHeight; render(); }
+  if (m[1]) openDetail(m[1], false); else if (detail.classList.contains('open')) hideDetail();
+}
+$('#demoRange').addEventListener('input', (e) => { const v = e.target.value + 'px'; $('#demoDot').style.width = v; $('#demoDot').style.height = v; });
+
+/* ---------- Contact overlay and form (FR-25 to FR-37) ---------- */
+const dlg = $('#contact'), form = $('#contactForm');
+let returnFocus = null;
+$$('[data-open-contact]').forEach((b) => b.addEventListener('click', () => { returnFocus = b; $('#status').textContent = ''; dlg.showModal(); $('#name').focus(); }));
+$('#contactClose').addEventListener('click', () => dlg.close());
+dlg.addEventListener('close', () => { if (returnFocus) returnFocus.focus({ preventScroll: true }); });   // FR-27: same position
+dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+$('#message').addEventListener('input', (e) => { $('#count').textContent = e.target.value.length + ' / 3000'; });
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function check(field, ok, msgKey) {
+  $('#f-' + field).dataset.invalid = String(!ok);
+  $('#' + field).setAttribute('aria-invalid', String(!ok));
+  $('#e-' + field).textContent = ok ? '' : T[lang][msgKey];
+  return ok;
+}
+function validate() {
+  const a = check('name', $('#name').value.trim().length > 0, 'errName');
+  const b = check('email', EMAIL.test($('#email').value.trim()), 'errEmail');
+  const c = check('message', $('#message').value.trim().length > 0 && $('#message').value.length <= 3000, 'errMessage');
+  return a && b && c;
+}
+['name', 'email', 'message'].forEach((id) => $('#' + id).addEventListener('blur', () => { if ($('#f-' + id).dataset.invalid === 'true') validate(); }));
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!validate()) { const first = $('.field[data-invalid="true"] input, .field[data-invalid="true"] textarea'); if (first) first.focus(); return; }
+  // Real build: POST to a server function that verifies the Turnstile token, sanitizes input,
+  // applies the rate limit (3 per 10 min) and sends the mail (FR-31 to FR-35).
+  const status = $('#status'); status.className = 'status'; status.textContent = T[lang].sending; $('#sendBtn').disabled = true;
+  setTimeout(() => {
+    $('#sendBtn').disabled = false;
+    if ($('#simFail').checked) { status.textContent = T[lang].failed; return; }   // FR-37: text stays
+    status.className = 'status ok'; status.textContent = T[lang].sent; form.reset(); $('#count').textContent = '0 / 3000';
+  }, 700);
+});
+
+/* ---------- Start ---------- */
+renderCards();
+applyLang();
+runLoader();
+layout();
+route();
+scroller.focus({ preventScroll: true });
+let rz = 0;
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { const wasBottom = atBottom(); layout(); if (wasBottom) scroller.scrollTop = scroller.scrollHeight; updateIndicator(); }, 120); });
+if (document.fonts) document.fonts.ready.then(layout);
+})();
+</script>
+</body>
+</html>

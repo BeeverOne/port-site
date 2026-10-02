@@ -2,9 +2,13 @@
    behaviour depends on, and does its CSS still carry every prototype rule?
    Run: npm run build && node scripts/verify.mjs */
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = '/Volumes/BEE1/Users/beever/Documents/DEV/R1/Port-Site';
-const proto = readFileSync(`${ROOT}/docs/v2/portfolio-prototype-v2.html`, 'utf8');
+/* The repository root, from this script's own location (site/scripts/), so the check runs on any
+   machine and in CI. The reference is a frozen copy of the approved prototype v2 kept in the repo;
+   docs/v2/ (git-ignored) stays the owner's working copy. Update both together. */
+const ROOT = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
+const proto = readFileSync(`${ROOT}/site/tests/reference/portfolio-prototype-v2.html`, 'utf8');
 const js = readFileSync(`${ROOT}/site/src/scripts/site.js`, 'utf8');
 
 /* With the Vercel adapter (ADR-0001) the static pages are written to .vercel/output/static, the

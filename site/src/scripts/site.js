@@ -139,10 +139,25 @@ function runLoader() {
   const finish = () => { el.classList.add('done'); document.body.classList.add('ready'); };
   const slow = $('#simSlow')?.checked ? 3500 : 0;
   Promise.all([document.fonts ? document.fonts.ready : Promise.resolve(), new Promise((r) => setTimeout(r, slow))])
-    .then(() => { ready = true; if (filled) finish(); });
+    .then(() => { ready = true; showLoadTime(); if (filled) finish(); });
   setTimeout(() => { filled = true; if (ready) finish(); else { el.classList.remove('run'); el.classList.add('loop'); } }, reduce.matches ? 0 : LOADER_MS);
 }
 $('#replayLoader')?.addEventListener('click', runLoader);
+/* FR-48 measurement aid (measurements.md M-02): with ?loadtime in the address, the page shows its
+   time to "intro ready" (milliseconds since navigation start, the moment the loader may end) in a small
+   badge, so it can be read off on a phone without developer tools. Nothing shows without the
+   parameter. Once per page load: a replayed loader does not re-measure. */
+let loadTimeShown = false;
+function showLoadTime() {
+  if (loadTimeShown || !new URLSearchParams(location.search).has('loadtime')) return;
+  loadTimeShown = true;
+  const ms = Math.round(performance.now());
+  const badge = document.createElement('output');
+  badge.id = 'loadtime';
+  badge.textContent = 'intro ready: ' + ms + ' ms';
+  badge.style.cssText = 'position:fixed;z-index:200;left:8px;bottom:8px;padding:6px 10px;border-radius:8px;background:#000;color:#fff;font:600 14px/1 system-ui,sans-serif';
+  document.body.append(badge);
+}
 
 /* Dev-only transition look controls: write LOOK live and re-measure or re-draw. The whole block
    is compiled out of production builds, so a saved look can never override the baked LOOK there. */

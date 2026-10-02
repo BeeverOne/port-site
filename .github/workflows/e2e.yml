@@ -2,8 +2,7 @@
 # Build the site and run the unit tests and the end-to-end suite in Chromium, WebKit and Firefox
 # (ADR-0011, QS-05, NFR-06). Firefox runs only here: on the owner's Mac (macOS 27) Firefox cannot be
 # started from the command line, so the local suite covers Chrome and WebKit.
-# npm run verify is not part of CI: it compares against the prototype in docs/, which is not in the
-# repository; run it locally.
+# The faithfulness check compares the build against the frozen prototype in site/tests/reference/.
 name: tests
 
 on:
@@ -44,6 +43,7 @@ jobs:
       - run: npm run build
         env:
           PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      - run: node scripts/verify.mjs   # faithfulness to the approved prototype (build above)
       - run: npm test
       - run: npx playwright test
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
