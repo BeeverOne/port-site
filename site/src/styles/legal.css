@@ -6,6 +6,7 @@ body.legal { overflow: auto; }
   display: flex; align-items: center; justify-content: center;
   min-width: 44px; height: 44px; padding: 0 6px; border-radius: var(--radius);
   color: var(--h-sub); font-size: 14px; font-weight: 600; text-decoration: none; --cb: var(--h-ink);
+  --cbx: 12px; --cby: 11px;   /* the corner-mark frame sits as in the site header, clear of the underline (CR-30) */
 }
 .legal .lang a[aria-current="page"] {
   color: var(--h-ink); text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px;
@@ -29,5 +30,4 @@ body.legal { overflow: auto; }
 .legal-sheet a { color: inherit; text-underline-offset: 3px; }
 .legal-sheet .legal-sub { margin-bottom: 32px; color: var(--sub); }
 .legal-sheet address { font-style: normal; }
-.legal-back { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 24px; color: var(--sub); font-weight: 600; text-decoration: none; }
-.legal-back:hover { color: var(--ink); }
+.legal-back { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 24px; color: var(--sub); font-weight: 600; text-decoration: none; --cby: 13px; }   /* frame 6 px from the text (CR-30) */

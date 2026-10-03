@@ -12,9 +12,12 @@ if (detail) {
   const head = detail.querySelector('.detail-head');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const LINE = 120; // a heading counts as current once it passes this far below the detail's top
+  const SETTLE_MS = 150; // a clicked entry stays current until the scroll has been still this long
   let heads = [];
   let links = [];
   let frame = 0;
+  let pinned = null;
+  let pinTimer = 0;
 
   const link = (h) => {
     const a = document.createElement('a');
@@ -47,34 +50,47 @@ if (detail) {
       } else toc.append(li);
     }
     links = [...toc.querySelectorAll('a')];
+    pinned = null;
     detail.classList.toggle('has-toc', heads.some((h) => h.classList.contains('sec')));
     update();
+  }
+
+  /* The heading being read: the last one past the reading line. Over the last screenful the line
+     slides down to the bottom edge, so a short final section becomes current while it is read rather
+     than only at the very end. A clicked entry stays current while the scroll travels to it. */
+  function reading() {
+    if (pinned) return pinned;
+    const top = detail.getBoundingClientRect().top;
+    const left = detail.scrollHeight - detail.clientHeight - detail.scrollTop;
+    const slide = Math.max(0, 1 - left / detail.clientHeight) * (detail.clientHeight - LINE);
+    let at = null;
+    for (const h of heads) {
+      if (h.getBoundingClientRect().top > top + LINE + slide) break;
+      at = h;
+    }
+    return at;
   }
 
   function update() {
     frame = 0;
     const max = detail.scrollHeight - detail.clientHeight;
     progress.style.transform = `scaleX(${max > 0 ? Math.min(1, detail.scrollTop / max) : 0})`;
-    const top = detail.getBoundingClientRect().top;
-    let sec = null;
-    let at = null;
-    for (const h of heads) {
-      if (h.getBoundingClientRect().top > top + LINE) break;
-      at = h;
-      if (h.classList.contains('sec')) sec = h;
-    }
+    const at = reading();
+    const sec = heads.slice(0, heads.indexOf(at) + 1).findLast((h) => h.classList.contains('sec'));
     section.textContent = sec ? sec.dataset.toc : '';
-    detail.classList.toggle('past-head', head.getBoundingClientRect().bottom < top + 64);
+    detail.classList.toggle('past-head', head.getBoundingClientRect().bottom < detail.getBoundingClientRect().top + 64);
     for (const a of links) {
-      const id = a.hash.slice(1);
-      a.classList.toggle('active', id === at?.id || id === sec?.id);
-      if (id === at?.id) a.setAttribute('aria-current', 'location');
+      if (at && a.hash === '#' + at.id) a.setAttribute('aria-current', 'location');
       else a.removeAttribute('aria-current');
     }
   }
   const queue = () => { if (!frame) frame = requestAnimationFrame(update); };
+  const unpin = () => { pinned = null; queue(); };
 
-  detail.addEventListener('scroll', queue, { passive: true });
+  detail.addEventListener('scroll', () => {
+    if (pinned) { clearTimeout(pinTimer); pinTimer = setTimeout(unpin, SETTLE_MS); }
+    queue();
+  }, { passive: true });
   addEventListener('resize', queue);
 
   /* In-page links (the rail, the '→ A' chips): scroll the detail itself, never the island behind it,
@@ -87,6 +103,10 @@ if (detail) {
     e.preventDefault();
     const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
     const y = target.getBoundingClientRect().top - detail.getBoundingClientRect().top + detail.scrollTop - margin;
+    pinned = target;
+    clearTimeout(pinTimer);
+    pinTimer = setTimeout(unpin, 1000);   // released sooner by the scroll settling; this covers a jump that does not scroll
+    queue();
     detail.scrollTo({ top: y, behavior: reduce.matches ? 'auto' : 'smooth' });
     target.focus({ preventScroll: true });
   });

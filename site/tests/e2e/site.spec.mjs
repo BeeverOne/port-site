@@ -5,6 +5,7 @@
    and sends no mail; the endpoint itself is covered by tests/contact.test.js.
    Run after a build: npm run build && npm run test:e2e (playwright.config.mjs serves the output). */
 import { test, expect } from '@playwright/test';
+import { PROJECTS, STUDY, OTHER, PREVIEW } from './content.mjs';
 
 const SITE = 'http://localhost:4322/';
 test.describe.configure({ timeout: 120_000 });
@@ -52,11 +53,12 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
     check(await page.evaluate(() => getComputedStyle(document.querySelector('.btn-contact'), '::before').animationDuration === '7s'), 'scan cycle is 7s with hover neutralised (CR-12)', 'scan duration not 7s');
 
     /* FR-10/FR-22: cards localized from the island, with the stagger class */
-    const card = await page.evaluate(() => {
-      const c = document.querySelector('.card[data-id="project-2"]');
+    const card = await page.evaluate((id) => {
+      const c = document.querySelector(`.card[data-id="${id}"]`);
       return { h3: c.querySelector('h3').textContent, t: c.querySelector('.t').textContent, tags: c.querySelectorAll('.tags span').length, stagger: c.classList.contains('stagger') };
-    });
-    check(card.h3 === 'Short project headline' && card.t === 'Project 2 title' && card.tags === 2 && card.stagger, 'cards localized and carry .stagger (FR-10, CR-17)', `unexpected card: ${JSON.stringify(card)}`);
+    }, OTHER.id);
+    check(card.h3 === OTHER.en.headline && card.t === OTHER.en.title && card.tags === OTHER.en.tags.length && card.stagger,
+      'cards localized and carry .stagger (FR-10, CR-17)', `unexpected card ${OTHER.id}: ${JSON.stringify(card)}`);
 
     /* FR-02: enter works scrolls the island to the works section and the transition follows */
     await page.click('#enterWorks');
@@ -117,15 +119,15 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
     await page.waitForTimeout(400);
 
     /* Hover scales the whole card from one origin, so the composition holds (F4) */
-    const cardRects = () => page.evaluate(() => {
-      const c = document.querySelector('.card[data-id="project-2"]');
+    const cardRects = () => page.evaluate((id) => {
+      const c = document.querySelector(`.card[data-id="${id}"]`);
       const w = (sel) => c.querySelector(sel).getBoundingClientRect().width;
       return { thumb: w('.thumb'), meta: w('.meta'), tags: w('.tags') };
-    });
+    }, OTHER.id);
     await page.mouse.move(720, 120);   // off the cards, or the baseline is already hovered
     await page.waitForTimeout(400);
     const hb = await cardRects();
-    await page.hover('.card[data-id="project-2"]');
+    await page.hover(`.card[data-id="${OTHER.id}"]`);
     await page.waitForTimeout(400);
     const ha = await cardRects();
     const ratios = [ha.thumb / hb.thumb, ha.meta / hb.meta, ha.tags / hb.tags];
@@ -161,7 +163,7 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
     await page.waitForTimeout(700);
     check(await page.evaluate(() => { const t = document.querySelector('#track'); return t.scrollLeft >= t.scrollWidth - t.clientWidth - 2; }), 'End key jumps the slider to the last card (CR-04)', 'End did not reach the last card');
     const vt = await page.evaluate(() => document.querySelector('#bar').getAttribute('aria-valuetext'));
-    check(typeof vt === 'string' && vt.endsWith('5') && vt.toLowerCase().startsWith('project'), `aria-valuetext speaks the position ("${vt}") (CR-11)`, `aria-valuetext wrong: "${vt}"`);
+    check(typeof vt === 'string' && vt.endsWith(String(PROJECTS.length)) && vt.toLowerCase().startsWith('project'), `aria-valuetext speaks the position ("${vt}") (CR-11)`, `aria-valuetext wrong: "${vt}" for ${PROJECTS.length} projects`);
     await page.keyboard.press('Home');
     await page.waitForTimeout(700);
     check(await page.evaluate(() => document.querySelector('#track').scrollLeft <= 2), 'Home key returns the slider to the first card (CR-04)', 'Home did not return to the first card');
@@ -169,12 +171,13 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
     await page.waitForTimeout(600);
 
     /* FR-13/FR-14: card click opens detail in place with its own URL */
-    await page.click('.card[data-id="project-1"]');
+    const first = PROJECTS[0];
+    await page.click(`.card[data-id="${first.id}"]`);
     await page.waitForTimeout(900);
     check(await page.evaluate(() => document.querySelector('#detail').classList.contains('open')), 'detail view opened in place (FR-13)', 'detail did not open');
-    check(await page.evaluate(() => location.pathname) === '/works/project-1', 'URL changed to the project URL (FR-14)', `path is ${await page.evaluate(() => location.pathname)}`);
+    check(await page.evaluate(() => location.pathname) === `/works/${first.id}`, 'URL changed to the project URL (FR-14)', `path is ${await page.evaluate(() => location.pathname)}`);
     const detailTitle = await page.evaluate(() => document.querySelector('#detailTitle').textContent);
-    check(detailTitle === 'Short project headline', `detail filled from project data ("${detailTitle}")`, `detail title wrong: "${detailTitle}"`);
+    check(detailTitle === first.en.headline, `detail filled from project data ("${detailTitle}")`, `detail title wrong: "${detailTitle}"`);
 
     /* FR-16: Escape closes and returns to the works overview URL */
     await page.keyboard.press('Escape');
@@ -333,22 +336,22 @@ test('real paths in two languages (FT-15, FT-20, FT-21, ADR-0006, ADR-0012)', as
       check(v.path === '/de/works' && v.lang === 'de', 'a saved German choice moves /works to /de/works (FR-20)', `saved de at /works: ${JSON.stringify(v)}`);
       await pg.close();
 
-      pg = await at('/works/project-2', { locale: 'en-US' });
+      pg = await at(`/works/${OTHER.id}`, { locale: 'en-US' });
       v = await view(pg);
       const p2 = v.detail;
-      check(v.path === '/works/project-2' && !!p2, `direct project URL opens that project's detail view (${p2}) (FR-15)`, `direct /works/project-2: ${JSON.stringify(v)}`);
+      check(v.path === `/works/${OTHER.id}` && !!p2, `direct project URL opens that project's detail view (${p2}) (FR-15)`, `direct /works/${OTHER.id}: ${JSON.stringify(v)}`);
       const navs = [];   // document requests only: replaceState also fires framenavigated
       pg.on('request', (r) => { if (r.resourceType() === 'document') navs.push(r.url()); });
       await pg.click('[data-lang="de"]');
       await pg.waitForTimeout(400);
       v = await view(pg);
-      check(v.path === '/de/works/project-2' && v.lang === 'de' && v.detail !== null && navs.length === 0,
-        'toggle moves the address to /de/works/project-2 in place, detail stays open, no new document (FR-21)', `toggle on a project: ${JSON.stringify({ v, navs })}`);
+      check(v.path === `/de/works/${OTHER.id}` && v.lang === 'de' && v.detail !== null && navs.length === 0,
+        `toggle moves the address to /de/works/${OTHER.id} in place, detail stays open, no new document (FR-21)`, `toggle on a project: ${JSON.stringify({ v, navs })}`);
       await pg.close();
 
-      pg = await at('/#/works/project-1', { locale: 'en-US' });
+      pg = await at(`/#/works/${STUDY.id}`, { locale: 'en-US' });
       v = await view(pg);
-      check(v.path === '/works/project-1' && v.hash === '' && !!v.detail, 'an old #/works link becomes its real path and opens the project', `legacy hash: ${JSON.stringify(v)}`);
+      check(v.path === `/works/${STUDY.id}` && v.hash === '' && !!v.detail, 'an old #/works link becomes its real path and opens the project', `legacy hash: ${JSON.stringify(v)}`);
       await pg.close();
 
       pg = await at('/de/works', { locale: 'en-US' });
@@ -385,94 +388,121 @@ test('CMS blocks and media items (FT-17, FT-21, FT-50 to FT-52, NFT-05)', async 
 
       pg = await openPage(browser, { viewport: { width: 1280, height: 800 } });
       pg.on('pageerror', (e) => bad(`page error (blocks): ${e.message}`));
-      await pg.goto(SITE + 'works/project-1');
+      await pg.goto(SITE + 'works/' + STUDY.id);
       await pg.waitForTimeout(4000);
       await scrollDetail(pg);
       await pg.waitForTimeout(800);
       const blocks = await pg.evaluate(() => {
         const set = document.querySelector('.detail-blocks:not([hidden])');
+        const kind = (c) => (c.matches('.block-text') ? 'text' : c.matches('.block-heading') ? 'heading' : c.matches('.block-facts') ? 'facts'
+          : c.matches('.block-list') ? 'list' : c.querySelector('img') ? 'image' : c.querySelector('video') ? 'video' : c.querySelector('iframe') ? 'preview' : '?');
         return set && {
-          project: set.dataset.project, lang: set.dataset.lang,
-          kinds: [...set.children].map((c) => c.classList.contains('block-text') ? 'text' : c.querySelector('img') ? 'image' : c.querySelector('video') ? 'video' : c.querySelector('iframe') ? 'preview' : '?'),
+          project: set.dataset.project, kinds: [...set.children].map(kind),
           states: [...set.querySelectorAll('[data-media]')].map((m) => m.dataset.state),
-          sandbox: set.querySelector('iframe')?.getAttribute('sandbox'),
           otherSetsMediaArmed: [...document.querySelectorAll('.detail-blocks[hidden] [data-media][data-state]')].length,
         };
       });
-      check(blocks && blocks.project === 'project-1' && blocks.kinds.join() === 'text,image,video,preview' && blocks.states.every((s) => s === 'loaded'),
-        `project blocks show in CMS order and load (${blocks?.kinds.join(', ')}; ${blocks?.states.join(', ')}) (FR-17)`, `blocks wrong: ${JSON.stringify(blocks)}`);
-      check(blocks?.sandbox === 'allow-scripts' && blocks.otherSetsMediaArmed === 0,
-        'preview iframe is sandboxed without allow-same-origin; hidden blocks load nothing (ADR-0008, NFR-05)', `sandbox/hidden: ${JSON.stringify(blocks)}`);
-      const frame = pg.frameLocator('.detail-blocks:not([hidden]) iframe');
-      await frame.locator('#size').fill('50');
-      const dot = await frame.locator('#dot').evaluate((d) => d.style.width);
-      check(dot === '50px', `interactive preview responds to input (dot ${dot}) (FR-17)`, `preview did not respond (dot ${dot})`);
+      const want = STUDY.blocks.map((b) => b.discriminant).join();
+      check(blocks && blocks.project === STUDY.id && blocks.kinds.join() === want && blocks.states.every((s) => s === 'loaded'),
+        `${STUDY.id} shows its ${STUDY.blocks.length} blocks in CMS order and its media load (FR-17)`, `blocks wrong: ${JSON.stringify({ want, blocks })}`);
+      check(blocks?.otherSetsMediaArmed === 0, 'hidden block sets load nothing (NFR-05)', `hidden sets armed media: ${blocks?.otherSetsMediaArmed}`);
       await pg.click('[data-lang="de"]');
       await pg.waitForTimeout(400);
-      const de = await pg.evaluate(() => { const s = document.querySelector('.detail-blocks:not([hidden])'); return s && { lang: s.dataset.lang, text: s.querySelector('.block-text p').textContent.slice(0, 20) }; });
-      check(de?.lang === 'de' && de.text.startsWith('Platzhalter'), `language switch swaps the open project's blocks (${de?.text}) (FR-21)`, `blocks after switch: ${JSON.stringify(de)}`);
+      const deFirst = STUDY.blocks.find((b) => b.discriminant === 'text')?.value.de.trim().slice(0, 20);
+      const de = await pg.evaluate(() => { const s = document.querySelector('.detail-blocks:not([hidden])'); return s && { lang: s.dataset.lang, text: s.querySelector('.block-text p')?.textContent.slice(0, 20) }; });
+      check(de?.lang === 'de' && de.text === deFirst, `language switch swaps the open project's blocks (${de?.text}) (FR-21)`, `blocks after switch: ${JSON.stringify({ deFirst, de })}`);
+
+      /* FR-17, ADR-0008: an interactive preview runs sandboxed and responds. Previews are content, so the
+         check waits until a published project has one. */
+      if (!PREVIEW) {
+        test.info().annotations.push({ type: 'note', description: 'no published project has an interactive preview yet; the FR-17 preview checks run once one does' });
+      } else {
+        await pg.goto(SITE + 'works/' + PREVIEW.id);
+        await pg.waitForTimeout(4000);
+        await scrollDetail(pg);
+        await pg.waitForTimeout(800);
+        const sandbox = await pg.evaluate(() => document.querySelector('.detail-blocks:not([hidden]) iframe')?.getAttribute('sandbox'));
+        check(sandbox === 'allow-scripts', 'preview iframe is sandboxed without allow-same-origin (ADR-0008)', `preview sandbox: ${sandbox}`);
+        if (PREVIEW.blocks.some((b) => b.discriminant === 'preview' && b.value.slug === 'circle-size')) {
+          const frame = pg.frameLocator('.detail-blocks:not([hidden]) iframe');
+          await frame.locator('#size').fill('50');
+          const dot = await frame.locator('#dot').evaluate((d) => d.style.width);
+          check(dot === '50px', `interactive preview responds to input (dot ${dot}) (FR-17)`, `preview did not respond (dot ${dot})`);
+        }
+      }
       await pg.close();
 
-      /* FT-50: delayed media show the loader at the final size, and nothing moves when they arrive */
+      /* FT-50 to FT-52 on a real media item: the first image thumbnail in the track. It is a MediaBox like
+         the detail's images, videos and previews, with the same loader, error, timeout and retry paths. */
+      if (!PROJECTS.some((p) => p.thumbnail)) {
+        test.info().annotations.push({ type: 'note', description: 'no published project has an image thumbnail; the FT-50 to FT-52 media checks need one' });
+        return;
+      }
+      const THUMB = '.card .media-box';
+      const thumb = (page) => page.evaluate((sel) => {
+        const m = document.querySelector(sel);
+        return m && { state: m.dataset.state, h: Math.round(m.getBoundingClientRect().height),
+          loader: getComputedStyle(m.querySelector('.media-loader')).display, anim: getComputedStyle(m.querySelector('.mfill')).animationName };
+      }, THUMB);
+
+      /* FT-50: a delayed thumbnail shows the loader at the final size, and nothing moves when it arrives */
       pg = await openPage(browser, { viewport: { width: 1280, height: 800 } });
-      // delay only the first request per file: WebKit fetches video as several byte ranges in a row,
-      // and delaying each one would stall the video three times over
       const delayed = new Set();
-      await pg.route(/\/_astro\/.*\.webp|\/media\//, async (route) => {
+      await pg.route(/\/_astro\/.*\.webp/, async (route) => {
         const url = route.request().url();
         if (!delayed.has(url)) { delayed.add(url); await new Promise((r) => setTimeout(r, 7000)); }
         await route.continue();
       });
-      await pg.goto(SITE + 'works/project-1');
+      await pg.goto(SITE + 'works');
       await pg.waitForTimeout(3400);
-      await scrollDetail(pg);
-      const during = await pg.evaluate(() => [...document.querySelectorAll('.detail-blocks:not([hidden]) [data-media]')].map((m) => ({
-        state: m.dataset.state, h: Math.round(m.getBoundingClientRect().height), loader: getComputedStyle(m.querySelector('.media-loader')).display,
-        anim: getComputedStyle(m.querySelector('.mfill')).animationName })));
+      const during = await thumb(pg);
       await pg.waitForTimeout(7000);
-      const after = await pg.evaluate(() => [...document.querySelectorAll('.detail-blocks:not([hidden]) [data-media]')].map((m) => ({
-        state: m.dataset.state, h: Math.round(m.getBoundingClientRect().height) })));
-      check(during.slice(0, 2).every((m) => m.state === 'loading' && m.loader === 'flex' && m.anim === 'rise') && after.every((m) => m.state === 'loaded')
-          && during.every((m, i) => m.h === after[i].h && m.h > 0),
-        `media loaders show at the final size and nothing shifts (${during.map((m) => m.h).join('/')} px) (FR-50, NFR-03)`, `media loading: ${JSON.stringify({ during, after })}`);
+      const after = await thumb(pg);
+      check(during?.state === 'loading' && during.loader === 'flex' && during.anim === 'rise' && after?.state === 'loaded' && during.h === after.h && during.h > 0,
+        `the media loader shows at the final size and nothing shifts (${during?.h} px) (FR-50, NFR-03)`, `media loading: ${JSON.stringify({ during, after })}`);
       await pg.close();
 
-      /* FT-51: an error shows the message and retry at once; a stalled item after 15 s; retry reloads */
+      /* FT-51: an error shows the message and retry at once; retry reloads the image, and inside a card
+         it must not open the project */
       pg = await openPage(browser, { viewport: { width: 1280, height: 800 } });
-      let blockImg = true, holdPreview = true;
-      await pg.route(/\/_astro\/.*\.webp/, (route) => (blockImg && route.request().url().includes('image') ? route.abort() : route.continue()));
-      await pg.route(/\/previews\//, async (route) => { if (holdPreview) return; await route.continue(); });   // held: never answers
-      await pg.goto(SITE + 'works/project-1');
+      let fail = true;
+      await pg.route(/\/_astro\/.*\.webp/, (route) => (fail ? route.abort() : route.continue()));
+      await pg.goto(SITE + 'works');
       await pg.waitForTimeout(4000);
-      await scrollDetail(pg);
-      await pg.waitForTimeout(500);
-      const state = () => pg.evaluate(() => [...document.querySelectorAll('.detail-blocks:not([hidden]) [data-media]')].map((m) => m.dataset.state));
-      let s1 = await state();
-      check(s1[0] === 'failed', `a media error shows the message and retry (${s1.join(', ')}) (FR-51)`, `after an image error: ${s1.join(', ')}`);
-      blockImg = false;
-      await pg.click('.detail-blocks:not([hidden]) [data-state="failed"] .media-retry');
+      let s = await thumb(pg);
+      check(s?.state === 'failed', `a media error shows the message and retry (${s?.state}) (FR-51)`, `after an image error: ${s?.state}`);
+      fail = false;
+      await pg.click(`${THUMB}[data-state="failed"] .media-retry`);
       await pg.waitForTimeout(1500);
-      s1 = await state();
-      check(s1[0] === 'loaded', 'retry starts a new load and the item shows (FR-51)', `after retry: ${s1.join(', ')}`);
-      await pg.waitForTimeout(12000);   // the preview has been held for over 15 s now
-      const s2 = await state();
-      holdPreview = false;
-      await pg.unroute(/\/previews\//);
-      await pg.click('.detail-blocks:not([hidden]) [data-state="failed"] .media-retry').catch(() => {});
+      s = await thumb(pg);
+      const where = await pg.evaluate(() => ({ path: location.pathname, open: document.querySelector('#detail').classList.contains('open') }));
+      check(s?.state === 'loaded' && where.path === '/works' && !where.open, 'retry starts a new load and the item shows, without opening its project (FR-51)',
+        `after retry: ${JSON.stringify({ state: s?.state, ...where })}`);
+      await pg.close();
+
+      /* FT-51: a stalled item fails after 15 s and retries */
+      pg = await openPage(browser, { viewport: { width: 1280, height: 800 } });
+      let hold = true;
+      await pg.route(/\/_astro\/.*\.webp/, async (route) => { if (hold) return; await route.continue(); });   // held: never answers
+      await pg.goto(SITE + 'works');
+      await pg.waitForTimeout(17500);   // the thumbnail has been held for over 15 s now
+      const held = await thumb(pg);
+      hold = false;
+      await pg.click(`${THUMB}[data-state="failed"] .media-retry`).catch(() => {});
       await pg.waitForTimeout(1500);
-      const s3 = await state();
-      check(s2[2] === 'failed' && s3[2] === 'loaded', `a stalled item fails after 15 s and retries (${s2[2]} -> ${s3[2]}) (FR-51)`, `timeout path: ${JSON.stringify({ s2, s3 })}`);
+      const freed = await thumb(pg);
+      check(held?.state === 'failed' && freed?.state === 'loaded', `a stalled item fails after 15 s and retries (${held?.state} -> ${freed?.state}) (FR-51)`,
+        `timeout path: ${JSON.stringify({ held, freed })}`);
       await pg.close();
 
       /* FT-52: reduced motion shows a static full mark */
       pg = await openPage(browser, { viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
-      await pg.route(/\/_astro\/.*\.webp|\/media\//, async (route) => { await new Promise((r) => setTimeout(r, 2500)); await route.continue(); });
-      await pg.goto(SITE + 'works/project-1');
+      await pg.route(/\/_astro\/.*\.webp/, async (route) => { await new Promise((r) => setTimeout(r, 2500)); await route.continue(); });
+      await pg.goto(SITE + 'works');
       await pg.waitForTimeout(2500);
-      const rm = await pg.evaluate(() => { const f = document.querySelector('.detail-blocks:not([hidden]) .mfill'); const c = getComputedStyle(f); return { anim: c.animationName, clip: c.clipPath }; });
-      check(rm.anim === 'none', `media loader is static under reduced motion (${rm.anim}) (FR-52)`, `media loader animates under reduced motion: ${JSON.stringify(rm)}`);
+      const rm = await thumb(pg);
+      check(rm?.anim === 'none', `media loader is static under reduced motion (${rm?.anim}) (FR-52)`, `media loader animates under reduced motion: ${JSON.stringify(rm)}`);
       await pg.close();
-
 });
 
 test('contact form against the endpoint contract (FT-32 to FT-36)', async ({ browser, browserName }) => {

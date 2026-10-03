@@ -566,7 +566,9 @@ function hideDetail() {
 }
 track.addEventListener('click', (e) => {
   const a = e.target.closest('.card'); if (!a) return;
-  e.preventDefault(); pushed = true;
+  e.preventDefault();
+  if (e.target.closest('.media-retry')) return;   // a failed thumbnail's retry reloads the image, not the project (FR-51)
+  pushed = true;
   history.pushState(null, '', prefix() + '/works/' + a.dataset.id);
   openDetail(a.dataset.id, true);
 });
@@ -622,7 +624,14 @@ document.addEventListener('click', (e) => {   // FR-51: retry starts a new load 
   const box = btn.closest('[data-media]'), old = box.querySelector('img, video, iframe');
   const fresh = old.cloneNode(true);   // a new element makes a new request, not a replay of the cached failure
   fresh.removeAttribute('src');
-  if (fresh.tagName === 'IMG') fresh.src = old.getAttribute('src');
+  if (fresh.tagName === 'IMG') {
+    /* a new address too: Chrome and WebKit attach a new <img> with the same URL to a request still in
+       flight, so after a stall the retry would wait on the stalled request */
+    const bust = (u) => { const base = u.replace(/[?&]retry=\d+/, ''); return base + (base.includes('?') ? '&' : '?') + 'retry=' + Date.now(); };
+    const set = old.getAttribute('srcset');
+    if (set) fresh.srcset = set.split(',').map((c) => c.trim().split(/\s+/)).map(([u, w]) => bust(u) + (w ? ' ' + w : '')).join(', ');
+    fresh.src = bust(old.getAttribute('src'));
+  }
   old.replaceWith(fresh);
   watchMedia(box, fresh);
 });

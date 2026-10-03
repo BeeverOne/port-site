@@ -4,6 +4,7 @@
    same findings. The keyboard and screen-reader passes (NFT-08-2, NFT-08-3) stay manual. */
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { STUDY } from './content.mjs';
 
 const SITE = 'http://localhost:4322/';
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'];
@@ -16,7 +17,7 @@ const TURNSTILE_STUB = `window.turnstile = { render: () => 'w1', getResponse: ()
 const STATES = [
   { name: 'intro', path: '' },
   { name: 'works', path: 'works' },
-  { name: 'project detail', path: 'works/project-1', prep: async (p) => { await p.evaluate(() => { document.querySelector('#detail').scrollTop = 99999; }); await p.waitForTimeout(1500); } },
+  { name: 'project detail', path: `works/${STUDY.id}`, prep: async (p) => { await p.evaluate(() => { document.querySelector('#detail').scrollTop = 99999; }); await p.waitForTimeout(1500); } },
   { name: 'contact overlay', path: '', prep: async (p) => { await p.locator('[data-open-contact]:visible').first().click(); await p.waitForTimeout(500); } },
   { name: 'contact errors', path: '', prep: async (p) => { await p.locator('[data-open-contact]:visible').first().click(); await p.waitForTimeout(400); await p.click('#sendBtn'); await p.waitForTimeout(300); } },
   { name: 'impressum', path: 'impressum', legal: true },

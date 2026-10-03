@@ -220,7 +220,6 @@ const mustHave = [
   ['id="wfToggle"', 'mobile footer collapse chevron (owner direction)'],
   ['id="detail"', 'detail view (FR-13)'],
   ['id="contact"', 'contact overlay (FR-26)'],
-  ['sandbox="allow-scripts"', 'interactive preview in a sandboxed iframe (FR-17, ADR-0008)'],
   ['data-media', 'media items carry their loader (FR-50)'],
   ['href="/impressum" data-legal="impressum"', 'Impressum link (FR-44)'],
   ['href="/privacy" data-legal="privacy"', 'privacy link (FR-45)'],
@@ -233,6 +232,14 @@ const mustHave = [
 ];
 for (const [needle, label] of mustHave) {
   check(built.includes(needle), label, `${label} — "${needle}" not in built page`);
+}
+/* FR-17, ADR-0008: every interactive preview runs in an iframe sandboxed with allow-scripts only.
+   Previews are content, so until a published project has one there is nothing to check. */
+const previews = [...built.matchAll(/<iframe\b[^>]*>/g)].map((m) => m[0]);
+if (previews.length === 0) console.log('  note  no published project has an interactive preview yet; the FR-17 sandbox check runs once one does');
+else {
+  const loose = previews.find((f) => !/\bsandbox="allow-scripts"/.test(f));
+  check(!loose, `${previews.length} interactive preview(s) sandboxed with allow-scripts only (FR-17, ADR-0008)`, `preview iframe not sandboxed: ${loose}`);
 }
 
 /* ---------- 6. Production hygiene ---------- */

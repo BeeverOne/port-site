@@ -470,23 +470,27 @@ body.mode-works .island > .plus-field { background-color: var(--works-plus); }
 /* contents rail (desktop, projects with sections) */
 .detail-toc { display: none; }
 .detail-toc-label { margin: 0 0 10px; font-size: 14px; font-weight: 600; font-stretch: 80%; color: var(--accent); }
-#detailToc, #detailToc ol { list-style: none; margin: 0; padding: 0; }
-#detailToc { display: flex; flex-direction: column; gap: 2px; }
-#detailToc ol { margin: 0 0 4px 28px; }
+/* Nested boxes: a section's entry spans the rail, a subsection's entry starts at its own indent (its
+   letter sits under the section titles) and ends at the same right edge. Within a level every entry
+   shares its edges, padding and radius, so hover, focus and the current entry draw matching boxes. */
+#detailToc, #detailToc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+#detailToc ol { margin: 2px 0 6px 28px; }
 #detailToc a {
-  display: flex; gap: 8px; align-items: baseline; padding: 5px 6px; margin-left: -6px; border-radius: 6px;
-  text-decoration: none; color: var(--works-sub); font-size: 15px; font-weight: 600; --cb: var(--works-ink);
+  display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: baseline; margin: 0 -10px; padding: 7px 10px; border-radius: 8px;
+  text-decoration: none; color: var(--works-sub); font-size: 15px; font-weight: 600; line-height: 1.3; text-wrap: pretty; --cb: var(--works-ink);
+  transition: color 150ms ease-out, background-color 150ms ease-out;
 }
-#detailToc ol a { font-size: 14px; font-weight: 500; padding: 3px 6px; }
-#detailToc .n { min-width: 20px; font-size: 13px; font-stretch: 80%; }
-#detailToc a.active { color: var(--works-ink); }
-#detailToc a.active .n { color: var(--accent); }
+#detailToc ol a { font-size: 14px; font-weight: 500; }
+#detailToc .n { font-size: 13px; font-weight: 600; font-stretch: 80%; }
+/* one entry at a time is the one being read: ink text, accent number, the works fill */
+#detailToc a[aria-current] { color: var(--works-ink); background: var(--works-fill); }
+#detailToc a[aria-current] .n { color: var(--accent); }
 @media (min-width: 1100px) {
   .detail.has-toc .detail-inner { max-width: 1320px; }
   .detail.has-toc .detail-body { display: grid; grid-template-columns: 240px minmax(0, 1fr); column-gap: 88px; align-items: start; }
   .detail.has-toc .detail-toc {
     display: block; grid-column: 1; grid-row: 1; position: sticky; top: 100px;
-    max-height: calc(100dvh - 260px); overflow-y: auto; scrollbar-width: none; padding: 6px 8px; margin: -6px -8px;
+    max-height: calc(100dvh - 260px); overflow-y: auto; scrollbar-width: none; padding: 8px 24px; margin: -8px -24px;   /* room for the entries' -10 px edge and 8 px past their corner marks (CR-30) */
   }
   .detail.has-toc .detail-body > .detail-blocks { grid-column: 2; grid-row: 1; max-width: 720px; }
   .detail.has-toc .detail-section { visibility: hidden; }   /* the rail shows where you are */
@@ -533,7 +537,6 @@ ol.block-list li::before { content: counter(step, decimal-leading-zero); font-si
   display: inline-grid; place-items: center; min-width: 30px; height: 26px; padding: 0 8px; border: 1px solid var(--accent); border-radius: 7px;
   color: var(--accent); font-size: 13px; font-weight: 700; text-decoration: none; --cb: var(--accent);
 }
-.block-list .ref:hover { background: var(--accent); color: var(--accent-ink); }
 .block-media { margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .block-media figcaption { font-size: 14px; color: var(--works-sub); }
 
@@ -556,5 +559,43 @@ ol.block-list li::before { content: counter(step, decimal-leading-zero); font-si
   ol.block-list li { grid-template-columns: 32px 1fr auto; gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .detail-section { transition: none; }
+  .detail-section, #detailToc a { transition: none; }
 }
+
+/* ---------- Corner-mark frame: one rule across the site (CR-30) ----------
+   src/scripts/brackets.js draws the marks as SVG brackets that glide within an area and sit inside a
+   project card; with .brk-on on <html> (set by that script) the prototype's .cb::after marks step
+   aside, and without the script they remain as the fallback focus indicator. Both use one geometry:
+   a text or icon control's frame sits 6 px from its visible text or icon (--cbx and --cby pull the
+   frame in from the box by the difference, and the 44 px touch area stays); a boxed control (button,
+   card, chip, contents entry, slider) keeps its frame 6 px outside the box. In the fallback the arms
+   are at most 10 px and never more than 30 percent of a side. */
+.brk-on .cb::after { display: none; }
+.brk-wrap { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; }
+.brk { position: absolute; left: 0; top: 0; width: 0; height: 0; opacity: 0; pointer-events: none; will-change: transform, width, height; }
+.brk-in { width: auto; height: auto; z-index: 3; will-change: auto; }   /* inside a card: scales with it */
+.brk-c { position: absolute; display: block; line-height: 0; }
+.brk-c svg { display: block; overflow: visible; }
+.brk-tl { left: -0.75px; top: -0.75px; }
+.brk-tr { right: -0.75px; top: -0.75px; transform: scaleX(-1); }
+.brk-bl { left: -0.75px; bottom: -0.75px; transform: scaleY(-1); }
+.brk-br { right: -0.75px; bottom: -0.75px; transform: scale(-1, -1); }
+.cb::after { inset: calc(var(--cby, 0px) - 4px) calc(var(--cbx, 0px) - 4px); }
+.cb:hover::after, .cb:focus-visible::after { inset: calc(var(--cby, 0px) - 6px) calc(var(--cbx, 0px) - 6px); --cbl: min(10px, 30%); }
+.mark { --cby: 7px; }
+.lang button { --cbx: 12px; --cby: 11px; }   /* 11, not 15: 10 px from the letters, so the frame clears the active language's underline */
+.icon-btn { --cbx: 12px; --cby: 12px; }
+.close.cb { --cbx: 6px; --cby: 10px; }
+.works-footer nav a { --cbx: 2px; --cby: 4px; }
+.enter { --cbx: 8px; --cby: 4px; }
+@media (max-width: 767px) { .mark { --cby: 4px; } }
+/* a card's tags wrap: in one row a long set (five tags on a phone) widened the card past the track's
+   78 vw and cut its frame at the track edge */
+.card .tags { flex-wrap: wrap; }
+/* room for the card frames, with a matching negative margin so nothing moves: a hovered card grows
+   3 percent (about 8.5 px a side) and its frame sits 6 px further out, past the track's 10 px */
+.track { padding-left: 16px; margin-left: -16px; padding-bottom: 16px; margin-bottom: -6px; }
+/* the footer's Contact button had 10 px of room, so its frame sat 4 px from the footer's rounded edge;
+   16 px leaves 10 */
+.works-footer { padding: 16px 20px 16px 16px; min-height: 76px; }
+@media (max-width: 767px) { .works-footer { padding: 16px; } }

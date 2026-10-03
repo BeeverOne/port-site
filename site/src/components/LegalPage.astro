@@ -37,4 +37,7 @@ const home = lang === 'de' ? '/de/' : '/';
       try { localStorage.setItem('lang', a.dataset.setLang); } catch { /* storage blocked */ }
     }));
   </script>
+  <script>
+    import '../scripts/brackets.js';   // the corner-mark brackets (CR-30), as on the main page
+  </script>
 </Base>

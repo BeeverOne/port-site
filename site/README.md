@@ -145,6 +145,16 @@ against the previous language's text lengths.
   writes the head (title, year in accent, tags) where the prototype wrote 'title   year' as text.
   The CSS sits in its own section after the prototype rules in `global.css`; `verify.mjs` drops the
   bar and head wrappers from the skeleton comparison.
+- Corner brackets (CR-30): `src/scripts/brackets.js` draws the hover and focus marks as SVG
+  brackets (1.5 px, 3 px rounding) with Motion: one bracket per area glides between targets, a
+  project card gets its own bracket inside the card so it scales with the hover, and the prototype's
+  `.cb::after` marks step aside once the script sets `.brk-on` (they stay as the no-script fallback).
+  A text or icon control sets `--cbx` and `--cby` to pull its frame in to 6 px from what it shows;
+  a boxed control keeps its frame 6 px outside the box. A new control with `.cb` needs its own
+  `--cbx`/`--cby` if its box is larger than what it shows, and an area selector in `AREAS` if it
+  should glide with its neighbours. In the contents rail one entry at a time is current;
+  `detail-reading.js` slides the reading line down over the last screenful and keeps a clicked
+  entry current until the scroll settles.
 
 ## Retired by the v2 port
 

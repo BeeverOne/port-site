@@ -20,6 +20,7 @@
     "@keystatic/astro": "^6.0.0",
     "@keystatic/core": "^0.6.9",
     "astro": "^7.3.5",
+    "motion": "^14.0.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "sharp": "^0.35.5"
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "1.63",
+    "js-yaml": "^4.3.2",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"
   }

@@ -27,7 +27,7 @@ for (const root of ['.vercel/output/static', '.vercel/output/functions']) {
   for (const f of walk(root)) { scan(f, readFileSync(f, 'latin1')); files++; }
 }
 
-const pages = ['/', '/works', '/works/project-1', '/de/', '/de/works', '/impressum', '/privacy', '/de/impressum', '/de/datenschutz', '/previews/circle-size/', '/keystatic'];
+const pages = ['/', '/works', '/works/fuerst-pueckler', '/de/', '/de/works', '/impressum', '/privacy', '/de/impressum', '/de/datenschutz', '/previews/circle-size/', '/keystatic'];
 const seen = new Set();
 let responses = 0;
 const fetchText = async (url) => { const r = await fetch(url, { redirect: 'follow' }); responses++; return { text: await r.text(), headers: [...r.headers].map(([k, v]) => `${k}: ${v}`).join('\n') }; };
