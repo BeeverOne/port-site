@@ -530,17 +530,22 @@ function setClip(r) {
 /* The detail view holds every project's blocks in both languages (ProjectDetail.astro); only the open
    project's set in the active language shows, and hidden sets never load their media (FR-17, NFR-05). */
 let openId = null;
+/* The detail head mirrors the card: title, the year in accent, the tags (CR-29). */
+function fillDetailHead(p) {
+  $('#detailTitle').textContent = p.headline;
+  const span = (cls, text) => { const s = document.createElement('span'); if (cls) s.className = cls; s.textContent = text; return s; };
+  $('#detailMeta').replaceChildren(span('m-title', p.title), ' ', span('m-year', p.year));
+  $('#detailTags').replaceChildren(...p.tags.map((t) => span('', t)));
+}
 function showBlocks(id) {
   openId = id;
   $$('.detail-blocks').forEach((b) => { b.hidden = !(b.dataset.project === id && b.dataset.lang === lang); });
   const p = PROJECTS.find((x) => x.id === id);
-  if (p) { $('#detailTitle').textContent = p.headline; $('#detailMeta').textContent = p.title + '   ' + p.year; }
+  if (p) fillDetailHead(p);
 }
 function openDetail(id, fromCard) {
   const p = PROJECTS.find((x) => x.id === id); if (!p) return;
   showBlocks(id);
-  $('#detailTitle').textContent = p.headline;
-  $('#detailMeta').textContent = p.title + '   ' + p.year;
   lastCard = cards().find((c) => c.dataset.id === id) || null;
   detail.classList.add('open');
   if (lastCard && fromCard && !reduce.matches) {

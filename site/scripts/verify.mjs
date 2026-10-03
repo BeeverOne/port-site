@@ -348,6 +348,12 @@ function skeleton(html) {
   s = s.replace(/<svg class="sym"[\s\S]*?<\/svg>/g, '');
   /* the detail view's content: the prototype's four placeholder blocks, the build's CMS blocks (FR-17) */
   s = s.replace(/(<h2 id="detailTitle"[^>]*>[\s\S]*?<\/h2>)[\s\S]*?(<\/div>\s*<\/article>)/, '$1$2');
+  /* the detail view's sticky bar, head wrapper and meta spans are owner-directed additions (CR-29) */
+  s = s.replace(/<div class="detail-bar">/, '');
+  s = s.replace(/<span class="detail-section"[^>]*><\/span>/, '');
+  s = s.replace(/<span class="detail-progress"[^>]*><i[^>]*><\/i><\/span>/, '');
+  s = s.replace(/<header class="detail-head">/, '');
+  s = s.replace(/<span class="m-(?:title|year)">[^<]*<\/span>/g, '');
   s = s.replace(/<svg[\s\S]*?<\/svg>/g, '<svg>'); /* svg innards come from the extracted marks */
   s = s.replace(/<details class="proto">[\s\S]*?<\/details>/g, '');
   /* the statement is pre-rendered now (ADR-0012); the prototype fills it at runtime */
@@ -397,7 +403,7 @@ if (protoSkel.length === builtSkel.length && protoSkel.every((t, i) => t === bui
 /* Class-name multiset: catches a renamed or dropped hook the sequence check could mask. */
 /* Known, deliberate differences: the track's cards (Astro renders them, the prototype
    injects them at runtime) and the dev-only prototype control panel (checked in [6]). */
-const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger', 'hover-title', 'plus-field', 'wf-row', 'wf-toggle', 'wf-more', 'wf-more-inner', 'name', 'hl', 'sym', 'media-box', 'media-loader', 'mbase', 'mfill', 'media-failed', 'media-retry', 'detail-blocks', 'block-text', 'block-media', 'block', 'media', 'demo', 'swatch'];   // media-*, block-*: CMS blocks and loaders (FR-17, FR-50); block, media, demo, swatch: the prototype's placeholders they replace   // name, hl: the pre-rendered statement spans (ADR-0012)
+const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger', 'hover-title', 'plus-field', 'wf-row', 'wf-toggle', 'wf-more', 'wf-more-inner', 'name', 'hl', 'sym', 'media-box', 'media-loader', 'mbase', 'mfill', 'media-failed', 'media-retry', 'detail-blocks', 'block-text', 'block-media', 'block', 'media', 'demo', 'swatch', 'block-heading', 'sec', 'sec-num', 'sec-title', 'sub', 'sub-key', 'lede', 'block-facts', 'block-list', 'ref', 'detail-bar', 'detail-section', 'detail-progress', 'detail-head', 'm-title', 'm-year', 'detail-body', 'detail-toc', 'detail-toc-label'];   // media-*, block-*: CMS blocks and loaders (FR-17, FR-50); block, media, demo, swatch: the prototype's placeholders they replace   // sec*, sub*, lede, ref, detail-*, m-*: the detail reading layout (CR-29)   // name, hl: the pre-rendered statement spans (ADR-0012)
 function classBag(html) {
   const bag = new Map();
   for (const m of bodyOf(html).matchAll(/\bclass="([^"]*)"/g)) {

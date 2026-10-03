@@ -427,20 +427,134 @@ body.mode-works .island > .plus-field { background-color: var(--works-plus); }
 }
 .thumb.media-box { padding: 0; flex-shrink: 0; }   /* overflow: hidden would otherwise let the card's flex column shrink it below its aspect ratio */
 
-/* Detail blocks from the CMS (FR-17): text paragraphs and media figures in the owner's order. */
-.detail-blocks { display: flex; flex-direction: column; gap: 32px; }
+/* ---------- Detail view reading layout (CR-29) ----------
+   The detail view carries the works section's signature: the plus-mark grid, the [ bracket ] cut and the
+   accent. A sticky bar keeps [ Close ] in reach with the current section and a reading-progress line in
+   the works slider's look. From 1100 px a project with sections gets a sticky contents rail beside the
+   text (detail-reading.js builds it and sets .has-toc); narrower, or without sections, it is one centred
+   column. These rules come after the prototype's .detail rules and override them. */
+.detail {
+  /* the island's plus field as a background: a scroll container's background stays put while its content
+     scrolls, and at 0 0 the marks sit exactly on the works grid beneath. One colour for both themes:
+     --works-plus is #F1F7F4 or #FFF at 40%, which on either works colour is the same mark */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cpath d='M56 60h8M60 56v8' stroke='%23F1F7F4' stroke-opacity='0.4' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 120px 120px;
+}
+.detail-inner { max-width: 860px; margin: 0 auto; padding: 0 56px 120px; gap: 0; }
+
+/* sticky bar */
+.detail-bar {
+  position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  height: 64px; margin: 0 -56px; padding: 0 50px; background: var(--works);   /* solid: text scrolling under a translucent bar ghosts through */
+}
+.detail-bar .close { align-self: center; }
+.detail-section {
+  min-width: 0; font-size: 14px; font-weight: 600; color: var(--works-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  opacity: 0; transform: translateY(4px); transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+.detail-section:not(:empty)::before { content: "[ "; }
+.detail-section:not(:empty)::after { content: " ]"; }
+.detail.past-head .detail-section { opacity: 1; transform: none; }
+.detail-progress { position: absolute; left: 56px; right: 56px; bottom: 0; height: 4px; pointer-events: none; }
+.detail-progress::before { content: ""; position: absolute; left: 0; right: 0; top: 2px; border-top: 1px solid var(--works-rule); }
+.detail-progress i { position: absolute; inset: 0; border-radius: 2px; background: var(--accent); transform-origin: left; transform: scaleX(0); }
+
+/* head: mirrors the card (title, year in accent, tags), set in the [ Works ] heading's wide cut */
+.detail-head { display: flex; flex-direction: column; gap: 20px; padding: 56px 0 48px; }
+#detailMeta { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; color: var(--works-sub); }
+#detailMeta .m-year { color: var(--accent); font-stretch: 100%; }
+.detail h2 { font-size: clamp(40px, 5.6vw, 84px); line-height: 0.98; font-stretch: 125%; letter-spacing: -0.02em; }
+.detail-head .tags { flex-wrap: wrap; margin-top: 4px; }
+.detail-head .tags:empty { display: none; }
+
+/* contents rail (desktop, projects with sections) */
+.detail-toc { display: none; }
+.detail-toc-label { margin: 0 0 10px; font-size: 14px; font-weight: 600; font-stretch: 80%; color: var(--accent); }
+#detailToc, #detailToc ol { list-style: none; margin: 0; padding: 0; }
+#detailToc { display: flex; flex-direction: column; gap: 2px; }
+#detailToc ol { margin: 0 0 4px 28px; }
+#detailToc a {
+  display: flex; gap: 8px; align-items: baseline; padding: 5px 6px; margin-left: -6px; border-radius: 6px;
+  text-decoration: none; color: var(--works-sub); font-size: 15px; font-weight: 600; --cb: var(--works-ink);
+}
+#detailToc ol a { font-size: 14px; font-weight: 500; padding: 3px 6px; }
+#detailToc .n { min-width: 20px; font-size: 13px; font-stretch: 80%; }
+#detailToc a.active { color: var(--works-ink); }
+#detailToc a.active .n { color: var(--accent); }
+@media (min-width: 1100px) {
+  .detail.has-toc .detail-inner { max-width: 1320px; }
+  .detail.has-toc .detail-body { display: grid; grid-template-columns: 240px minmax(0, 1fr); column-gap: 88px; align-items: start; }
+  .detail.has-toc .detail-toc {
+    display: block; grid-column: 1; grid-row: 1; position: sticky; top: 100px;
+    max-height: calc(100dvh - 260px); overflow-y: auto; scrollbar-width: none; padding: 6px 8px; margin: -6px -8px;
+  }
+  .detail.has-toc .detail-body > .detail-blocks { grid-column: 2; grid-row: 1; max-width: 720px; }
+  .detail.has-toc .detail-section { visibility: hidden; }   /* the rail shows where you are */
+}
+
+/* Detail blocks from the CMS (FR-17) in the owner's order */
+.detail-blocks { display: flex; flex-direction: column; gap: 28px; }
 .detail-blocks[hidden] { display: none; }
-.block-text p { margin: 0 0 1em; max-width: 68ch; font-size: 18px; line-height: 1.6; color: var(--works-ink); }
+.block-text p { margin: 0 0 1em; max-width: 64ch; font-size: 17px; line-height: 1.65; color: var(--works-ink); }
 .block-text p:last-child { margin-bottom: 0; }
-/* headings sit closer to the block they introduce than to the one above */
-.block-heading { margin: 16px 0 -16px; max-width: 68ch; font-size: clamp(22px, 2.4vw, 32px); line-height: 1.15; font-weight: 500; font-stretch: 115%; text-wrap: balance; }
-.block-heading.sub { margin-top: 0; font-size: 20px; font-stretch: 110%; }
-.block-facts { margin: 0; max-width: 68ch; display: grid; grid-template-columns: max-content 1fr; gap: 12px 28px; padding-top: 18px; border-top: 1px solid var(--works-rule); }
+.block-text.lede p:first-child { max-width: 36ch; font-size: clamp(21px, 2vw, 26px); line-height: 1.4; }
+.block-heading { margin: 0; scroll-margin-top: 84px; font-weight: 500; text-wrap: balance; }
+.block-heading:focus { outline: none; }   /* focused only as the target of a contents link */
+/* sections: [ bracket ] headings like [ Works ], counted like the track's 1 / 6 */
+.block-heading.sec { display: flex; flex-direction: column; gap: 14px; margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--works-rule); }
+.detail-blocks > .block-heading.sec:first-child { margin-top: 0; }
+.sec-num { font-size: 14px; font-weight: 600; font-stretch: 80%; color: var(--accent); }
+.sec-title { font-size: clamp(30px, 3.4vw, 50px); line-height: 1; font-stretch: 125%; letter-spacing: -0.02em; }
+/* subsections sit closer to the block they introduce than to the one above */
+.block-heading.sub { display: flex; align-items: center; gap: 12px; margin: 18px 0 -10px; font-size: 22px; line-height: 1.2; font-stretch: 112%; }
+.sub-key {
+  flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px;
+  background: var(--accent); color: var(--accent-ink); font-size: 15px; font-weight: 700; font-stretch: 100%;
+}
+/* facts: a framed panel, like a card's frame */
+.block-facts {
+  margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 14px 32px; padding: 22px 24px;
+  border: 1px solid var(--works-rule); border-radius: var(--radius); background: var(--works-fill);
+}
 .block-facts dt { font-size: 15px; font-weight: 600; font-stretch: 80%; color: var(--works-sub); padding-top: 2px; }
 .block-facts dd { margin: 0; font-size: 16px; line-height: 1.5; }
-@media (max-width: 767px) { .block-facts { grid-template-columns: 1fr; gap: 4px; } .block-facts dd + dt { margin-top: 12px; } }
-.block-list { margin: 0; padding-left: 1.3em; max-width: 68ch; font-size: 18px; line-height: 1.6; }
+/* lists: plus-mark bullets; a numbered list as steps, each with its chip to a highlight */
+.block-list { margin: 0; padding: 0; list-style: none; max-width: 64ch; font-size: 17px; line-height: 1.6; }
 .block-list li + li { margin-top: 0.35em; }
-.block-list li::marker { color: var(--works-sub); }
+ul.block-list li { position: relative; padding-left: 26px; }
+ul.block-list li::before { content: "+"; position: absolute; left: 2px; top: -1px; color: var(--accent); font-size: 20px; font-weight: 600; }
+ol.block-list { counter-reset: step; max-width: none; border-top: 1px solid var(--works-rule); }
+ol.block-list li {
+  counter-increment: step; display: grid; grid-template-columns: 44px 1fr auto; align-items: baseline; gap: 12px;
+  margin: 0; padding: 12px 0; border-bottom: 1px solid var(--works-rule);
+}
+ol.block-list li::before { content: counter(step, decimal-leading-zero); font-size: 14px; font-weight: 600; font-stretch: 80%; color: var(--accent); }
+.block-list .ref {
+  display: inline-grid; place-items: center; min-width: 30px; height: 26px; padding: 0 8px; border: 1px solid var(--accent); border-radius: 7px;
+  color: var(--accent); font-size: 13px; font-weight: 700; text-decoration: none; --cb: var(--accent);
+}
+.block-list .ref:hover { background: var(--accent); color: var(--accent-ink); }
 .block-media { margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .block-media figcaption { font-size: 14px; color: var(--works-sub); }
+
+@media (max-width: 767px) {
+  .detail { background-size: 60px 60px; }
+  .detail-inner { padding: 0 18px 80px; }
+  .detail-bar { height: 56px; margin: 0 -18px; padding: 0 12px; }
+  .detail-progress { left: 18px; right: 18px; }
+  .detail-head { padding: 28px 0 32px; gap: 16px; }
+  .detail h2 { font-size: clamp(32px, 9.4vw, 44px); }
+  .block-text p, .block-list { font-size: 16px; line-height: 1.6; }
+  .block-text.lede p:first-child { font-size: 19px; }
+  .block-heading { scroll-margin-top: 72px; }
+  .block-heading.sec { margin-top: 44px; gap: 10px; padding-top: 18px; }
+  .sec-title { font-size: 30px; }
+  .block-heading.sub { font-size: 19px; gap: 10px; }
+  .sub-key { width: 26px; height: 26px; font-size: 14px; }
+  .block-facts { grid-template-columns: 1fr; gap: 2px; padding: 16px; }
+  .block-facts dd + dt { margin-top: 14px; }
+  ol.block-list li { grid-template-columns: 32px 1fr auto; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .detail-section { transition: none; }
+}

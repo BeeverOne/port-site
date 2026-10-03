@@ -74,6 +74,7 @@ Old `#/works` links are rewritten to their paths on load.
 | --- | --- |
 | `src/styles/global.css` | The v2 prototype's `<style>` block, byte-identical. Edit here, not in a component. |
 | `src/scripts/site.js` | The v2 prototype's `<script>`, byte-identical except the four standing edits listed below. |
+| `src/scripts/detail-reading.js` | The detail view's reading aids (CR-29): contents rail, current section in the sticky bar, reading progress. Not in the prototype; it only observes what `site.js` does. |
 | `src/i18n/ui.js` | The v2 EN/DE dictionary, lifted out verbatim (statement parts carry the highlighter timing). |
 | `src/components/marks/` | The inline SVG brand marks, sliced out verbatim. `VStack` is parameterised: the header mark and the loader's base/fillmark pair. `R1Mark` retired with the title blocks (CR-08). |
 | `src/content/projects/` | One markdown file per project (the content model; a CMS replaces this loader later). |
@@ -135,6 +136,15 @@ against the previous language's text lengths.
   through a grid-rows animation, and the chevron rotates 180 degrees between states. The footer
   starts collapsed on phones and one tap reveals the links (CR-25, FR-12 amended); the desktop
   footer is untouched because the wrappers dissolve with display: contents.
+- Detail reading layout (CR-29): the detail view carries the plus-mark grid (as a background, so it
+  stays put while the text scrolls), a sticky bar with [ Close ], the current section and a
+  reading-progress line, a head that mirrors the card, bracket section headings numbered 01 / 04,
+  accent letter chips for 'A · Title' subsections, and links from list items ending in '→ A'. From
+  1100 px a project with sections gets a sticky contents rail. `ProjectDetail.astro` renders the
+  outline, `detail-reading.js` drives the rail and the bar, and `fillDetailHead()` in `site.js`
+  writes the head (title, year in accent, tags) where the prototype wrote 'title   year' as text.
+  The CSS sits in its own section after the prototype rules in `global.css`; `verify.mjs` drops the
+  bar and head wrappers from the skeleton comparison.
 
 ## Retired by the v2 port
 

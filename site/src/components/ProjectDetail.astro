@@ -11,7 +11,13 @@
 
    Block types (Keystatic, FR-17): text paragraphs, a section or subsection heading, a facts list
    (label/value rows), a bulleted or numbered list, an optimised image (ADR-0007), a video with a
-   poster (ADR-0007), and an interactive preview in a sandboxed iframe (ADR-0008). */
+   poster (ADR-0007), and an interactive preview in a sandboxed iframe (ADR-0008).
+
+   Reading layout (CR-29): a sticky bar holds [ Close ], the current section and a reading-progress
+   line; the head mirrors the card (title, year in accent, tags). Section headings are numbered and
+   set in brackets, a subsection written 'A · Title' gets an accent letter chip, a list item ending
+   in '→ A' links to that subsection, and a set that opens with a text block shows it as a lede.
+   detail-reading.js builds the contents rail from these headings and drives the bar. */
 import { Image, getImage } from 'astro:assets';
 import MediaBox from './MediaBox.astro';
 import { dict } from '../i18n/server.js';
@@ -28,6 +34,40 @@ const widthsFor = (img, wanted) => {
 };
 const paragraphs = (text) => text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 
+/* CR-29: one set's headings. Every set shares this page, so ids carry the project and language;
+   sections are numbered '01 / 04'; 'A · Title' yields the letter chip and a target for '→ A' links. */
+const KEYED = /^(\S{1,2}) · (.+)$/;
+const REF = /^(.*?)\s*→\s*(\S{1,2})$/;
+const slug = (s) =>
+  s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'part';
+function outline(p, l) {
+  const used = new Set();
+  const uid = (s) => {
+    let id = `${p.id}-${l}-${s}`;
+    for (let n = 2; used.has(id); n++) id = `${p.id}-${l}-${s}-${n}`;
+    used.add(id);
+    return id;
+  };
+  const two = (n) => String(n).padStart(2, '0');
+  const total = p.data.blocks.filter((b) => b.discriminant === 'heading' && b.value.level === 'section').length;
+  const keys = new Map();
+  let n = 0;
+  const heads = p.data.blocks.map((b) => {
+    if (b.discriminant !== 'heading') return null;
+    const text = b.value.text[l];
+    if (b.value.level === 'section') {
+      n += 1;
+      return { id: uid(slug(text)), n: two(n), num: `${two(n)} / ${two(total)}`, text };
+    }
+    const m = text.match(KEYED);
+    if (!m) return { id: uid(slug(text)), text };
+    const h = { id: uid('hl-' + slug(m[1])), key: m[1], text: m[2] };
+    keys.set(m[1], h);
+    return h;
+  });
+  return { heads, keys };
+}
+
 /* video posters: optimised once per block, shared by both languages */
 const posters = new Map();
 for (const p of projects) {
@@ -42,22 +82,47 @@ for (const p of projects) {
 
 <article class="detail" id="detail" aria-labelledby="detailTitle" tabindex="-1">
   <div class="detail-inner">
-    <button class="close cb" type="button" id="detailClose" data-i18n="close">{t.close}</button>
-    <div class="label" style="color: var(--works-sub)" id="detailMeta">{project && `${project.title}   ${project.year}`}</div>
-    <h2 id="detailTitle">{project?.headline}</h2>
+    <div class="detail-bar">
+      <button class="close cb" type="button" id="detailClose" data-i18n="close">{t.close}</button>
+      <span class="detail-section" id="detailSection" aria-hidden="true"></span>
+      <span class="detail-progress" aria-hidden="true"><i id="detailProgress"></i></span>
+    </div>
+    <header class="detail-head">
+      <div class="label" id="detailMeta">
+        {project && [<span class="m-title">{project.title}</span>, ' ', <span class="m-year">{project.year}</span>]}
+      </div>
+      <h2 id="detailTitle">{project?.headline}</h2>
+      <div class="tags" id="detailTags">{project?.tags.map((g) => <span>{g}</span>)}</div>
+    </header>
+    <div class="detail-body">
+      <nav class="detail-toc" aria-labelledby="detailTocLabel">
+        <p class="detail-toc-label" id="detailTocLabel" data-i18n="contents">{t.contents}</p>
+        <ol id="detailToc"></ol>
+      </nav>
     {
       projects.map((p) =>
-        LANGS.map((l) => (
+        LANGS.map((l) => {
+          const o = outline(p, l);
+          return (
           <div class="detail-blocks" data-project={p.id} data-lang={l} lang={l} hidden={!(p.id === currentId && l === lang)}>
             {p.data.blocks.map((b, i) => {
               const v = b.value;
+              const h = o.heads[i];
               if (b.discriminant === 'text')
-                return <div class="block-text">{paragraphs(v[l]).map((para) => <p>{para}</p>)}</div>;
+                return (
+                  <div class={i === 0 ? 'block-text lede' : 'block-text'}>{paragraphs(v[l]).map((para) => <p>{para}</p>)}</div>
+                );
               if (b.discriminant === 'heading')
                 return v.level === 'section' ? (
-                  <h3 class="block-heading">{v.text[l]}</h3>
+                  <h3 class="block-heading sec" id={h.id} tabindex="-1" data-toc={h.text} data-n={h.n}>
+                    <span class="sec-num" aria-hidden="true">{h.num}</span>
+                    <span class="sec-title"><span aria-hidden="true">[ </span>{h.text}<span aria-hidden="true"> ]</span></span>
+                  </h3>
                 ) : (
-                  <h4 class="block-heading sub">{v.text[l]}</h4>
+                  <h4 class="block-heading sub" id={h.id} tabindex="-1" data-toc={h.text} data-n={h.key}>
+                    {h.key && <span class="sub-key">{h.key}</span>}
+                    <span>{h.text}</span>
+                  </h4>
                 );
               if (b.discriminant === 'facts')
                 return (
@@ -66,7 +131,15 @@ for (const p of projects) {
                   </dl>
                 );
               if (b.discriminant === 'list') {
-                const items = v.items.map((it) => <li>{it[l]}</li>);
+                const items = v.items.map((it) => {
+                  const m = it[l].match(REF);
+                  const to = m && o.keys.get(m[2]);
+                  return to ? (
+                    <li><span>{m[1]}</span> <a class="ref cb" href={`#${to.id}`} aria-label={`${to.key} · ${to.text}`}>{to.key}</a></li>
+                  ) : (
+                    <li>{it[l]}</li>
+                  );
+                });
                 return v.ordered ? <ol class="block-list">{items}</ol> : <ul class="block-list">{items}</ul>;
               }
               if (b.discriminant === 'image')
@@ -77,7 +150,7 @@ for (const p of projects) {
                         src={v.image}
                         alt={v.alt[l]}
                         widths={widthsFor(v.image, [640, 980, 1600])}
-                        sizes="(max-width: 1023px) 100vw, 868px"
+                        sizes="(max-width: 1023px) 100vw, 748px"
                         loading="lazy"
                         decoding="async"
                       />
@@ -115,8 +188,10 @@ for (const p of projects) {
               return null;
             })}
           </div>
-        )),
+          );
+        }),
       )
     }
+    </div>
   </div>
 </article>
