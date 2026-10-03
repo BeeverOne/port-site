@@ -1,7 +1,10 @@
 name: Fürst Pückler Commentary Station
 order: 1
 draft: false
-thumbnailAlt: {}
+thumbnail: ../../assets/projects/fuerst-pueckler/thumbnail.png
+thumbnailAlt:
+  en: Placeholder title card with the project name
+  de: Platzhalter-Titelkarte mit dem Projektnamen
 en:
   headline: Fürst Pückler Commentary Station
   title: IHK final project
