@@ -1,0 +1,215 @@
+name: Fürst Pückler Commentary Station
+order: 1
+draft: true
+en:
+  headline: Fürst Pückler Commentary Station
+  title: IHK final project
+  year: '2025'
+  tags:
+    - BrightSign
+    - Neuroomnet
+    - RFID
+    - PIR sensor
+    - UDP
+de:
+  headline: Fürst-Pückler-Kommentarstation
+  title: IHK-Abschlussprojekt
+  year: '2025'
+  tags:
+    - BrightSign
+    - Neuroomnet
+    - RFID
+    - PIR-Sensor
+    - UDP
+blocks:
+  - discriminant: text
+    value:
+      en: A museum station that wakes when you approach and plays its film in your language.
+      de: Eine Museumsstation, die erwacht, sobald man sich nähert, und ihren Film in der eigenen Sprache zeigt.
+  - discriminant: facts
+    value:
+      rows:
+        - label:
+            en: Project title
+            de: Projekttitel
+          value:
+            en: Development of an application for an interactive commentary station (Entwicklung einer Applikation für eine interaktive Kommentarstation)
+            de: Entwicklung einer Applikation für eine interaktive Kommentarstation
+        - label:
+            en: Role
+            de: Rolle
+          value:
+            en: 'Sole developer: requirements, architecture, implementation, testing, documentation'
+            de: 'Alleinentwickler: Anforderungen, Architektur, Umsetzung, Test, Dokumentation'
+        - label:
+            en: Context
+            de: Kontext
+          value:
+            en: IHK final project, application developer training at inSynergie GmbH
+            de: IHK-Abschlussprojekt, Ausbildung zum Fachinformatiker für Anwendungsentwicklung bei der inSynergie GmbH
+        - label:
+            en: Timeframe
+            de: Zeitraum
+          value:
+            en: 80 hours, 2025
+            de: 80 Stunden, 2025
+        - label:
+            en: Stack
+            de: Stack
+          value:
+            en: BrightSign, BrightAuthor:connected, Neuroomnet, RFID, PIR motion sensor, UDP
+            de: BrightSign, BrightAuthor:connected, Neuroomnet, RFID, PIR-Bewegungssensor, UDP
+        - label:
+            en: Status
+            de: Status
+          value:
+            en: Delivered, signed off without reservations
+            de: Ausgeliefert, vorbehaltlos abgenommen
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: Intro
+        de: Einleitung
+  - discriminant: text
+    value:
+      en: |-
+        Muskau Park lies on both sides of the German–Polish border, and its Villa Pückler exhibition follows the prince on his journey through the Orient. Visitors arrive from both sides of that border, so the museum wanted comment stations along the route that tell each story in German, Polish or English.
+
+        The stations had to meet two needs that pull in opposite directions: inviting enough to catch a visitor's eye, and quiet enough to run all day with no staff, little power in an empty room, and no technician for routine use. My job, as my IHK final project, was the software — a robust, low-maintenance system that autonomously controls the whole flow of the station.
+      de: |-
+        Der Muskauer Park liegt beiderseits der deutsch-polnischen Grenze, und die Ausstellung „Villa Pückler“ folgt dem Fürsten auf seiner Reise durch den Orient. Das Publikum kommt von beiden Seiten dieser Grenze, deshalb wünschte sich das Museum entlang des Rundgangs Kommentarstationen, die jede Geschichte auf Deutsch, Polnisch oder Englisch erzählen.
+
+        Die Stationen mussten zwei Anforderungen erfüllen, die einander widersprechen: einladend genug, um Blicke auf sich zu ziehen, und zurückhaltend genug, um den ganzen Tag ohne Personal zu laufen, im leeren Raum kaum Strom zu verbrauchen und im Alltagsbetrieb ohne Techniker auszukommen. Meine Aufgabe in meinem IHK-Abschlussprojekt war die Software – ein robustes, wartungsarmes System, das den gesamten Ablauf der Station autonom steuert.
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: Highlights
+        de: Highlights
+  - discriminant: text
+    value:
+      en: Four behaviors carry the project. Each is a problem I was handed and the decision I made.
+      de: Vier Verhaltensweisen tragen das Projekt. Jede ist ein Problem, das mir gestellt wurde, und die Entscheidung, die ich dafür getroffen habe.
+  - discriminant: heading
+    value:
+      level: subsection
+      text:
+        en: A · Wakes on approach
+        de: A · Erwacht, wenn man sich nähert
+  - discriminant: text
+    value:
+      en: |-
+        A station must catch your eye, but it can't run its screen all day. So the screen stays in sleep mode until a visitor triggers the PIR motion sensor. The sensor is wired straight into the BrightSign player's input pins and the player passes the ping on to Neuroomnet, the central media control — no extra hardware anywhere. Neuroomnet wakes the station and starts the introduction film: a portrait comes to life and invites the visitor closer.
+      de: |-
+        Eine Station muss Blicke auf sich ziehen, darf ihren Bildschirm aber nicht den ganzen Tag laufen lassen. Deshalb bleibt der Bildschirm im Schlafmodus, bis ein Besucher den PIR-Sensor auslöst. Der Sensor ist direkt an die Eingangs-Pins des BrightSign-Players angeschlossen, und der Player meldet das Signal an Neuroomnet weiter, die zentrale Mediensteuerung – ganz ohne zusätzliche Hardware. Neuroomnet weckt die Station und startet den Einführungsfilm: Ein Porträt wird lebendig und lädt den Besucher ein, näherzutreten.
+  - discriminant: heading
+    value:
+      level: subsection
+      text:
+        en: B · Language from the ticket
+        de: B · Sprachwahl per Ticket
+  - discriminant: text
+    value:
+      en: |-
+        A station cannot see which language the person in front of it prefers, so the language is decided at the ticket desk: staff pick it on a dashboard and scan the visitor's RFID ticket, which binds the two together in Neuroomnet's ticket list. At the station, the visitor taps the ticket; the reader's UDP message reaches a Neuroomnet script, which looks up the stored language and answers with the matching play command. Two modules carry this: the language-assignment dashboard with the logic behind it, and the Neuroomnet scripts that process the incoming UDP signals.
+      de: |-
+        Eine Station kann nicht sehen, welche Sprache die Person vor ihr bevorzugt. Deshalb wird die Sprache an der Kasse festgelegt: Das Personal wählt sie in einem Dashboard aus und scannt das RFID-Ticket des Besuchers, wodurch beides in der Ticketliste von Neuroomnet verknüpft wird. An der Station hält der Besucher das Ticket an den Leser; dessen UDP-Nachricht erreicht ein Neuroomnet-Skript, das die gespeicherte Sprache nachschlägt und mit dem passenden Abspielbefehl antwortet. Zwei Module tragen diese Funktion: das Dashboard zur Sprachzuweisung mit der Logik dahinter und die Neuroomnet-Skripte, die die eingehenden UDP-Signale verarbeiten.
+  - discriminant: heading
+    value:
+      level: subsection
+      text:
+        en: C · Nothing interrupts a film
+        de: C · Nichts unterbricht einen Film
+  - discriminant: text
+    value:
+      en: |-
+        On a busy floor, people walk past mid-film and tap their tickets out of curiosity. A film cut in half spoils the visit for everyone in the room. So while the main film plays, the station locks its ticket reader and ignores new sensor pings; the reader unlocks the moment the film ends.
+      de: |-
+        In einer belebten Ausstellung gehen Menschen mitten im Film vorbei und halten aus Neugier ihr Ticket an den Leser. Ein mittendrin abgebrochener Film verdirbt allen im Raum den Besuch. Deshalb sperrt die Station während des Hauptfilms ihren Ticketleser und ignoriert neue Sensorsignale; der Leser wird wieder freigegeben, sobald der Film endet.
+  - discriminant: heading
+    value:
+      level: subsection
+      text:
+        en: D · Sleeps when the room empties
+        de: D · Schläft, wenn der Raum sich leert
+  - discriminant: text
+    value:
+      en: |-
+        The energy requirement does not end when the film does. After each playback the application returns to a defined idle state, waiting for the next visitor; if the sensor stays quiet past a timeout, it drops into sleep mode until someone approaches again. Every state the station can be in is named and reachable — which is exactly what made every state testable.
+      de: |-
+        Die Anforderung, Energie zu sparen, endet nicht mit dem Film. Nach jeder Wiedergabe kehrt die Applikation in einen definierten Ruhezustand zurück und wartet auf den nächsten Besucher; bleibt der Sensor bis zum Ablauf eines Timeouts still, wechselt sie in den Schlafmodus, bis sich wieder jemand nähert. Jeder Zustand, den die Station einnehmen kann, ist benannt und erreichbar – und genau das machte jeden Zustand testbar.
+  - discriminant: heading
+    value:
+      level: subsection
+      text:
+        en: Proof
+        de: Belege
+  - discriminant: list
+    value:
+      ordered: false
+      items:
+        - en: 22 of 22 test cases passed; signed off without reservations
+          de: 22 von 22 Testfällen bestanden; vorbehaltlos abgenommen
+        - en: ~130 ms from ticket tap to play command, against a 2-second requirement
+          de: ~130 ms vom Auflegen des Tickets bis zum Abspielbefehl – gefordert waren 2 Sekunden
+        - en: Delivered within the 80-hour budget
+          de: Innerhalb des Budgets von 80 Stunden geliefert
+        - en: One application, running six or more stations
+          de: Eine Applikation für sechs oder mehr Stationen
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: The whole loop
+        de: Der gesamte Ablauf
+  - discriminant: text
+    value:
+      en: One top-level animation shows the entire system — everything a live demo would show, without hardware in the browser. Each step is a chip; each chip links to the highlight that explains it.
+      de: Eine übergeordnete Animation zeigt das gesamte System – alles, was eine Live-Vorführung zeigen würde, ohne Hardware im Browser. Jeder Schritt ist ein Chip; jeder Chip verlinkt auf das Highlight, das ihn erklärt.
+  - discriminant: list
+    value:
+      ordered: true
+      items:
+        - en: Ticket desk — language assigned to the RFID ticket → B
+          de: Kasse – Sprache wird dem RFID-Ticket zugewiesen → B
+        - en: Visitor approaches the station → A
+          de: Besucher nähert sich der Station → A
+        - en: PIR sensor triggers, signal to Neuroomnet → A
+          de: PIR-Sensor löst aus, Signal an Neuroomnet → A
+        - en: Station wakes and plays the intro → A
+          de: Station erwacht und spielt den Einführungsfilm → A
+        - en: Portrait invites an RFID tap → B
+          de: Porträt lädt zum Auflegen des RFID-Tickets ein → B
+        - en: Neuroomnet reads the stored language → B
+          de: Neuroomnet liest die gespeicherte Sprache aus → B
+        - en: Language-appropriate playback, input locked → C
+          de: Wiedergabe in der passenden Sprache, Eingabe gesperrt → C
+        - en: Film ends, back to idle → D
+          de: Film endet, zurück in den Ruhezustand → D
+        - en: Timeout, sleep mode → D
+          de: Timeout, Schlafmodus → D
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: Summary
+        de: Fazit
+  - discriminant: text
+    value:
+      en: |-
+        The project was delivered in budget and signed off without reservations. It also threw me in at the deep end: networking and hardware integration were both new to me, and most of the hard problems lived in the gap between the two systems rather than inside either one — like the controller that silently ignored every message until I traced the traffic and found it expected a "#" at the end of each one. That lesson stuck: test on the real hardware, early. Working in visual tools taught me a second one — when there is no code to read, the structure of the states and messages is the design, so it has to be clear to the next person who opens it.
+
+        If I extended the system today, I would move the films and the language list into a central content management system, so the museum could update every station from one place.
+
+        Client: Stiftung Fürst-Pückler-Park Bad Muskau · Exhibition design: KOCMOC Exhibitions GmbH · Films: m box bewegtbild GmbH · Supervision at inSynergie: Lisa Rau, Martin Bosshart.
+
+        My part was the software. Hardware installation, on-site network setup and the films were handled by others.
+      de: |-
+        Das Projekt wurde im Budget geliefert und vorbehaltlos abgenommen. Es hat mich außerdem ins kalte Wasser geworfen: Netzwerktechnik und Hardware-Integration waren beide neu für mich, und die meisten schwierigen Probleme lagen in der Lücke zwischen den beiden Systemen, nicht in einem davon – etwa die Steuerung, die jede Nachricht stillschweigend ignorierte, bis ich den Datenverkehr mitschnitt und feststellte, dass sie am Ende jeder Nachricht ein „#“ erwartete. Diese Lektion ist geblieben: früh auf der echten Hardware testen. Die Arbeit mit visuellen Werkzeugen hat mich eine zweite gelehrt: Wenn es keinen Code zum Lesen gibt, ist die Struktur der Zustände und Nachrichten das Design – also muss sie für die nächste Person, die das Projekt öffnet, klar sein.
+
+        Bei einer Erweiterung würde ich heute die Filme und die Sprachliste in ein zentrales Content-Management-System verlagern, damit das Museum alle Stationen von einer Stelle aus aktualisieren kann.
+
+        Auftraggeber: Stiftung Fürst-Pückler-Park Bad Muskau · Ausstellungsgestaltung: KOCMOC Exhibitions GmbH · Filme: m box bewegtbild GmbH · Betreuung bei inSynergie: Lisa Rau, Martin Bosshart.
+
+        Mein Anteil war die Software. Die Installation der Hardware, die Netzwerkeinrichtung vor Ort und die Filme übernahmen andere.

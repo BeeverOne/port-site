@@ -1,5 +1,6 @@
 /* Keystatic CMS (ADR-0003). The owner edits projects at /keystatic: card fields in English and German,
-   a thumbnail, the track order, a draft flag, and the detail view's blocks in the owner's order
+   a thumbnail, the track order, a draft flag, and the detail view's blocks (text, heading, facts, list,
+   image, video, preview) in the owner's order
    (FR-10, FR-11, FR-17, FR-22, FR-38 to FR-42). Each project is one YAML file in
    src/content/projects; the file name is the project id in /works/<id> (FR-14).
 
@@ -121,6 +122,42 @@ export default config({
               label: 'Text',
               itemLabel: (props) => props.fields.en.value.slice(0, 48) || 'Text',
               schema: bilingual('Text', { multiline: true }),
+            },
+            heading: {
+              label: 'Heading',
+              itemLabel: (props) => props.fields.text.fields.en.value || 'Heading',
+              schema: fields.object({
+                level: fields.select({
+                  label: 'Level',
+                  options: [
+                    { label: 'Section', value: 'section' },
+                    { label: 'Subsection', value: 'subsection' },
+                  ],
+                  defaultValue: 'section',
+                }),
+                text: bilingual('Heading'),
+              }),
+            },
+            facts: {
+              label: 'Facts',
+              itemLabel: (props) => `Facts (${props.fields.rows.elements.length} rows)`,
+              schema: fields.object({
+                rows: fields.array(fields.object({ label: bilingual('Label'), value: bilingual('Value') }), {
+                  label: 'Rows',
+                  itemLabel: (props) => props.fields.label.fields.en.value || 'Row',
+                }),
+              }),
+            },
+            list: {
+              label: 'List',
+              itemLabel: (props) => props.fields.items.elements[0]?.fields.en.value.slice(0, 48) || 'List',
+              schema: fields.object({
+                ordered: fields.checkbox({ label: 'Numbered', defaultValue: false }),
+                items: fields.array(bilingual('Item'), {
+                  label: 'Items',
+                  itemLabel: (props) => props.fields.en.value || 'Item',
+                }),
+              }),
             },
             image: {
               label: 'Image',

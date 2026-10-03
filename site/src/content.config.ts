@@ -40,6 +40,18 @@ const projects = defineCollection({
           z.discriminatedUnion('discriminant', [
             z.object({ discriminant: z.literal('text'), value: bilingual }),
             z.object({
+              discriminant: z.literal('heading'),
+              value: z.object({ level: z.enum(['section', 'subsection']), text: bilingual }),
+            }),
+            z.object({
+              discriminant: z.literal('facts'),
+              value: z.object({ rows: z.array(z.object({ label: bilingual, value: bilingual })) }),
+            }),
+            z.object({
+              discriminant: z.literal('list'),
+              value: z.object({ ordered: z.boolean(), items: z.array(bilingual) }),
+            }),
+            z.object({
               discriminant: z.literal('image'),
               value: z.object({ image: image(), alt: bilingual, caption: optionalBilingual }),
             }),

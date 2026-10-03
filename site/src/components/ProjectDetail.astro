@@ -9,7 +9,8 @@
    until site.js arms them (NFR-05, FR-50). On a project page (/works/<id>) the title and meta
    are pre-rendered for that project, so the page names it without JavaScript.
 
-   Block types (Keystatic, FR-17): text paragraphs, an optimised image (ADR-0007), a video with a
+   Block types (Keystatic, FR-17): text paragraphs, a section or subsection heading, a facts list
+   (label/value rows), a bulleted or numbered list, an optimised image (ADR-0007), a video with a
    poster (ADR-0007), and an interactive preview in a sandboxed iframe (ADR-0008). */
 import { Image, getImage } from 'astro:assets';
 import MediaBox from './MediaBox.astro';
@@ -52,6 +53,22 @@ for (const p of projects) {
               const v = b.value;
               if (b.discriminant === 'text')
                 return <div class="block-text">{paragraphs(v[l]).map((para) => <p>{para}</p>)}</div>;
+              if (b.discriminant === 'heading')
+                return v.level === 'section' ? (
+                  <h3 class="block-heading">{v.text[l]}</h3>
+                ) : (
+                  <h4 class="block-heading sub">{v.text[l]}</h4>
+                );
+              if (b.discriminant === 'facts')
+                return (
+                  <dl class="block-facts">
+                    {v.rows.map((r) => [<dt>{r.label[l]}</dt>, <dd>{r.value[l]}</dd>])}
+                  </dl>
+                );
+              if (b.discriminant === 'list') {
+                const items = v.items.map((it) => <li>{it[l]}</li>);
+                return v.ordered ? <ol class="block-list">{items}</ol> : <ul class="block-list">{items}</ul>;
+              }
               if (b.discriminant === 'image')
                 return (
                   <figure class="block-media">

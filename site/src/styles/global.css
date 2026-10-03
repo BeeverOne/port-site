@@ -432,5 +432,15 @@ body.mode-works .island > .plus-field { background-color: var(--works-plus); }
 .detail-blocks[hidden] { display: none; }
 .block-text p { margin: 0 0 1em; max-width: 68ch; font-size: 18px; line-height: 1.6; color: var(--works-ink); }
 .block-text p:last-child { margin-bottom: 0; }
+/* headings sit closer to the block they introduce than to the one above */
+.block-heading { margin: 16px 0 -16px; max-width: 68ch; font-size: clamp(22px, 2.4vw, 32px); line-height: 1.15; font-weight: 500; font-stretch: 115%; text-wrap: balance; }
+.block-heading.sub { margin-top: 0; font-size: 20px; font-stretch: 110%; }
+.block-facts { margin: 0; max-width: 68ch; display: grid; grid-template-columns: max-content 1fr; gap: 12px 28px; padding-top: 18px; border-top: 1px solid var(--works-rule); }
+.block-facts dt { font-size: 15px; font-weight: 600; font-stretch: 80%; color: var(--works-sub); padding-top: 2px; }
+.block-facts dd { margin: 0; font-size: 16px; line-height: 1.5; }
+@media (max-width: 767px) { .block-facts { grid-template-columns: 1fr; gap: 4px; } .block-facts dd + dt { margin-top: 12px; } }
+.block-list { margin: 0; padding-left: 1.3em; max-width: 68ch; font-size: 18px; line-height: 1.6; }
+.block-list li + li { margin-top: 0.35em; }
+.block-list li::marker { color: var(--works-sub); }
 .block-media { margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .block-media figcaption { font-size: 14px; color: var(--works-sub); }
