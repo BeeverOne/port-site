@@ -6,7 +6,7 @@ thumbnailAlt:
   en: Placeholder title card with the project name
   de: Platzhalter-Titelkarte mit dem Projektnamen
 en:
-  headline: Fürst Pückler Commentary Station
+  headline: Fürst-Pückler Commentary Station
   title: IHK final project
   year: '2025'
   tags:
@@ -109,7 +109,7 @@ blocks:
         The stations had to meet two needs that pull in opposite directions:
         inviting enough to catch a visitor's eye, and quiet enough to run all
         day with no staff, little power in an empty room, and no technician for
-        routine use. My job, as my IHK final project, was the software — a
+        routine use. My job, as my IHK final project, was the software - a
         robust, low-maintenance system that autonomously controls the whole flow
         of the station.
       de: >-
@@ -125,7 +125,7 @@ blocks:
         zurückhaltend genug, um den ganzen Tag ohne Personal zu laufen, im
         leeren Raum kaum Strom zu verbrauchen und im Alltagsbetrieb ohne
         Techniker auszukommen. Meine Aufgabe in meinem IHK-Abschlussprojekt war
-        die Software – ein robustes, wartungsarmes System, das den gesamten
+        die Software - ein robustes, wartungsarmes System, das den gesamten
         Ablauf der Station autonom steuert.
   - discriminant: heading
     value:
@@ -154,7 +154,7 @@ blocks:
         the screen stays in sleep mode until a visitor triggers the PIR motion
         sensor. The sensor is wired straight into the BrightSign player's input
         pins and the player passes the ping on to Neuroomnet, the central media
-        control — no extra hardware anywhere. Neuroomnet wakes the station and
+        control - no extra hardware anywhere. Neuroomnet wakes the station and
         starts the introduction film: a portrait comes to life and invites the
         visitor closer.
       de: >-
@@ -163,7 +163,7 @@ blocks:
         Schlafmodus, bis ein Besucher den PIR-Sensor auslöst. Der Sensor ist
         direkt an die Eingangs-Pins des BrightSign-Players angeschlossen, und
         der Player meldet das Signal an Neuroomnet weiter, die zentrale
-        Mediensteuerung – ganz ohne zusätzliche Hardware. Neuroomnet weckt die
+        Mediensteuerung - ganz ohne zusätzliche Hardware. Neuroomnet weckt die
         Station und startet den Einführungsfilm: Ein Porträt wird lebendig und
         lädt den Besucher ein, näherzutreten.
   - discriminant: heading
@@ -227,7 +227,7 @@ blocks:
         playback the application returns to a defined idle state, waiting for
         the next visitor; if the sensor stays quiet past a timeout, it drops
         into sleep mode until someone approaches again. Every state the station
-        can be in is named and reachable — which is exactly what made every
+        can be in is named and reachable - which is exactly what made every
         state testable.
       de: >-
         Die Anforderung, Energie zu sparen, endet nicht mit dem Film. Nach jeder
@@ -278,8 +278,8 @@ blocks:
     value:
       ordered: true
       items:
-        - en: Ticket desk — language assigned to the RFID ticket → B
-          de: Kasse – Sprache wird dem RFID-Ticket zugewiesen → B
+        - en: Ticket desk - language assigned to the RFID ticket → B
+          de: Kasse - Sprache wird dem RFID-Ticket zugewiesen → B
         - en: Visitor approaches the station → A
           de: Besucher nähert sich der Station → A
         - en: PIR sensor triggers, signal to Neuroomnet → A
@@ -308,11 +308,11 @@ blocks:
         The project was delivered in budget and signed off without reservations.
         It also threw me in at the deep end: networking and hardware integration
         were both new to me, and most of the hard problems lived in the gap
-        between the two systems rather than inside either one — like the
+        between the two systems rather than inside either one - like the
         controller that silently ignored every message until I traced the
         traffic and found it expected a "#" at the end of each one. That lesson
         stuck: test on the real hardware, early. Working in visual tools taught
-        me a second one — when there is no code to read, the structure of the
+        me a second one - when there is no code to read, the structure of the
         states and messages is the design, so it has to be clear to the next
         person who opens it.
 
@@ -334,13 +334,13 @@ blocks:
         hat mich außerdem ins kalte Wasser geworfen: Netzwerktechnik und
         Hardware-Integration waren beide neu für mich, und die meisten
         schwierigen Probleme lagen in der Lücke zwischen den beiden Systemen,
-        nicht in einem davon – etwa die Steuerung, die jede Nachricht
+        nicht in einem davon - etwa die Steuerung, die jede Nachricht
         stillschweigend ignorierte, bis ich den Datenverkehr mitschnitt und
         feststellte, dass sie am Ende jeder Nachricht ein „#“ erwartete. Diese
         Lektion ist geblieben: früh auf der echten Hardware testen. Die Arbeit
         mit visuellen Werkzeugen hat mich eine zweite gelehrt: Wenn es keinen
         Code zum Lesen gibt, ist die Struktur der Zustände und Nachrichten das
-        Design – also muss sie für die nächste Person, die das Projekt öffnet,
+        Design - also muss sie für die nächste Person, die das Projekt öffnet,
         klar sein.
 
 
