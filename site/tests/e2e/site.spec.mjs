@@ -5,9 +5,13 @@
    and sends no mail; the endpoint itself is covered by tests/contact.test.js.
    Run after a build: npm run build && npm run test:e2e (playwright.config.mjs serves the output). */
 import { test, expect } from '@playwright/test';
-import { PROJECTS, STUDY, OTHER, PREVIEW } from './content.mjs';
+import { PROJECTS, STUDY, OTHER, PREVIEW, INTRO } from './content.mjs';
 
 const SITE = 'http://localhost:4322/';
+/* The works track only moves with two or more published projects; with fewer, the checks of its
+   movement (jack, keys, slider drag, the ends, the settle pauses) cannot happen and say so instead. */
+const MULTI = PROJECTS.length >= 2;
+const ONE_CARD = `needs at least 2 published projects for the works track to move (${PROJECTS.length} published)`;
 test.describe.configure({ timeout: 120_000 });
 
 /* A stand-in for Cloudflare Turnstile that passes and hands out a fixed token: the suite stays offline,
@@ -25,8 +29,7 @@ async function openPage(browser, options = {}) {
   return page;
 }
 /* The original suite's check(): the pass text is kept for readers, the fail text is what the report shows. */
-// eslint-disable-next-line no-unused-vars
-const check = (cond, pass, failMsg) => expect.soft(Boolean(cond), failMsg).toBe(true);
+const check = (cond, _pass, failMsg) => expect.soft(Boolean(cond), failMsg).toBe(true);
 const bad = (msg) => expect.soft(false, msg).toBe(true);
 
 test('main flow: loader, transition, works track, detail, reverse, language, theme, contact (FR-02 to FR-29)', async ({ browser, browserName }) => {
@@ -97,6 +100,7 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
       check(false, 'flow-in active at p=0.9 for the suspension test', 'flow not active at p=0.9');
     }
     check(await page.evaluate(() => document.querySelector('#runway').offsetHeight > 0), 'runway spacer sized by layout()', 'runway has no height');
+    if (MULTI) {
     const trackScrollable = await page.evaluate(() => { const t = document.querySelector('#track'); return t.scrollWidth > t.clientWidth; });
     check(trackScrollable, 'works track overflows horizontally (FR-04/FR-06)', 'track not scrollable');
 
@@ -117,6 +121,13 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
     check(resumed > 0, `jack resumed after the pause (${resumed})`, 'jack did not resume after the pause');
     await page.evaluate(() => { document.querySelector('#track').scrollLeft = 0; });
     await page.waitForTimeout(400);
+    } else {
+      test.info().annotations.push({ type: 'note', description: `main flow: the track overflow and the settle pause on arrival not checked, ${ONE_CARD}` });
+      // the settle-pause steps also bring the view back to the works section after the flow-in check, which
+      // left it in the runway; without them, return there directly so /works is the overview address again
+      await page.evaluate(() => { const s = document.querySelector('#scroller'); s.scrollTop = s.scrollHeight; });
+      await page.waitForTimeout(1400);
+    }
 
     /* Hover scales the whole card from one origin, so the composition holds (F4) */
     const cardRects = () => page.evaluate((id) => {
@@ -125,6 +136,7 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
       return { thumb: w('.thumb'), meta: w('.meta'), tags: w('.tags') };
     }, OTHER.id);
     await page.mouse.move(720, 120);   // off the cards, or the baseline is already hovered
+    await page.evaluate(() => document.activeElement?.blur());   // the first card takes focus on arrival, and a focused card is already scaled
     await page.waitForTimeout(400);
     const hb = await cardRects();
     await page.hover(`.card[data-id="${OTHER.id}"]`);
@@ -135,6 +147,7 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
     await page.mouse.move(720, 120);
     await page.waitForTimeout(300);
 
+    if (MULTI) {
     /* FR-06: at the bottom, vertical wheel moves the track sideways */
     await page.mouse.move(720, 500);
     const before = await page.evaluate(() => document.querySelector('#track').scrollLeft);
@@ -162,13 +175,17 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
     await page.keyboard.press('End');
     await page.waitForTimeout(700);
     check(await page.evaluate(() => { const t = document.querySelector('#track'); return t.scrollLeft >= t.scrollWidth - t.clientWidth - 2; }), 'End key jumps the slider to the last card (CR-04)', 'End did not reach the last card');
+    } else test.info().annotations.push({ type: 'note', description: `main flow: the wheel jack, arrow keys, slider drag and End not checked, ${ONE_CARD}` });
     const vt = await page.evaluate(() => document.querySelector('#bar').getAttribute('aria-valuetext'));
     check(typeof vt === 'string' && vt.endsWith(String(PROJECTS.length)) && vt.toLowerCase().startsWith('project'), `aria-valuetext speaks the position ("${vt}") (CR-11)`, `aria-valuetext wrong: "${vt}" for ${PROJECTS.length} projects`);
+    if (MULTI) {
+    await page.focus('#bar');
     await page.keyboard.press('Home');
     await page.waitForTimeout(700);
     check(await page.evaluate(() => document.querySelector('#track').scrollLeft <= 2), 'Home key returns the slider to the first card (CR-04)', 'Home did not return to the first card');
     await page.keyboard.press('ArrowLeft');
     await page.waitForTimeout(600);
+    }
 
     /* FR-13/FR-14: card click opens detail in place with its own URL */
     const first = PROJECTS[0];
@@ -236,7 +253,7 @@ test('main flow: loader, transition, works track, detail, reverse, language, the
     check(await page.evaluate(() => !document.querySelector('#contact').open), 'Escape closed the contact overlay (FR-27)', 'contact still open');
 });
 
-test('mobile footer: collapsed by default, one tap reveals the links (CR-25, FR-12)', async ({ browser, browserName }) => {
+test('mobile footer: collapsed by default, one tap reveals the links (CR-25, FR-12)', async ({ browser }) => {
     const mob = await openPage(browser, { viewport: { width: 360, height: 780 } });
     mob.on('pageerror', (e) => bad(`mobile page error: ${e.message}`));
     await mob.goto(SITE);
@@ -272,7 +289,7 @@ test('mobile footer: collapsed by default, one tap reveals the links (CR-25, FR-
     await mob.close();
 });
 
-test('a nudge after a reverse re-triggers the transition (CR-22)', async ({ browser, browserName }) => {
+test('a nudge after a reverse re-triggers the transition (CR-22)', async ({ browser }) => {
     for (const vp of [{ width: 1280, height: 777 }, { width: 1440, height: 900 }]) {
       const pg = await openPage(browser, { viewport: vp });
       pg.on('pageerror', (e) => bad(`page error (${vp.width}x${vp.height}): ${e.message}`));
@@ -299,7 +316,7 @@ test('a nudge after a reverse re-triggers the transition (CR-22)', async ({ brow
     }
 });
 
-test('real paths in two languages (FT-15, FT-20, FT-21, ADR-0006, ADR-0012)', async ({ browser, browserName }) => {
+test('real paths in two languages (FT-15, FT-20, FT-21, ADR-0006, ADR-0012)', async ({ browser }) => {
 
       const at = async (url, options = {}, before) => {
         const pg = await openPage(browser, { viewport: { width: 1280, height: 800 }, ...options });
@@ -314,7 +331,7 @@ test('real paths in two languages (FT-15, FT-20, FT-21, ADR-0006, ADR-0012)', as
         trigger: document.querySelector('[data-i18n="trigger"]').textContent,
         detail: document.querySelector('#detail').classList.contains('open') ? document.querySelector('#detailTitle').textContent : null,
       }));
-      const DE_TRIGGER = 'Hier sind einige meiner Arbeiten';
+      const DE_TRIGGER = INTRO.de.trigger;   // from the CMS, so a copy edit does not fail the test
 
       let pg = await at('/', { locale: 'de-DE' });
       let v = await view(pg);
@@ -368,7 +385,7 @@ test('real paths in two languages (FT-15, FT-20, FT-21, ADR-0006, ADR-0012)', as
 
 });
 
-test('CMS blocks and media items (FT-17, FT-21, FT-50 to FT-52, NFT-05)', async ({ browser, browserName }) => {
+test('CMS blocks and media items (FT-17, FT-21, FT-50 to FT-52, NFT-05)', async ({ browser }) => {
 
       /* the detail view is its own scroll container: media below its fold arm only when scrolled near */
       const scrollDetail = async (page) => {
@@ -598,6 +615,7 @@ test('legal pages follow the language (FR-44, FR-45, ADR-0012)', async ({ browse
 });
 
 test('settle pause holds at the first card (CR-26)', async ({ browser }) => {
+      test.skip(!MULTI, ONE_CARD);
 
       const pg = await openPage(browser, { viewport: { width: 1440, height: 900 } });
       const scrollTop = () => pg.evaluate(() => document.querySelector('#scroller').scrollTop);
@@ -738,6 +756,161 @@ test('one canvas draw per frame; scroll keys suppressed during the transition (N
       await pg.keyboard.press('PageDown');
       check(await pg.evaluate(() => window.__prevented === true), 'scroll keys are suppressed while the transition plays (CR-22)',
         'PageDown was not prevented during the transition');
+      await pg.close();
+
+});
+
+/* ---------- Test cases that had no automated check (test-protocol coverage map, 2026-10-02) ---------- */
+
+test('the works section fills the island at 360, 768, 1024 and 1440 px (FT-04)', async ({ browser }) => {
+
+      for (const width of [360, 768, 1024, 1440]) {
+        const pg = await openPage(browser, { viewport: { width, height: 900 } });
+        pg.on('pageerror', (e) => bad(`page error (island ${width}): ${e.message}`));
+        await pg.goto(SITE + 'works');
+        await pg.waitForTimeout(3500);
+        /* the island's visible area is its scroller's client box (a classic scrollbar, as on the Linux
+           CI runner, takes its width from the island, not from the works section) */
+        const m = await pg.evaluate(() => {
+          const s = document.querySelector('#scroller'), w = document.querySelector('#works').getBoundingClientRect(), r = s.getBoundingClientRect();
+          return { w: Math.round(w.width), h: Math.round(w.height), sw: s.clientWidth, sh: s.clientHeight, dx: Math.round(w.left - r.left), dy: Math.round(w.top - r.top) };
+        });
+        check(Math.abs(m.w - m.sw) <= 1 && Math.abs(m.h - m.sh) <= 1 && Math.abs(m.dx) <= 1 && Math.abs(m.dy) <= 1,
+          `the works section fills the island at ${width} px (${m.w} x ${m.h}) (FR-04)`, `works vs island at ${width} px: ${JSON.stringify(m)}`);
+        await pg.close();
+      }
+
+});
+
+test('track input: native horizontal wheel, the ends hold, no jack under reduced motion (FT-07, FT-09, FT-19)', async ({ browser }) => {
+      test.skip(!MULTI, ONE_CARD);
+
+      let pg = await openPage(browser, { viewport: { width: 1440, height: 900 } });
+      pg.on('pageerror', (e) => bad(`page error (track input): ${e.message}`));
+      await pg.goto(SITE + 'works');
+      await pg.waitForTimeout(3500);
+      const left = () => pg.evaluate(() => document.querySelector('#track').scrollLeft);
+      const overTrack = async () => { const b = await pg.locator('#track').boundingBox(); await pg.mouse.move(b.x + b.width / 2, b.y + b.height / 2); };
+
+      /* FT-07: horizontal wheel input scrolls the track natively; a window listener (after the site's
+         own, in the bubble phase) sees whether anything prevented it */
+      await pg.evaluate(() => { window.__horizontal = []; addEventListener('wheel', (e) => { if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) window.__horizontal.push(e.defaultPrevented); }, { passive: true }); });
+      await overTrack();
+      const l0 = await left();
+      await pg.mouse.wheel(300, 0);
+      await pg.waitForTimeout(500);
+      const l1 = await left();
+      const prevented = await pg.evaluate(() => window.__horizontal);
+      check(l1 > l0 && prevented.length > 0 && prevented.every((p) => !p), `horizontal wheel scrolls the track natively (${l0} -> ${l1}) and is never prevented (FR-07)`,
+        `horizontal wheel: ${JSON.stringify({ l0, l1, prevented })}`);
+
+      /* FT-09: at the last card Right and wheel down stay there; at the first card Left does not wrap */
+      await pg.focus('#bar');
+      await pg.keyboard.press('End');
+      await pg.waitForTimeout(700);
+      const max = await pg.evaluate(() => { const t = document.querySelector('#track'); return t.scrollWidth - t.clientWidth; });
+      await pg.evaluate(() => document.activeElement.blur());
+      await pg.keyboard.press('ArrowRight');
+      await pg.waitForTimeout(600);
+      await overTrack();
+      await pg.mouse.wheel(0, 400);
+      await pg.waitForTimeout(700);
+      const atEnd = await left();
+      check(atEnd >= max - 2, `Right and wheel down at the last card stay at the last card (${Math.round(atEnd)} of ${Math.round(max)}) (FR-09)`, `left the last card: ${atEnd} of ${max}`);
+      await pg.focus('#bar');
+      await pg.keyboard.press('Home');
+      await pg.waitForTimeout(700);
+      await pg.evaluate(() => document.activeElement.blur());
+      await pg.keyboard.press('ArrowLeft');
+      await pg.waitForTimeout(600);
+      const atStart = await left();
+      check(atStart <= 2, `Left at the first card does not wrap to the last card (${Math.round(atStart)}) (FR-09)`, `Left at the first card moved the track to ${atStart}`);
+      await pg.close();
+
+      /* FT-19: with reduced motion the wheel at the island bottom does not move the track */
+      pg = await openPage(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+      pg.on('pageerror', (e) => bad(`page error (reduced motion): ${e.message}`));
+      await pg.goto(SITE + 'works');
+      await pg.waitForTimeout(2500);
+      await overTrack();
+      const r0 = await left();
+      await pg.mouse.wheel(0, 400);
+      await pg.waitForTimeout(600);
+      const r1 = await left();
+      check(Math.abs(r1 - r0) <= 2, `no scroll-jack under reduced motion (${r0} -> ${r1}) (FR-19)`, `the track moved under reduced motion: ${r0} -> ${r1}`);
+      await pg.close();
+
+});
+
+test('the theme follows the system with no saved choice (FT-23)', async ({ browser }) => {
+
+      /* The case's third step, no preference, cannot be produced: prefers-color-scheme lost its
+         no-preference value in Media Queries 5, browsers always report light or dark, and Playwright's
+         'no-preference' falls through to the machine's own setting. The site shows light unless the dark
+         query matches, which the light step covers. */
+      for (const [scheme, want] of [['dark', '#141518'], ['light', '#DDE1DE']]) {
+        const pg = await openPage(browser, { viewport: { width: 1280, height: 800 }, colorScheme: scheme });   // a fresh context: empty storage
+        await pg.goto(SITE);
+        await pg.waitForTimeout(800);
+        const v = await pg.evaluate(() => ({ bg: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim().toUpperCase(), saved: document.documentElement.dataset.theme ?? null }));
+        check(v.bg === want && v.saved === null, `system ${scheme} shows the ${scheme} theme with no saved choice (FR-23)`, `system ${scheme}: ${JSON.stringify(v)}, expected --bg ${want} and no data-theme`);
+        await pg.close();
+      }
+
+});
+
+test('the header Contact stays visible while the intro scrolls to the trigger line (FT-25)', async ({ browser }) => {
+
+      const pg = await openPage(browser, { viewport: { width: 1440, height: 900 } });
+      pg.on('pageerror', (e) => bad(`page error (contact visible): ${e.message}`));
+      await pg.goto(SITE);
+      await pg.waitForTimeout(3500);
+      // stop short of the trigger line, which starts the transition 252 px below the island top
+      const end = await pg.evaluate(() => { const s = document.querySelector('#scroller'), t = document.querySelector('[data-i18n="trigger"]');
+        return Math.max(0, t.getBoundingClientRect().top - s.getBoundingClientRect().top + s.scrollTop - 300); });
+      const hidden = [];
+      for (let k = 1; k <= 5; k++) {
+        await pg.evaluate((y) => { document.querySelector('#scroller').scrollTop = y; }, Math.round((end * k) / 5));
+        await pg.waitForTimeout(200);
+        const v = await pg.evaluate(() => { const c = document.querySelector('.site-header .btn-contact'), cs = getComputedStyle(c), r = c.getBoundingClientRect();
+          return cs.visibility === 'visible' && +cs.opacity > 0.99 && r.width > 0 && r.top >= 0 && r.bottom <= innerHeight; });
+        if (!v) hidden.push(k);
+      }
+      check(hidden.length === 0, 'the header Contact is visible at each of 5 steps down the intro (FR-25)', `the header Contact was not visible at step(s) ${hidden.join(', ')}`);
+      await pg.close();
+
+});
+
+test('the GitHub link opens the owner\'s profile (FT-37)', async ({ browser }) => {
+
+      const pg = await openPage(browser, { viewport: { width: 1440, height: 900 } });
+      // offline: the profile page is answered here, the test only follows where the link goes
+      await pg.context().route('https://github.com/**', (r) => r.fulfill({ contentType: 'text/html', body: '<title>GitHub</title>' }));
+      await pg.goto(SITE + 'works');
+      await pg.waitForTimeout(3500);
+      const link = pg.locator('.works-footer a[href^="https://github.com/"]');
+      const href = await link.getAttribute('href');
+      const [tab] = await Promise.all([pg.context().waitForEvent('page'), link.click()]);
+      await tab.waitForLoadState();
+      check(href === 'https://github.com/BeeverOne' && tab.url() === href, `the GitHub link opens ${tab.url()} in a new tab (FR-37)`, `GitHub link: href ${href}, opened ${tab.url()}`);
+      await pg.close();
+
+});
+
+test('on a slow connection the loader fill repeats until the intro is ready (FT-49)', async ({ browser }) => {
+
+      const pg = await openPage(browser, { viewport: { width: 1280, height: 800 } });
+      pg.on('pageerror', (e) => bad(`page error (slow loader): ${e.message}`));
+      // the intro is ready when the fonts are; holding them 3 s keeps it unready past the 1 s fill
+      await pg.route(/\/fonts\/.*\.woff2$/, async (r) => { await new Promise((res) => setTimeout(res, 3000)); await r.continue(); });
+      await pg.goto(SITE, { waitUntil: 'commit' });
+      await pg.waitForTimeout(1800);
+      const mid = await pg.evaluate(() => { const l = document.querySelector('#loader');
+        return { loop: l.classList.contains('loop'), ready: document.body.classList.contains('ready'), repeats: getComputedStyle(l.querySelector('.fillmark')).animationIterationCount }; });
+      await pg.waitForFunction(() => document.body.classList.contains('ready'), null, { timeout: 10000 }).catch(() => {});
+      const end = await pg.evaluate(() => ({ ready: document.body.classList.contains('ready'), done: document.querySelector('#loader').classList.contains('done') }));
+      check(mid.loop && mid.repeats === 'infinite' && !mid.ready && end.ready && end.done,
+        'after the first fill the loader repeats, and it ends once the intro is ready (FR-49)', `slow loader: ${JSON.stringify({ mid, end })}`);
       await pg.close();
 
 });

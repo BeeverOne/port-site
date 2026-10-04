@@ -12,7 +12,8 @@
     "test:e2e": "playwright test",
     "test": "vitest run",
     "test:e2e:chrome": "playwright test --project=chromium",
-    "scan:secrets": "node scripts/secret-scan.mjs"
+    "scan:secrets": "node scripts/secret-scan.mjs",
+    "measure:inp": "node scripts/inp.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^7.0.0",
@@ -30,6 +31,7 @@
     "@playwright/test": "1.63",
     "js-yaml": "^4.3.2",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "web-vitals": "^6.2.2"
   }
 }

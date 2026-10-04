@@ -102,6 +102,7 @@ function applyLang() {
   $$('[data-i18n-label]').forEach((el) => el.setAttribute('aria-label', T[lang][el.dataset.i18nLabel]));
   $$('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
   track.setAttribute('aria-label', T[lang].projects);
+  updateIndicator();   // the slider speaks its position from the start and in the new language, not only after a scroll (CR-11)
   $$('[data-legal]').forEach((a) => { a.href = LEGAL[a.dataset.legal][lang]; });   // FR-44, FR-45: the page in the active language
   updateThemeLabel();
   requestAnimationFrame(layout);   // text length changes the intro height

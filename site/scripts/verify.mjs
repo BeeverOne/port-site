@@ -3,6 +3,8 @@
    Run: npm run build && node scripts/verify.mjs */
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import yaml from 'js-yaml';
+import { parseStatement } from '../src/lib/statement.js';
 
 /* The repository root, from this script's own location (site/scripts/), so the check runs on any
    machine and in CI. The reference is a frozen copy of the approved prototype v2 kept in the repo;
@@ -272,25 +274,31 @@ for (const [file, lang, other] of legalPages) {
    hash routes left over. */
 const projectIds = [...built.matchAll(/class="card[^"]*" href="\/works\/([\w-]+)"/g)].map((m) => m[1]);
 check(projectIds.length > 0, `cards link to real project paths (${projectIds.length} projects) (FR-14)`, 'cards do not link to /works/<id>');
+/* The language each route is in shows in its intro copy, read from the CMS (src/content/intro.yaml,
+   CR-27) so a copy edit does not fail the check: the trigger heading and every highlighted word of
+   the statement, as Intro.astro pre-renders them. */
+const intro = yaml.load(readFileSync(`${ROOT}/site/src/content/intro.yaml`, 'utf8'));
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const copyIn = (html, lang) => html.includes(esc(intro[lang].trigger))
+  && parseStatement(intro[lang].statement).filter((p) => p.hl).every((p) => html.includes(`>${esc(p.hl)}<`));
 const routes = [
-  ['index.html', 'en', '/', 'Here’s some of my work'],
-  ['works/index.html', 'en', '/works', 'Here’s some of my work'],
-  ['de/index.html', 'de', '/', 'Hier sind einige meiner Arbeiten'],
-  ['de/works/index.html', 'de', '/works', 'Hier sind einige meiner Arbeiten'],
+  ['index.html', 'en', '/'],
+  ['works/index.html', 'en', '/works'],
+  ['de/index.html', 'de', '/'],
+  ['de/works/index.html', 'de', '/works'],
   ...projectIds.flatMap((id) => [
-    [`works/${id}/index.html`, 'en', `/works/${id}`, 'Here’s some of my work'],
-    [`de/works/${id}/index.html`, 'de', `/works/${id}`, 'Hier sind einige meiner Arbeiten'],
+    [`works/${id}/index.html`, 'en', `/works/${id}`],
+    [`de/works/${id}/index.html`, 'de', `/works/${id}`],
   ]),
 ];
 const badRoutes = [];
-for (const [file, lang, base, trigger] of routes) {
+for (const [file, lang, base] of routes) {
   const path = `${OUT}/${file}`;
   const html = existsSync(path) ? readFileSync(path, 'utf8') : '';
   const de = base === '/' ? '/de/' : `/de${base}`;
-  const ok = html.includes(`<html lang="${lang}"`) && html.includes(trigger)
+  const ok = html.includes(`<html lang="${lang}"`) && copyIn(html, lang)
     && html.includes(`hreflang="en" href="https://reverb-one.space${base}"`) && html.includes(`hreflang="de" href="https://reverb-one.space${de}"`)
-    && html.includes('hreflang="x-default"') && !html.includes('#/works')
-    && (lang === 'de' ? /Software\u00ADentwickler|Software&shy;entwickler/.test(html) : html.includes('software developer'));
+    && html.includes('hreflang="x-default"') && !html.includes('#/works');
   if (!ok) badRoutes.push(file);
 }
 check(badRoutes.length === 0, `${routes.length} site routes pre-rendered in their language with hreflang pairs (FR-20, ADR-0012)`,

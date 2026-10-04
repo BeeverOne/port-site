@@ -3,7 +3,8 @@
      PROJECTS  published projects in track order
      STUDY     the published project with the most blocks (the case study the block checks read)
      OTHER     a published project other than STUDY (direct URLs, card text, hover)
-     PREVIEW   a published project with an interactive preview block, or undefined until one exists */
+     PREVIEW   a published project with an interactive preview block, or undefined until one exists
+     INTRO     the intro copy in both languages (src/content/intro.yaml, CR-27) */
 import { readFileSync, readdirSync } from 'node:fs';
 import yaml from 'js-yaml';
 
@@ -19,3 +20,4 @@ const blockCount = (p) => p.blocks?.length ?? 0;
 export const STUDY = PROJECTS.reduce((a, b) => (blockCount(b) > blockCount(a) ? b : a));
 export const OTHER = PROJECTS.find((p) => p.id !== STUDY.id) ?? STUDY;
 export const PREVIEW = PROJECTS.find((p) => p.blocks?.some((b) => b.discriminant === 'preview'));
+export const INTRO = yaml.load(readFileSync(new URL('../../src/content/intro.yaml', import.meta.url), 'utf8'));
