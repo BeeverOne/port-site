@@ -599,3 +599,28 @@ ol.block-list li::before { content: counter(step, decimal-leading-zero); font-si
    16 px leaves 10 */
 .works-footer { padding: 16px 20px 16px 16px; min-height: 76px; }
 @media (max-width: 767px) { .works-footer { padding: 16px; } }
+/* the header's Contact button filled 44 of the header's 64 px (56 on phones), so its frame sat 4 px from
+   the header's edge, 0 on phones; a smaller button in the header leaves 8 px (6 on phones). The footer's
+   Contact button keeps 44 px. */
+.site-header .btn-contact { height: 36px; }
+@media (max-width: 767px) { .site-header .btn-contact { height: 32px; } }
+/* In the works section the header's Contact gives way to the footer's (FR-12, CR-32): it leaves the row
+   but fades out where it stood, so the language and theme toggles take its space; header-shift.js
+   slides them there (and back) instead of letting them jump. The visibility delay keeps the fade
+   visible and still takes the button out of the tab order and the accessibility tree at the end. */
+.site-header .controls { position: relative; }
+.site-header .btn-contact { transition: opacity 200ms ease-out, visibility 0s; }
+body.mode-works .site-header .btn-contact {
+  position: absolute; right: 0; top: 0; bottom: 0; margin: auto 0; opacity: 0;
+  transition: opacity 200ms ease-out, visibility 0s 200ms;
+}
+
+/* Card title on phones (CR-31): below 768 px the title stays under the thumbnail, where it can wrap,
+   instead of cross-fading to the slot above the card, where a long title wrapped into the [ Works ]
+   heading. On wider screens the slot above keeps to one line and ends in an ellipsis if a title is
+   ever longer than the card. */
+.card .hover-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 767px) {
+  .card:hover .hover-title, .card:focus-visible .hover-title { opacity: 0; }
+  .card:hover h3, .card:focus-visible h3 { opacity: 1; }
+}

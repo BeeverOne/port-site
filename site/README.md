@@ -117,7 +117,11 @@ against the previous language's text lengths.
   stable and removes both the travelling slab edge and the downward nudge.
 - Card hover (CR-21): the whole card scales to 1.03 from one origin; the headline cross-fades to a
   slot above the thumbnail, siblings dim behind a works-coloured veil, and the track headroom band
-  keeps the hover title clear of the track's overflow clip.
+  keeps the hover title clear of the track's overflow clip. The slot keeps to one line with an
+  ellipsis, and below 768 px the title stays under the thumbnail instead (CR-31).
+- Header in the works section (CR-32): the header's Contact leaves the row and fades where it stood,
+  and `src/scripts/header-shift.js` slides the language and theme toggles into its space (and back)
+  with the brackets' spring; without the script they move without sliding.
 - Transition look controls: the dev-only prototype panel carries live ranges with value readouts for
   scale, density, size falloff, falloff width, randomness, min and max size, fade width, stream,
   speed, trigger lead and trigger offset (px below the island top at which the trigger line starts

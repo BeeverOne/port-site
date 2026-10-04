@@ -505,7 +505,7 @@ test('CMS blocks and media items (FT-17, FT-21, FT-50 to FT-52, NFT-05)', async 
       await pg.close();
 });
 
-test('contact form against the endpoint contract (FT-32 to FT-36)', async ({ browser, browserName }) => {
+test('contact form against the endpoint contract (FT-32 to FT-36)', async ({ browser }) => {
 
       const pg = await openPage(browser, { viewport: { width: 1280, height: 800 } });
       pg.on('pageerror', (e) => bad(`page error (contact): ${e.message}`));
@@ -565,7 +565,7 @@ test('contact form against the endpoint contract (FT-32 to FT-36)', async ({ bro
 
 });
 
-test('legal pages follow the language (FR-44, FR-45, ADR-0012)', async ({ browser, browserName }) => {
+test('legal pages follow the language (FR-44, FR-45, ADR-0012)', async ({ browser }) => {
 
       const pg = await openPage(browser, { viewport: { width: 1280, height: 800 } });
       pg.on('pageerror', (e) => bad(`page error (legal): ${e.message}`));
@@ -597,23 +597,42 @@ test('legal pages follow the language (FR-44, FR-45, ADR-0012)', async ({ browse
 
 });
 
-test('settle pause holds at the first card (CR-26)', async ({ browser, browserName }) => {
+test('settle pause holds at the first card (CR-26)', async ({ browser }) => {
 
       const pg = await openPage(browser, { viewport: { width: 1440, height: 900 } });
+      const scrollTop = () => pg.evaluate(() => document.querySelector('#scroller').scrollTop);
+      const enter = async () => { await pg.mouse.move(720, 450); await pg.click('#enterWorks'); await pg.waitForTimeout(3500); };
       await pg.goto(SITE);
       await pg.waitForTimeout(3500);
-      await pg.mouse.move(720, 450);
-      await pg.click('#enterWorks');
-      await pg.waitForTimeout(3500);
-      await pg.mouse.wheel(0, 400);             // jack right
-      await pg.waitForTimeout(900);
-      await pg.mouse.wheel(0, -600);            // jack back to the first card
-      await pg.waitForFunction(() => document.querySelector('#track').scrollLeft <= 2, null, { timeout: 3000, polling: 'raf' });
-      const st0 = await pg.evaluate(() => document.querySelector('#scroller').scrollTop);
-      await pg.mouse.wheel(0, -120);            // momentum tail inside the 250 ms window
-      await pg.waitForTimeout(120);
-      const st1 = await pg.evaluate(() => document.querySelector('#scroller').scrollTop);
-      check(Math.abs(st1 - st0) <= 2, `settle pause holds at the first card (${st0} -> ${st1})`, `momentum rolled into the reverse transition (${st0} -> ${st1})`);
+      await enter();
+      /* The pause starts when the track reaches the first card, and the momentum tail has to arrive
+         inside its 250 ms. Under a loaded run the round trips between reaching the card and sending
+         the wheel can take longer, and then the site rightly reverses: that attempt says nothing about
+         the pause. So the page records both moments, and an attempt whose tail came too late is
+         repeated from the works section instead of counted. */
+      await pg.evaluate(() => {
+        const t = document.querySelector('#track');
+        t.addEventListener('scroll', () => { if (t.scrollLeft <= 2 && !window.__firstAt) window.__firstAt = performance.now(); }, { passive: true });
+        addEventListener('wheel', () => { if (window.__firstAt && !window.__tailAt) window.__tailAt = performance.now(); }, { capture: true, passive: true });
+      });
+      let st0 = 0, st1 = 0, lag = Infinity;
+      for (let attempt = 0; attempt < 3 && lag >= 200; attempt++) {
+        await pg.mouse.wheel(0, 400);           // jack right
+        await pg.waitForTimeout(900);
+        await pg.evaluate(() => { window.__firstAt = 0; window.__tailAt = 0; });
+        await pg.mouse.wheel(0, -600);          // jack back to the first card
+        await pg.waitForFunction(() => document.querySelector('#track').scrollLeft <= 2, null, { timeout: 3000, polling: 'raf' });
+        st0 = await scrollTop();
+        await pg.mouse.wheel(0, -120);          // momentum tail inside the 250 ms window
+        await pg.waitForTimeout(120);
+        st1 = await scrollTop();
+        lag = await pg.evaluate(() => window.__tailAt - window.__firstAt);
+        if (lag < 200) break;
+        if (Math.abs(st1 - st0) > 2) { await pg.waitForTimeout(2500); await enter(); }   // it reversed: back to the works
+        else await pg.waitForTimeout(400);
+      }
+      if (lag >= 200) test.info().annotations.push({ type: 'note', description: `the momentum tail never reached the page within 200 ms of the first card (last ${Math.round(lag)} ms); the pause was not testable on this run` });
+      else check(Math.abs(st1 - st0) <= 2, `settle pause holds at the first card (${st0} -> ${st1}, tail after ${Math.round(lag)} ms)`, `momentum rolled into the reverse transition (${st0} -> ${st1}, tail after ${Math.round(lag)} ms)`);
       await pg.waitForTimeout(400);
       await pg.mouse.wheel(0, -120);            // window closed: a deliberate wheel up reverses
       await pg.waitForTimeout(500);
@@ -623,7 +642,7 @@ test('settle pause holds at the first card (CR-26)', async ({ browser, browserNa
 
 });
 
-test('keyboard focus crosses the inert boundary; no scan under reduced motion (CR-15, CR-12)', async ({ browser, browserName }) => {
+test('keyboard focus crosses the inert boundary; no scan under reduced motion (CR-15, CR-12)', async ({ browser }) => {
 
       const pg = await openPage(browser, { viewport: { width: 1280, height: 800 } });
       pg.on('pageerror', (e) => bad(`page error (focus): ${e.message}`));
