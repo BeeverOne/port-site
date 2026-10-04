@@ -1,10 +1,7 @@
 name: Project 4
 order: 4
-draft: false
-thumbnail: null
-thumbnailAlt:
-  en: ''
-  de: ''
+draft: true
+thumbnailAlt: {}
 en:
   headline: Short project headline
   title: Project 4 title
