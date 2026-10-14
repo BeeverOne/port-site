@@ -1,0 +1,359 @@
+name: Car Park Website
+order: 2
+draft: false
+thumbnail: ../../assets/projects/car-park-website/hero.png
+thumbnailAlt:
+  en: >-
+    The hero of the new car park homepage on desktop: the headline 'Mitten
+    in Musterstadt parken. Tag und Nacht.' framed by opening status, entry
+    height, spaces and prices
+  de: >-
+    Der Kopfbereich der neuen Parkhaus-Startseite am Desktop: die
+    Schlagzeile „Mitten in Musterstadt parken. Tag und Nacht.“, umgeben von
+    Öffnungsstatus, Einfahrtshöhe, Plätzen und Preisen
+en:
+  headline: Car Park Website
+  title: Proposal prototype
+  year: '2026'
+  tags:
+    - Astro
+    - TypeScript
+    - schema.org
+    - WCAG 2.2 AA
+    - Playwright
+de:
+  headline: Parkhaus-Website
+  title: Angebotsprototyp
+  year: '2026'
+  tags:
+    - Astro
+    - TypeScript
+    - schema.org
+    - WCAG 2.2 AA
+    - Playwright
+blocks:
+  - discriminant: text
+    value:
+      en: >-
+        A car park website that people, search engines and AI assistants can
+        all read and trust, in three languages.
+      de: >-
+        Eine Parkhaus-Website, die Menschen, Suchmaschinen und
+        KI-Assistenten gleichermaßen lesen können und der sie vertrauen - in
+        drei Sprachen.
+  - discriminant: facts
+    value:
+      rows:
+        - label:
+            en: Role
+            de: Rolle
+          value:
+            en: >-
+              Sole designer and developer: audit, requirements, design,
+              build, testing
+            de: >-
+              Alleiniger Designer und Entwickler: Audit, Anforderungen,
+              Design, Umsetzung, Test
+        - label:
+            en: Context
+            de: Kontext
+          value:
+            en: >-
+              Self-initiated proposal to a family-run car park in a German
+              city centre
+            de: >-
+              Initiativangebot an ein familiengeführtes Parkhaus in einer
+              deutschen Innenstadt
+        - label:
+            en: Timeframe
+            de: Zeitraum
+          value:
+            en: 52 hours planned, September–October 2026
+            de: 52 Stunden geplant, September–Oktober 2026
+        - label:
+            en: Tools
+            de: Werkzeuge
+          value:
+            en: >-
+              Astro, TypeScript, schema.org JSON-LD, Vitest, Playwright,
+              axe-core
+            de: >-
+              Astro, TypeScript, schema.org JSON-LD, Vitest, Playwright,
+              axe-core
+        - label:
+            en: Status
+            de: Status
+          value:
+            en: Proposal
+            de: Angebot
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: The brief
+        de: Die Ausgangslage
+  - discriminant: text
+    value:
+      en: >-
+        A family-run car park earns from more than hourly parking: monthly
+        spaces, a chauffeur service, advertising, a prepaid ticket and EV
+        charging. A lot of customers, especially today, decide on a phone,
+        through a search engine, a map app or an AI assistant, and act on
+        whatever answer they find. My audit found the site failing them.
+        Expired notices came first, the height limit differed between two
+        pages, the free-space count was an image, and the English page
+        renamed the business. Information around the website isn't generally
+        easily accessible.
+      de: >-
+        Ein familiengeführtes Parkhaus verdient an mehr als dem Parken nach
+        Stunden: Dauerplätze, ein Chauffeurservice, Werbung, ein
+        Prepaid-Ticket und Laden für Elektroautos. Viele Kunden entscheiden
+        heute auf dem Handy, über eine Suchmaschine, eine Karten-App oder
+        einen KI-Assistenten, und handeln nach der Antwort, die sie dort
+        finden. Mein Audit zeigte, dass die Website sie im Stich ließ.
+        Abgelaufene Hinweise standen ganz oben, die Einfahrtshöhe
+        unterschied sich zwischen zwei Seiten, die Zahl der freien Plätze
+        war ein Bild, und die englische Seite gab dem Betrieb einen anderen
+        Namen. Die Informationen rund um die Website sind insgesamt nicht
+        leicht zugänglich.
+  - discriminant: image
+    value:
+      image: ../../assets/projects/car-park-website/before-after.png
+      alt:
+        en: >-
+          Two phone screens side by side. Left, a reconstruction of the old
+          homepage: contact details, a logo, a photo banner, a welcome line
+          and a green notice about prices from April 2023. Right, the new
+          homepage: opening status, occupancy, entry height and prices on
+          the first screen, with Call and Route buttons fixed at the bottom.
+        de: >-
+          Zwei Handybildschirme nebeneinander. Links eine Rekonstruktion der
+          alten Startseite: Kontaktdaten, ein Logo, ein Fotobanner, eine
+          Begrüßung und ein grüner Hinweis auf Preise ab April 2023. Rechts
+          die neue Startseite: Öffnungsstatus, Belegung, Einfahrtshöhe und
+          Preise auf dem ersten Bildschirm, unten fest die Schaltflächen
+          Anrufen und Route.
+      caption:
+        en: >-
+          The first screen, before and after. Left: a reconstruction of the
+          old layout, rebuilt in the anonymised demo brand.
+        de: >-
+          Der erste Bildschirm, vorher und nachher. Links: eine
+          Rekonstruktion des alten Layouts, nachgebaut in der anonymisierten
+          Demo-Marke.
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: What it does
+        de: Was sie leistet
+  - discriminant: text
+    value:
+      en: >-
+        The site opens with what a driver needs: is it open, how many
+        spaces, how high, what does it cost, with call and directions one
+        tap away. Every service makes its own case, from monthly spaces to
+        the chauffeur service and advertising, each with a way to ask.
+        Notices appear and disappear on their own dates, and a date picker
+        shows the owner any day. Visitors in three languages, search engines
+        and AI assistants all get the same facts.
+      de: >-
+        Die Website beginnt mit dem, was Autofahrer brauchen: Ist geöffnet,
+        wie viele Plätze gibt es, wie hoch ist die Einfahrt, was kostet es -
+        Anrufen und Route sind einen Tipp entfernt. Jedes Angebot spricht
+        für sich, von den Dauerplätzen bis zum Chauffeurservice und zur
+        Werbung, jeweils mit einer Möglichkeit zur Anfrage. Hinweise
+        erscheinen und verschwinden an ihrem eigenen Datum, und eine
+        Datumsvorschau zeigt dem Inhaber jeden beliebigen Tag. Besucher in
+        drei Sprachen, Suchmaschinen und KI-Assistenten erhalten alle
+        dieselben Fakten.
+  - discriminant: image
+    value:
+      image: ../../assets/projects/car-park-website/facts-first.png
+      alt:
+        en: >-
+          The new homepage on desktop. Five numbered callouts mark the
+          opening status, the entry height, the number of spaces with
+          occupancy, the price per hour with the daily maximum, and the
+          Route and Call buttons.
+        de: >-
+          Die neue Startseite am Desktop. Fünf nummerierte Markierungen
+          zeigen den Öffnungsstatus, die Einfahrtshöhe, die Zahl der Plätze
+          mit Belegung, den Preis pro Stunde mit Tagesmaximum und die
+          Schaltflächen Route starten und Anrufen.
+      caption:
+        en: >-
+          The first screen answers the driver. Prototype, anonymised demo
+          brand.
+        de: >-
+          Der erste Bildschirm beantwortet die Fragen der Fahrer. Prototyp,
+          anonymisierte Demo-Marke.
+  - discriminant: video
+    value:
+      url: >-
+        https://kls7pmsbzpva2ztj.public.blob.vercel-storage.com/car-park-website/clip-01-date-preview.mp4
+      poster: ../../assets/projects/car-park-website/date-preview-poster.png
+      width: 1920
+      height: 1080
+      caption:
+        en: >-
+          The date preview: Rosenmontag 2027 brings up a closure notice, the
+          first Sunday of Advent a price cap and a Christmas-market notice,
+          and a normal Tuesday clears them.
+        de: >-
+          Die Datumsvorschau: Rosenmontag 2027 zeigt einen Hinweis auf die
+          Schließung, der erste Advent eine Preisdeckelung und einen Hinweis
+          auf den Weihnachtsmarkt, ein normaler Dienstag blendet sie wieder
+          aus.
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: What it took
+        de: Was es brauchte
+  - discriminant: heading
+    value:
+      level: subsection
+      text:
+        en: A · An audit before an offer
+        de: A · Ein Audit vor dem Angebot
+  - discriminant: text
+    value:
+      en: >-
+        Instead of pitching a redesign straight away, I went through the
+        live site page by page and wrote down what worked, as well as things
+        that could use an update. The audit formed the foundation for the
+        project and defined the scope of work to be done.
+      de: >-
+        Statt sofort ein Redesign anzubieten, bin ich die bestehende Website
+        Seite für Seite durchgegangen und habe notiert, was funktioniert und
+        was eine Überarbeitung vertragen könnte. Das Audit bildete die
+        Grundlage des Projekts und legte den Arbeitsumfang fest.
+  - discriminant: heading
+    value:
+      level: subsection
+      text:
+        en: B · One set of facts for people and machines
+        de: B · Eine Faktenbasis für Menschen und Maschinen
+  - discriminant: text
+    value:
+      en: >-
+        Prices, hours and the height limit are written once, in one file.
+        Every page in every language reads them, and so does the structured
+        data that search engines and AI agents read. Carnival and holiday
+        dates are computed, not typed, so the parade closure appears on the
+        page and in the machine-readable opening hours from the same date.
+      de: >-
+        Preise, Öffnungszeiten und die Einfahrtshöhe stehen ein einziges Mal
+        in einer Datei. Jede Seite in jeder Sprache liest sie von dort,
+        ebenso die strukturierten Daten, die Suchmaschinen und KI-Agenten
+        auslesen. Karnevals- und Feiertage werden berechnet statt
+        eingetippt, deshalb erscheint die Sperrung während des Umzugs auf
+        der Seite und in den maschinenlesbaren Öffnungszeiten aus demselben
+        Datum.
+  - discriminant: heading
+    value:
+      level: subsection
+      text:
+        en: C · Accessibility
+        de: C · Barrierefreiheit
+  - discriminant: text
+    value:
+      en: >-
+        A screen reader and a search engine have the same problem: neither
+        can see the page. Both need real headings, links that say where they
+        go, and text instead of pictures of text, so building for one serves
+        the other. Germany's accessibility law (BFSG) probably doesn't cover
+        a site this small, but I held the work to WCAG 2.2 AA anyway and
+        tested for it from the first page.
+      de: >-
+        Ein Screenreader und eine Suchmaschine haben dasselbe Problem:
+        Keiner von beiden sieht die Seite. Beide brauchen echte
+        Überschriften, Links, die sagen, wohin sie führen, und Text statt
+        Bildern von Text - wer für den einen baut, baut also auch für den
+        anderen. Das Barrierefreiheitsstärkungsgesetz (BFSG) gilt für eine
+        so kleine Website wahrscheinlich nicht, trotzdem habe ich die Arbeit
+        an WCAG 2.2 AA ausgerichtet und ab der ersten Seite darauf getestet.
+  - discriminant: heading
+    value:
+      level: subsection
+      text:
+        en: D · Translations that can't change a fact
+        de: D · Übersetzungen, die keinen Fakt ändern können
+  - discriminant: text
+    value:
+      en: >-
+        The office writes only German. Before an English or Dutch draft
+        counts, a check confirms that every number, time, price and link
+        from the German survived and that key terms follow a glossary. If
+        the German changes, the old translation stops showing until a new
+        one passes. Legal pages stay German.
+      de: >-
+        Das Büro schreibt nur auf Deutsch. Bevor ein englischer oder
+        niederländischer Entwurf zählt, bestätigt eine Prüfung, dass jede
+        Zahl, jede Uhrzeit, jeder Preis und jeder Link aus dem Deutschen
+        erhalten geblieben ist und Schlüsselbegriffe einem Glossar folgen.
+        Ändert sich der deutsche Text, wird die alte Übersetzung
+        ausgeblendet, bis eine neue die Prüfung besteht. Rechtstexte bleiben
+        auf Deutsch.
+  - discriminant: video
+    value:
+      url: >-
+        https://kls7pmsbzpva2ztj.public.blob.vercel-storage.com/car-park-website/clip-02-three-languages.mp4
+      poster: ../../assets/projects/car-park-website/three-languages-poster.png
+      width: 1920
+      height: 1080
+      caption:
+        en: >-
+          The homepage switches from German to English to Dutch and back;
+          the headline, navigation and facts change language each time.
+        de: >-
+          Die Startseite wechselt von Deutsch zu Englisch zu Niederländisch
+          und zurück; Schlagzeile, Navigation und Fakten wechseln jedes Mal
+          die Sprache.
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: Where it stands
+        de: Stand der Dinge
+  - discriminant: list
+    value:
+      ordered: false
+      items:
+        - en: >-
+            The site is built: 12 pages in German, the 9 public ones also in
+            English and Dutch
+          de: >-
+            Die Website steht: 12 Seiten auf Deutsch, die 9 öffentlichen
+            auch auf Englisch und Niederländisch
+        - en: >-
+            254 unit tests and an axe-core scan that finds no WCAG 2.2 A or
+            AA violation
+          de: >-
+            254 Unit-Tests und ein axe-core-Scan, der keinen Verstoß gegen
+            WCAG 2.2 A oder AA findet
+        - en: >-
+            Automated scans catch only part of WCAG, so a manual check with
+            a screen reader is still to do
+          de: >-
+            Automatische Scans erfassen nur einen Teil der WCAG, deshalb
+            steht eine manuelle Prüfung mit Screenreader noch aus
+        - en: >-
+            Next: a native speaker reviews the English and Dutch text, then
+            the presentation to the owner. The real-brand version stays
+            private until the owner agrees in writing
+          de: >-
+            Als Nächstes: Muttersprachler prüfen den englischen und
+            niederländischen Text, danach folgt die Präsentation beim
+            Inhaber. Die Version mit der echten Marke bleibt privat, bis der
+            Inhaber schriftlich zustimmt
+  - discriminant: text
+    value:
+      en: >-
+        The content comes from the business's current website. I drafted the
+        English and Dutch text with AI help.
+      de: >-
+        Die Inhalte stammen von der aktuellen Website des Betriebs. Den
+        englischen und niederländischen Text habe ich mit KI-Unterstützung
+        entworfen.

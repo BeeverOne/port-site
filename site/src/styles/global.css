@@ -492,16 +492,16 @@ body.mode-works .island > .plus-field { background-color: var(--works-plus); }
     display: block; grid-column: 1; grid-row: 1; position: sticky; top: 100px;
     max-height: calc(100dvh - 260px); overflow-y: auto; scrollbar-width: none; padding: 8px 24px; margin: -8px -24px;   /* room for the entries' -10 px edge and 8 px past their corner marks (CR-30) */
   }
-  .detail.has-toc .detail-body > .detail-blocks { grid-column: 2; grid-row: 1; max-width: 720px; }
+  .detail.has-toc .detail-body > .detail-blocks { grid-column: 2; grid-row: 1; }
   .detail.has-toc .detail-section { visibility: hidden; }   /* the rail shows where you are */
 }
 
 /* Detail blocks from the CMS (FR-17) in the owner's order */
 .detail-blocks { display: flex; flex-direction: column; gap: 28px; }
 .detail-blocks[hidden] { display: none; }
-.block-text p { margin: 0 0 1em; max-width: 64ch; font-size: 17px; line-height: 1.65; color: var(--works-ink); }
+.block-text p { margin: 0 0 1em; font-size: 17px; line-height: 1.65; color: var(--works-ink); }
 .block-text p:last-child { margin-bottom: 0; }
-.block-text.lede p:first-child { max-width: 36ch; font-size: clamp(21px, 2vw, 26px); line-height: 1.4; }
+.block-text.lede p:first-child { font-size: clamp(21px, 2vw, 26px); line-height: 1.4; }
 .block-heading { margin: 0; scroll-margin-top: 84px; font-weight: 500; text-wrap: balance; }
 .block-heading:focus { outline: none; }   /* focused only as the target of a contents link */
 /* sections: [ bracket ] headings like [ Works ], counted like the track's 1 / 6 */
@@ -523,11 +523,11 @@ body.mode-works .island > .plus-field { background-color: var(--works-plus); }
 .block-facts dt { font-size: 15px; font-weight: 600; font-stretch: 80%; color: var(--works-sub); padding-top: 2px; }
 .block-facts dd { margin: 0; font-size: 16px; line-height: 1.5; }
 /* lists: plus-mark bullets; a numbered list as steps, each with its chip to a highlight */
-.block-list { margin: 0; padding: 0; list-style: none; max-width: 64ch; font-size: 17px; line-height: 1.6; }
+.block-list { margin: 0; padding: 0; list-style: none; font-size: 17px; line-height: 1.6; }
 .block-list li + li { margin-top: 0.35em; }
 ul.block-list li { position: relative; padding-left: 26px; }
 ul.block-list li::before { content: "+"; position: absolute; left: 2px; top: -1px; color: var(--accent); font-size: 20px; font-weight: 600; }
-ol.block-list { counter-reset: step; max-width: none; border-top: 1px solid var(--works-rule); }
+ol.block-list { counter-reset: step; border-top: 1px solid var(--works-rule); }
 ol.block-list li {
   counter-increment: step; display: grid; grid-template-columns: 44px 1fr auto; align-items: baseline; gap: 12px;
   margin: 0; padding: 12px 0; border-bottom: 1px solid var(--works-rule);

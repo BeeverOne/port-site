@@ -8,10 +8,11 @@ import { test, expect } from '@playwright/test';
 import { PROJECTS, STUDY, OTHER, PREVIEW, INTRO } from './content.mjs';
 
 const SITE = 'http://localhost:4322/';
-/* The works track only moves with two or more published projects; with fewer, the checks of its
-   movement (jack, keys, slider drag, the ends, the settle pauses) cannot happen and say so instead. */
-const MULTI = PROJECTS.length >= 2;
-const ONE_CARD = `needs at least 2 published projects for the works track to move (${PROJECTS.length} published)`;
+/* The works track only moves when its cards overflow it: at the 1440px desktop viewport two 560px cards
+   fit side by side, so it takes three published projects; with fewer, the checks of its movement (jack,
+   keys, slider drag, the ends, the settle pauses) cannot happen and say so instead. */
+const MULTI = PROJECTS.length >= 3;
+const ONE_CARD = `needs at least 3 published projects for the works track to overflow and move (${PROJECTS.length} published)`;
 test.describe.configure({ timeout: 120_000 });
 
 /* A stand-in for Cloudflare Turnstile that passes and hands out a fixed token: the suite stays offline,

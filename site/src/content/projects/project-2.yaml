@@ -1,6 +1,6 @@
 name: Project 2
 order: 2
-draft: false
+draft: true
 thumbnailAlt: {}
 en:
   headline: Short project headline
