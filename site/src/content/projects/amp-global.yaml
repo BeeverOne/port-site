@@ -1,0 +1,233 @@
+name: AMP Global
+order: 3
+draft: false
+thumbnail: ../../assets/projects/amp-global/cover.png
+thumbnailAlt:
+  en: The AMP Global logo in white on a dark ground.
+  de: Das Logo von AMP Global in Weiß auf dunklem Grund.
+en:
+  headline: A website rebuilt around a new brand
+  title: AMP Global
+  year: '2026'
+  tags:
+    - Website
+    - Front-end
+    - Interactive
+    - CMS
+de:
+  headline: Eine Website, neu gebaut für eine neue Marke
+  title: AMP Global
+  year: '2026'
+  tags:
+    - Website
+    - Frontend
+    - Interaktiv
+    - CMS
+blocks:
+  - discriminant: text
+    value:
+      en: >-
+        AMP Global is a music investment company. It invests in music rights
+        and music-driven platforms in emerging and high-growth regions, from
+        Africa to Latin America. As part of a rebranding project by ATIDE
+        Studios, AMP's website had to change to match the new brand. I was
+        the sole developer, from layout sketches to launch.
+      de: >-
+        AMP Global ist ein Musik-Investmentunternehmen. Es investiert in
+        Musikrechte und musikgetriebene Plattformen in aufstrebenden,
+        wachstumsstarken Regionen, von Afrika bis Lateinamerika. Im Rahmen
+        eines Rebrandings durch ATIDE Studios musste sich auch die Website
+        von AMP an die neue Marke anpassen. Ich war der alleinige
+        Entwickler, von den Layout-Skizzen bis zum Launch.
+  - discriminant: facts
+    value:
+      rows:
+        - label:
+            en: Role
+            de: Rolle
+          value:
+            en: Sole developer, from layout sketches to launch
+            de: Alleinentwickler, von den Layout-Skizzen bis zum Launch
+        - label:
+            en: Context
+            de: Kontext
+          value:
+            en: Website for the AMP Global rebrand by ATIDE Studios
+            de: Website zum Rebranding von AMP Global durch ATIDE Studios
+        - label:
+            en: Stack
+            de: Stack
+          value:
+            en: Astro, Keystatic CMS, Vercel, Canvas 2D
+            de: Astro, Keystatic CMS, Vercel, Canvas 2D
+        - label:
+            en: Status
+            de: Status
+          value:
+            en: Live at ampglobalent.com
+            de: Live unter ampglobalent.com
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: Problem
+        de: Problem
+  - discriminant: text
+    value:
+      en: >-
+        The old site no longer matched the brand, and it did not hold
+        together. Every page opened on a different photo with its own colour
+        cast, from orange to red to deep blue. Sections switched between
+        cards, maps, icon lists and centred text blocks, so each page felt
+        like a separate site.
+      de: >-
+        Die alte Website passte nicht mehr zur Marke, und sie hielt nicht
+        zusammen. Jede Seite begann mit einem anderen Foto mit eigenem
+        Farbstich, von Orange über Rot bis Dunkelblau. Die Abschnitte
+        wechselten zwischen Karten, Landkarten, Icon-Listen und zentrierten
+        Textblöcken, sodass sich jede Seite wie eine eigene Website
+        anfühlte.
+  - discriminant: image
+    value:
+      image: ../../assets/projects/amp-global/old-site.png
+      alt:
+        en: >-
+          Screenshots of the old AMP Global website, one column per page.
+          Each page opens on a full-screen photo with its own colour cast:
+          orange concert crowds, a mariachi band, a dark red portrait and a
+          blue DJ booth. Dark sections follow that switch between image
+          cards, a world map, team portraits and centred text.
+        de: >-
+          Screenshots der alten Website von AMP Global, eine Spalte pro
+          Seite. Jede Seite beginnt mit einem bildschirmfüllenden Foto mit
+          eigenem Farbstich: orangefarbene Konzertmengen, eine
+          Mariachi-Band, ein dunkelrotes Porträt und ein blaues DJ-Pult.
+          Darauf folgen dunkle Abschnitte, die zwischen Bildkarten, einer
+          Weltkarte, Teamporträts und zentriertem Text wechseln.
+      caption:
+        en: The old site, page by page.
+        de: Die alte Website, Seite für Seite.
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: Approach
+        de: Vorgehen
+  - discriminant: text
+    value:
+      en: >-
+        The goals were a clear site that matches the new brand on every page
+        and is easy to navigate. I started on paper, sketching the layouts
+        before writing any code.
+      de: >-
+        Die Ziele waren eine klare Website, die auf jeder Seite zur neuen
+        Marke passt und leicht zu navigieren ist. Ich habe auf Papier
+        begonnen und die Layouts skizziert, bevor ich eine Zeile Code
+        geschrieben habe.
+  - discriminant: image
+    value:
+      image: ../../assets/projects/amp-global/sketch-pages.png
+      alt:
+        en: >-
+          Hand-drawn layout sketches. Left, the homepage: the AMP logo and
+          navigation, the headline 'Investing In The Future Of Global Music
+          Culture' beside an intro and a Submit Proposal button, a
+          two-column section and the footer; below it, the loading screen,
+          with arrows tracing how the logo draws itself, notes that 'Global'
+          animates in from below and that the logo then moves to the
+          top-left corner, and a thin progress bar. Right, the About page:
+          What We Do with Invest, Build and Partner buttons, Our Edge with a
+          list that shows details on hover, Who We Work With as four cards,
+          Focus Regions with a dot map of Africa, and the footer.
+        de: >-
+          Handgezeichnete Layout-Skizzen. Links die Startseite: AMP-Logo und
+          Navigation, die Schlagzeile „Investing In The Future Of Global
+          Music Culture“ neben einem Einleitungstext und einer Schaltfläche
+          „Submit Proposal“, ein zweispaltiger Abschnitt und der Footer;
+          darunter der Ladebildschirm mit Pfeilen, die zeigen, wie sich das
+          Logo selbst zeichnet, Notizen, dass „Global“ von unten
+          hereinanimiert und das Logo danach in die linke obere Ecke
+          wandert, und ein dünner Fortschrittsbalken. Rechts die Seite „Über
+          uns“: What We Do mit den Schaltflächen Invest, Build und Partner,
+          Our Edge mit einer Liste, die beim Überfahren Details zeigt, Who
+          We Work With als vier Karten, Focus Regions mit einer Punktkarte
+          von Afrika und der Footer.
+      caption:
+        en: >-
+          The first layout sketches, drawn before any code: the homepage and
+          the loading screen, left, and the About page.
+        de: >-
+          Die ersten Layout-Skizzen, gezeichnet vor jeder Zeile Code: links
+          die Startseite und der Ladebildschirm, rechts die Seite „Über
+          uns“.
+  - discriminant: image
+    value:
+      image: ../../assets/projects/amp-global/sketch-details.png
+      alt:
+        en: >-
+          Four sketch frames. Top left, the header, with a note that the
+          navigation collapses into a menu when the page scrolls. The other
+          three show the What We Do section with Invest, Build and Partner
+          each highlighted in turn above its own description.
+        de: >-
+          Vier Skizzen. Oben links der Header mit der Notiz, dass die
+          Navigation beim Scrollen in ein Menü einklappt. Die anderen drei
+          zeigen den Abschnitt What We Do, in dem nacheinander Invest, Build
+          und Partner hervorgehoben sind, jeweils über der eigenen
+          Beschreibung.
+      caption:
+        en: >-
+          Details: the navigation folding into a menu on scroll, and the
+          three states of What We Do.
+        de: >-
+          Details: die Navigation, die beim Scrollen in ein Menü einklappt,
+          und die drei Zustände von What We Do.
+  - discriminant: text
+    value:
+      en: >-
+        The highlight is the matrix: a fine grid of dots behind the content
+        that reacts to the cursor. I designed it for maximum control. I
+        built it in isolation and exposed every value, from dot size and
+        spacing to cursor reach, strength and falloff, as a live control.
+        That made refining the feel of the interaction relatively easy: I
+        could tune it by eye, then lock the values in.
+      de: >-
+        Das Highlight ist die Matrix: ein feines Punktraster hinter den
+        Inhalten, das auf den Cursor reagiert. Ich habe sie auf maximale
+        Kontrolle ausgelegt. Ich habe sie isoliert gebaut und jeden Wert,
+        von Punktgröße und -abstand bis zu Reichweite, Stärke und Abfall des
+        Cursors, als Live-Regler zugänglich gemacht. Dadurch ließ sich das
+        Gefühl der Interaktion vergleichsweise leicht verfeinern: Ich konnte
+        sie nach Augenmaß abstimmen und die Werte dann festschreiben.
+  - discriminant: preview
+    value:
+      slug: amp-matrix
+      aspect: 16 / 10
+      title:
+        en: >-
+          The matrix harness. Every value is a control, so the feel was
+          tuned by eye.
+        de: >-
+          Die Matrix in Isolation. Jeder Wert ist ein Regler, so ließ sich
+          das Gefühl nach Augenmaß abstimmen.
+  - discriminant: heading
+    value:
+      level: section
+      text:
+        en: Outcome
+        de: Ergebnis
+  - discriminant: text
+    value:
+      en: >-
+        The new site is live at ampglobalent.com and carries the new brand
+        from the first screen to the footer. The navigation now has four
+        clear pages instead of five, with the focus regions on the homepage.
+        A built-in CMS lets AMP's team update content themselves, so changes
+        no longer need a developer.
+      de: >-
+        Die neue Website ist unter ampglobalent.com live und trägt die neue
+        Marke vom ersten Bildschirm bis zum Footer. Die Navigation hat jetzt
+        vier klare Seiten statt fünf, mit den Fokusregionen auf der
+        Startseite. Ein integriertes CMS ermöglicht es dem Team von AMP,
+        Inhalte selbst zu pflegen, sodass Änderungen keinen Entwickler mehr
+        brauchen.

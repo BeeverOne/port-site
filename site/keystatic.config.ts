@@ -38,7 +38,10 @@ const image = (label: string, required = false) =>
   });
 
 /* Interactive component previews are small pages in src/pages/previews (ADR-0008); the CMS picks one. */
-const PREVIEWS = [{ label: 'Circle size (demo)', value: 'circle-size' }] as const;
+const PREVIEWS = [
+  { label: 'Circle size (demo)', value: 'circle-size' },
+  { label: 'AMP matrix with tuning controls', value: 'amp-matrix' },
+] as const;
 
 const cardFields = (lang: 'EN' | 'DE') =>
   fields.object(

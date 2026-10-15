@@ -1,0 +1,235 @@
+---
+/* Interactive component preview "amp-matrix" (FR-17, ADR-0008): the AMP Global dot matrix in isolation,
+   with its tuning controls. Ported from the AMP site's src/lib/matrix.ts; the defaults are the values
+   locked for the live site. Sandboxed like every preview (opaque origin), so the logo the sweep traces
+   is an inline data URI: a fetched image would taint the canvas and getImageData would throw.
+   Same performance limits as the live site: DPR capped at 1.5, ~30fps, the sweep off under reduced
+   motion while the grid and the cursor field stay. ?lang=de switches the labels. */
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>AMP matrix</title>
+    <style is:global>
+      :root { color-scheme: dark; --ink: #17130f; --paper: #faf8f5; --soft: #c9c2b8; --rule: #4a423a; --accent: #f9603d; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: grid; grid-template-columns: minmax(0, 1fr) 248px; background: var(--ink); color: var(--paper);
+        font: 500 13px/1.3 system-ui, sans-serif; overflow: hidden;
+      }
+      .stage { position: relative; min-width: 0; cursor: crosshair; touch-action: pan-y; }
+      canvas { position: absolute; inset: 0; display: block; }
+      .hint { position: absolute; left: 14px; bottom: 12px; margin: 0; color: var(--soft); pointer-events: none; }
+      .panel { border-left: 1px solid var(--rule); background: #1d1814; overflow-y: auto; }
+      .panel summary { padding: 14px 16px 10px; font-weight: 700; cursor: pointer; list-style: none; }
+      .panel summary::-webkit-details-marker { display: none; }
+      .panel summary::after { content: " –"; color: var(--soft); }
+      .panel:not([open]) summary::after { content: " +"; }
+      form { display: flex; flex-direction: column; gap: 10px; padding: 0 16px 16px; }
+      label { display: flex; flex-direction: column; gap: 4px; }
+      label span { display: flex; justify-content: space-between; color: var(--soft); }
+      output { color: var(--paper); font-variant-numeric: tabular-nums; }
+      input[type="range"] { width: 100%; margin: 0; accent-color: var(--accent); }
+      button {
+        margin-top: 4px; padding: 7px 10px; border: 1px solid var(--rule); border-radius: 6px; background: none;
+        color: var(--paper); font: inherit; cursor: pointer;
+      }
+      button:hover { border-color: var(--soft); }
+      :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      /* phones: the panel folds over the matrix instead of taking a column */
+      @media (max-width: 599px) {
+        body { grid-template-columns: 1fr; }
+        .panel { position: absolute; right: 8px; bottom: 8px; max-height: calc(100% - 16px); width: min(248px, calc(100% - 16px)); border: 1px solid var(--rule); border-radius: 8px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage" id="stage"><canvas id="matrix" aria-hidden="true"></canvas><p class="hint" id="hint">Move your cursor over the grid</p></div>
+    <details class="panel" id="panel" open>
+      <summary id="title">Tuning</summary>
+      <form id="controls"></form>
+    </details>
+    <script is:inline>
+      const LOGO = 'data:image/png;base64,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';
+      const DE = new URLSearchParams(location.search).get('lang') === 'de';
+      if (DE) {
+        document.documentElement.lang = 'de';
+        document.getElementById('hint').textContent = 'Cursor über das Raster bewegen';
+      }
+
+      // The live site's locked values, then the subset the panel exposes: [key, EN, DE, min, max, step]
+      const LOCKED = {
+        cell: 5, dot: 0.5, baseOpacity: 0.1, cursorRadius: 40, cursorStrength: 0.2, cursorFalloff: 2.7, dotGrow: 2.3,
+        flashInterval: 2.5, sweepDuration: 2.6, bandWidth: 300, flashOpacity: 0.45, flashBoostUnderCursor: 1.1,
+        logoWidth: 0.74, logoOpacity: 0.62, logoResidual: 0.3, logoGrow: 2.0,
+      };
+      const CONTROLS = [
+        ['cell', 'Dot spacing', 'Punktabstand', 3, 20, 1],
+        ['dot', 'Dot size', 'Punktgröße', 0.25, 2, 0.05],
+        ['baseOpacity', 'Base opacity', 'Grunddeckkraft', 0.02, 0.4, 0.01],
+        ['cursorRadius', 'Cursor reach', 'Reichweite des Cursors', 20, 200, 5],
+        ['cursorStrength', 'Cursor strength', 'Stärke des Cursors', 0, 1, 0.05],
+        ['cursorFalloff', 'Falloff', 'Abfall', 0.5, 5, 0.1],
+        ['dotGrow', 'Dot growth', 'Punktwachstum', 1, 4, 0.1],
+        ['logoWidth', 'Logo width', 'Logobreite', 0.3, 1, 0.02],
+        ['logoOpacity', 'Logo strength', 'Logostärke', 0.2, 1, 0.05],
+        ['flashInterval', 'Sweep interval (s)', 'Abstand der Durchläufe (s)', 0.5, 6, 0.1],
+      ];
+      const cfg = { ...LOCKED };
+
+      const form = document.getElementById('controls');
+      document.getElementById('title').textContent = DE ? 'Feinabstimmung' : 'Tuning';
+      for (const [key, en, de, min, max, step] of CONTROLS) {
+        const label = document.createElement('label');
+        label.innerHTML = '<span></span><input type="range">';
+        const [name, input] = [label.firstChild, label.lastChild];
+        const out = document.createElement('output');
+        name.textContent = DE ? de : en;
+        name.append(out);
+        Object.assign(input, { name: key, min, max, step, value: cfg[key] });
+        out.textContent = cfg[key];
+        input.addEventListener('input', () => {
+          cfg[key] = +input.value;
+          out.textContent = input.value;
+          if (key === 'cell') resize(); else if (key === 'logoWidth') buildMask();
+        });
+        form.append(label);
+      }
+      const reset = document.createElement('button');
+      reset.type = 'button';
+      reset.textContent = DE ? 'Auf die Live-Werte zurücksetzen' : 'Reset to the live values';
+      reset.addEventListener('click', () => {
+        Object.assign(cfg, LOCKED);
+        for (const input of form.querySelectorAll('input')) {
+          input.value = cfg[input.name];
+          input.previousSibling.lastChild.textContent = input.value;
+        }
+        resize();
+      });
+      form.append(reset);
+      if (matchMedia('(max-width: 599px)').matches) document.getElementById('panel').open = false;
+
+      const stage = document.getElementById('stage');
+      const canvas = document.getElementById('matrix');
+      const ctx = canvas.getContext('2d');
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+      const grid = { cols: 0, rows: 0, w: 0, h: 0, dpr: 1 };
+      const mouse = { x: 0, y: 0, active: false };
+      let mask = null;
+      const logo = new Image();
+      logo.onload = buildMask;
+      logo.src = LOGO;
+
+      // The AMP mark rasterised to grid resolution; the sweep samples it per dot.
+      function buildMask() {
+        if (!logo.naturalWidth || !grid.cols) return;
+        const off = document.createElement('canvas');
+        off.width = grid.cols;
+        off.height = grid.rows;
+        const octx = off.getContext('2d');
+        let boxW = grid.cols * cfg.logoWidth;
+        let boxH = boxW * (logo.naturalHeight / logo.naturalWidth);
+        const maxH = grid.rows * 0.62;
+        if (boxH > maxH) { boxH = maxH; boxW = boxH * (logo.naturalWidth / logo.naturalHeight); }
+        octx.drawImage(logo, (grid.cols - boxW) / 2, (grid.rows - boxH) / 2, boxW, boxH);
+        const d = octx.getImageData(0, 0, grid.cols, grid.rows).data;
+        mask = new Float32Array(grid.cols * grid.rows);
+        for (let i = 0; i < mask.length; i++) mask[i] = d[i * 4 + 3] / 255;
+      }
+
+      function resize() {
+        const dpr = Math.min(devicePixelRatio || 1, 1.5);
+        const w = stage.clientWidth, h = stage.clientHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        Object.assign(grid, { cols: Math.ceil(w / cfg.cell) + 1, rows: Math.ceil(h / cfg.cell) + 1, w, h, dpr });
+        buildMask();
+      }
+      new ResizeObserver(resize).observe(stage);
+
+      stage.addEventListener('pointermove', (e) => {
+        const r = stage.getBoundingClientRect();
+        Object.assign(mouse, { x: e.clientX - r.left, y: e.clientY - r.top, active: true });
+      });
+      stage.addEventListener('pointerleave', () => { mouse.active = false; });
+
+      const LEVELS = 16, FRAME_MS = 1000 / 30;
+      const buckets = Array.from({ length: LEVELS }, () => []);
+      const flashStart = performance.now() + 600;
+      let last = 0;
+      function draw(now) {
+        requestAnimationFrame(draw);
+        if (now - last < FRAME_MS) return;
+        last = now;
+        const c = cfg, g = grid;
+        ctx.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
+        ctx.clearRect(0, 0, g.w, g.h);
+
+        let bandX = null, flashPhase = 0;
+        if (!reduced.matches) {
+          const cycle = (c.flashInterval + c.sweepDuration) * 1000;
+          const t = (((now - flashStart) % cycle) + cycle) % cycle;
+          if (t < c.sweepDuration * 1000) {
+            flashPhase = t / (c.sweepDuration * 1000);
+            bandX = -c.bandWidth + flashPhase * (g.w + c.bandWidth * 2);
+          }
+        }
+        const env = Math.sin(flashPhase * Math.PI);
+        const cr = c.cursorRadius, cr2 = cr * cr;
+        for (const b of buckets) b.length = 0;
+
+        for (let row = 0; row < g.rows; row++) {
+          const y = row * c.cell, rowOff = row * g.cols;
+          for (let col = 0; col < g.cols; col++) {
+            const x = col * c.cell;
+            let opacity = c.baseOpacity, radius = c.dot, ci = 0;
+            if (mouse.active) {
+              const dx = x - mouse.x, dy = y - mouse.y, d2 = dx * dx + dy * dy;
+              if (d2 < cr2) {
+                ci = Math.pow(1 - Math.sqrt(d2) / cr, c.cursorFalloff);
+                opacity += ci * c.cursorStrength;
+                radius = c.dot * (1 + ci * (c.dotGrow - 1));
+              }
+            }
+            if (bandX !== null) {
+              const bd = Math.abs(x - bandX);
+              if (bd < c.bandWidth) {
+                let bi = 1 - bd / c.bandWidth;
+                bi *= bi;
+                const mk = mask ? mask[rowOff + col] : 0;
+                const amp = bi * env;
+                let flash = amp * (c.flashOpacity * c.logoResidual + c.logoOpacity * mk);
+                if (ci > 0) flash *= 1 + ci * (c.flashBoostUnderCursor - 1);
+                opacity += flash;
+                if (mk > 0.2) radius = Math.max(radius, c.dot * (1 + amp * mk * (c.logoGrow - 1)));
+              }
+            }
+            if (opacity <= 0.008) continue;
+            buckets[(Math.min(opacity, 1) * (LEVELS - 1)) | 0].push(x, y, radius);
+          }
+        }
+        // one path fill per alpha level instead of one per dot
+        ctx.fillStyle = '#faf8f5';
+        for (let level = 1; level < LEVELS; level++) {
+          const arr = buckets[level];
+          if (!arr.length) continue;
+          ctx.globalAlpha = level / (LEVELS - 1);
+          ctx.beginPath();
+          for (let i = 0; i < arr.length; i += 3) {
+            ctx.moveTo(arr[i] + arr[i + 2], arr[i + 1]);
+            ctx.arc(arr[i], arr[i + 1], arr[i + 2], 0, Math.PI * 2);
+          }
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+      requestAnimationFrame(draw);
+    </script>
+  </body>
+</html>
