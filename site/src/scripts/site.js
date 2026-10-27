@@ -216,8 +216,27 @@ function localizeCards() {
     tags.textContent = '';
     p.tags.forEach((t) => { const s = document.createElement('span'); s.textContent = t; tags.append(s); });
   });
+  fitCards();   // the other language's tags can wrap differently
 }
 const cards = () => $$('.card', track);
+/* Cards scale down to fit a short screen (owner direction): the works section is one screen tall, so
+   on a short one the squeezed track pushed each card's title, meta and tags out of its box, out of its
+   corner-mark frame and partly out of view. The card narrows in steps until it fits: the thumbnail
+   shrinks with it, but the title and tags wrap onto more lines, so the height does not follow the
+   width in proportion. Never below 320 px: a smaller card shows little and frees little height, so a
+   very short screen still clips. */
+const CARD_MIN = 320, CARD_STEP = 16;
+function fitCards() {
+  track.style.removeProperty('--card-fit');
+  const cs = getComputedStyle(track), first = cards()[0];
+  const room = track.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  if (!first || room <= 0) return;
+  const need = () => Math.max(...cards().map((c) => { const t = c.querySelector('.tags'); return t.offsetTop + t.offsetHeight; }));
+  for (let w = first.offsetWidth; w > CARD_MIN && need() > room + 0.5;) {
+    w = Math.max(CARD_MIN, w - CARD_STEP);
+    track.style.setProperty('--card-fit', w + 'px');
+  }
+}
 const trackMax = () => Math.max(0, track.scrollWidth - track.clientWidth);
 const cardStep = () => { const c = cards(); return c.length > 1 ? c[1].offsetLeft - c[0].offsetLeft : track.clientWidth; };
 function currentIndex() {
@@ -322,6 +341,7 @@ function layout() {
   const flowEls = $$('.stagger', works);
   flowEls.forEach((el, i) => el.style.setProperty('--fd', (i * STAGGER_MS) + 'ms'));
   flowLockMs = reduce.matches ? 0 : Math.max(0, flowEls.length - 1) * STAGGER_MS + FLOW_MS;
+  fitCards();
   render();
 }
 
