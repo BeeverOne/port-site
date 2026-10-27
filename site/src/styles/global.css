@@ -173,7 +173,7 @@ body.ready .hl { background-size: 100% 64%; }
 .works-head h2 { margin: 0; font-size: clamp(44px, 6.7vw, 96px); line-height: 0.95; font-weight: 500; font-stretch: 125%; letter-spacing: -0.02em; }
 .track { display: flex; gap: 40px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding: 10px 56px 10px 10px; margin-left: -10px; overscroll-behavior-x: contain; }
 .track::-webkit-scrollbar { display: none; }
-.card { flex: 0 0 min(560px, 78vw); display: flex; flex-direction: column; gap: 14px; text-decoration: none; color: inherit; border-radius: var(--radius); --cb: var(--works-ink); }
+.card { flex: 0 0 min(560px, 78vw, var(--card-fit, 560px)); display: flex; flex-direction: column; gap: 14px; text-decoration: none; color: inherit; border-radius: var(--radius); --cb: var(--works-ink); }
 .thumb {
   aspect-ratio: 16 / 7.2; border: 1px solid var(--works-rule); border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
   background-color: var(--works-fill); background-image: conic-gradient(var(--works-fill) 25%, transparent 0 50%, var(--works-fill) 0 75%, transparent 0); background-size: 8px 8px;
@@ -292,7 +292,6 @@ body.mode-works .proto { bottom: calc(var(--gap) + 96px); }
   content: ""; position: absolute; inset: 0; z-index: 1; border-radius: var(--radius);
   background: var(--works); opacity: 0; pointer-events: none; transition: opacity 200ms ease-out;
 }
-.track:has(.card:hover) .card:not(:hover)::before { opacity: 0.45; }
 .card .hover-title {
   position: absolute; left: 0; right: 0; bottom: calc(100% + 10px);
   margin: 0; font-size: clamp(22px, 2.1vw, 30px); line-height: 1.1; font-weight: 500; font-stretch: 115%;
@@ -300,9 +299,17 @@ body.mode-works .proto { bottom: calc(var(--gap) + 96px); }
   transition: opacity 200ms ease-out, transform 250ms cubic-bezier(.2,.7,.2,1);
 }
 .card h3 { transition: opacity 200ms ease-out; }
-.card:hover, .card:focus-visible, .works.flow .card:hover, .works.flow .card:focus-visible { transform: scale(1.03); }
-.card:hover .hover-title, .card:focus-visible .hover-title { opacity: 1; transform: none; }
-.card:hover h3, .card:focus-visible h3 { opacity: 0; }
+.card:focus-visible, .works.flow .card:focus-visible { transform: scale(1.03); }
+.card:focus-visible .hover-title { opacity: 1; transform: none; }
+.card:focus-visible h3 { opacity: 0; }
+/* hover only where a pointer can hover: on a touch screen a tap left the card zoomed and the others
+   dimmed (owner direction) */
+@media (hover: hover) {
+  .track:has(.card:hover) .card:not(:hover)::before { opacity: 0.45; }
+  .card:hover, .works.flow .card:hover { transform: scale(1.03); }
+  .card:hover .hover-title { opacity: 1; transform: none; }
+  .card:hover h3 { opacity: 0; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .stagger { opacity: 1; transform: none; transition: none; }
@@ -592,6 +599,14 @@ ol.block-list li::before { content: counter(step, decimal-leading-zero); font-si
 /* a card's tags wrap: in one row a long set (five tags on a phone) widened the card past the track's
    78 vw and cut its frame at the track edge */
 .card .tags { flex-wrap: wrap; }
+/* each card keeps its own height, so its frame ends below its own tags, not the tallest card's */
+.track { align-items: flex-start; }
+/* Short screens (owner direction): the heading and spacing give up about 70 px so the cards, which
+   site.js narrows until they fit (fitCards), keep a usable size on a 720 px laptop screen */
+@media (max-height: 800px) and (min-width: 768px) {
+  .works-head h2 { font-size: clamp(44px, 4.4vw, 56px); }
+  .works-main { gap: 12px; padding-top: 12px; padding-bottom: 8px; }
+}
 /* room for the card frames, with a matching negative margin so nothing moves: a hovered card grows
    3 percent (about 8.5 px a side) and its frame sits 6 px further out, past the track's 10 px */
 .track { padding-left: 16px; margin-left: -16px; padding-bottom: 16px; margin-bottom: -6px; }
