@@ -11,3 +11,4 @@ npm-debug.log*
 .vitest/
 .vercel
 .env*
+.pi/
