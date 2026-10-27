@@ -207,7 +207,6 @@ function localizeCards() {
     if (!a) return;
     a.href = prefix() + '/works/' + p.id;   // FR-14: the project's own URL in the active language
     a.querySelector('h3').textContent = p.headline;
-    a.querySelector('.hover-title').textContent = p.headline;
     const thumb = a.querySelector('.thumb img');
     if (thumb) thumb.alt = p.thumbAlt || '';
     a.querySelector('.t').textContent = p.title;
@@ -219,7 +218,7 @@ function localizeCards() {
   fitCards();   // the other language's tags can wrap differently
 }
 const cards = () => $$('.card', track);
-/* Cards scale down to fit a short screen (owner direction): the works section is one screen tall, so
+/* Cards scale down to fit a short screen (CR-33): the works section is one screen tall, so
    on a short one the squeezed track pushed each card's title, meta and tags out of its box, out of its
    corner-mark frame and partly out of view. The card narrows in steps until it fits: the thumbnail
    shrinks with it, but the title and tags wrap onto more lines, so the height does not follow the

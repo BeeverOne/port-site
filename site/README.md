@@ -116,10 +116,14 @@ against the previous language's text lengths.
 - Single background (feel review 2): the canvas cross-fade is the island's only background; the works
   section paints none and clips the pre-flow stagger translate, which keeps the scroller height
   stable and removes both the travelling slab edge and the downward nudge.
-- Card hover (CR-21): the whole card scales to 1.03 from one origin; the headline cross-fades to a
-  slot above the thumbnail, siblings dim behind a works-coloured veil, and the track headroom band
-  keeps the hover title clear of the track's overflow clip. The slot keeps to one line with an
-  ellipsis, and below 768 px the title stays under the thumbnail instead (CR-31).
+- Card hover (CR-21): the whole card scales to 1.03 from one origin and siblings dim behind a
+  works-coloured veil, only on devices that can hover (CR-33). The headline stays under the
+  thumbnail; its cross-fade to a slot above the card and the track's headroom band for it were
+  withdrawn (CR-34).
+- Card fit on short screens (CR-33): `fitCards()` in `src/scripts/site.js` narrows the cards in
+  16 px steps (to 320 px at least) until title, meta and tags fit the track, so the corner bracket
+  wraps the whole card; below 800 px tall the [ Works ] heading and the spacing compact. Each card
+  keeps its own height. The card thumbnails stay undisplayed until the intro is ready (NFR-05).
 - Header in the works section (CR-32): the header's Contact leaves the row and fades where it stood,
   and `src/scripts/header-shift.js` slides the language and theme toggles into its space (and back)
   with the brackets' spring; without the script they move without sliding.

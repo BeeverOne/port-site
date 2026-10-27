@@ -285,42 +285,25 @@ body.mode-works .proto { bottom: calc(var(--gap) + 96px); }
 .works { background: transparent; overflow: hidden; }
 
 /* Card hover choreography: the whole card scales from one origin so the composition holds
-   together; the title cross-fades from beneath the thumbnail to a slot above it (mirroring
-   its position in the detail view), and the sibling cards dim behind a works-coloured veil. */
+   together, and the sibling cards dim behind a works-coloured veil (CR-21). The title stays
+   under the thumbnail; it no longer cross-fades to a slot above the card (CR-34). */
 .card { position: relative; transition: transform 250ms cubic-bezier(.2,.7,.2,1); }
 .card::before {
   content: ""; position: absolute; inset: 0; z-index: 1; border-radius: var(--radius);
   background: var(--works); opacity: 0; pointer-events: none; transition: opacity 200ms ease-out;
 }
-.card .hover-title {
-  position: absolute; left: 0; right: 0; bottom: calc(100% + 10px);
-  margin: 0; font-size: clamp(22px, 2.1vw, 30px); line-height: 1.1; font-weight: 500; font-stretch: 115%;
-  opacity: 0; transform: translateY(8px); pointer-events: none;
-  transition: opacity 200ms ease-out, transform 250ms cubic-bezier(.2,.7,.2,1);
-}
-.card h3 { transition: opacity 200ms ease-out; }
 .card:focus-visible, .works.flow .card:focus-visible { transform: scale(1.03); }
-.card:focus-visible .hover-title { opacity: 1; transform: none; }
-.card:focus-visible h3 { opacity: 0; }
 /* hover only where a pointer can hover: on a touch screen a tap left the card zoomed and the others
-   dimmed (owner direction) */
+   dimmed (CR-33) */
 @media (hover: hover) {
   .track:has(.card:hover) .card:not(:hover)::before { opacity: 0.45; }
   .card:hover, .works.flow .card:hover { transform: scale(1.03); }
-  .card:hover .hover-title { opacity: 1; transform: none; }
-  .card:hover h3 { opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .stagger { opacity: 1; transform: none; transition: none; }
-  .card, .card .hover-title { transform: none; }
-  .card .hover-title { transition: opacity 200ms ease-out; }
+  .card { transform: none; }
 }
-
-/* Headroom for the hover title above the thumbnail: the track clips overflow-y, so
-   without this band the title would be cut off at the track's top edge. */
-.track { padding-top: 56px; }
-@media (max-width: 767px) { .track { padding-top: 44px; } }
 
 /* Single plus-mark field: the works section no longer carries its own, so no doubled crosses
    during the transition; the field colour follows the active section instead. It paints above the
@@ -599,17 +582,22 @@ ol.block-list li::before { content: counter(step, decimal-leading-zero); font-si
 /* a card's tags wrap: in one row a long set (five tags on a phone) widened the card past the track's
    78 vw and cut its frame at the track edge */
 .card .tags { flex-wrap: wrap; }
-/* each card keeps its own height, so its frame ends below its own tags, not the tallest card's */
+/* each card keeps its own height, so its frame ends below its own tags, not the tallest card's (CR-33) */
 .track { align-items: flex-start; }
-/* Short screens (owner direction): the heading and spacing give up about 70 px so the cards, which
+/* Short screens (CR-33): the heading and spacing give up about 70 px so the cards, which
    site.js narrows until they fit (fitCards), keep a usable size on a 720 px laptop screen */
 @media (max-height: 800px) and (min-width: 768px) {
   .works-head h2 { font-size: clamp(44px, 4.4vw, 56px); }
   .works-main { gap: 12px; padding-top: 12px; padding-bottom: 8px; }
 }
 /* room for the card frames, with a matching negative margin so nothing moves: a hovered card grows
-   3 percent (about 8.5 px a side) and its frame sits 6 px further out, past the track's 10 px */
-.track { padding-left: 16px; margin-left: -16px; padding-bottom: 16px; margin-bottom: -6px; }
+   3 percent (about 8.5 px a side) and its frame sits 6 px further out, past the track's 10 px. The top
+   gets the same 16 px now that the hover title's 56 px headroom band is gone (CR-34). */
+.track { padding-top: 16px; padding-left: 16px; margin-left: -16px; padding-bottom: 16px; margin-bottom: -6px; }
+/* the card thumbnails wait for the intro (NFR-05): Chrome fetches a lazy image well before it nears the
+   view, and at 1280 x 800 the thumbnails sit just inside that distance from the first screen. An
+   image that is not displayed is not fetched; its box keeps the aspect ratio, so nothing shifts. */
+body:not(.ready) .card .thumb img { display: none; }
 /* the footer's Contact button had 10 px of room, so its frame sat 4 px from the footer's rounded edge;
    16 px leaves 10 */
 .works-footer { padding: 16px 20px 16px 16px; min-height: 76px; }
@@ -630,12 +618,3 @@ body.mode-works .site-header .btn-contact {
   transition: opacity 200ms ease-out, visibility 0s 200ms;
 }
 
-/* Card title on phones (CR-31): below 768 px the title stays under the thumbnail, where it can wrap,
-   instead of cross-fading to the slot above the card, where a long title wrapped into the [ Works ]
-   heading. On wider screens the slot above keeps to one line and ends in an ellipsis if a title is
-   ever longer than the card. */
-.card .hover-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-@media (max-width: 767px) {
-  .card:hover .hover-title, .card:focus-visible .hover-title { opacity: 0; }
-  .card:hover h3, .card:focus-visible h3 { opacity: 1; }
-}

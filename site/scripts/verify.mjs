@@ -202,7 +202,6 @@ const mustHave = [
   ['class="runway"', 'runway spacer sizes the transition'],
   ['class="lmark"', 'v-stack loader mark (FR-47)'],
   ['role="slider"', 'draggable indicator slider (FR-05, CR-04)'],
-  ['class="hover-title"', 'card hover title above the thumbnail (owner direction)'],
   ['btn-primary', 'primary buttons carry the scan sweep'],
   ['class="plus-field"', 'plus-mark field'],
   ['id="loader"', 'page loader'],
@@ -375,8 +374,6 @@ function skeleton(html) {
   s = s.replace(/(<h1 id="statement"[^>]*>)[\s\S]*?(<\/h1>)/, '$1$2');
   /* the island field is the only plus-mark field now; the prototype still carries two */
   s = s.replace(/<div class="plus-field"[^>]*>\s*<\/div>/g, '');
-  /* the hover title is an owner-directed addition, not in the prototype */
-  s = s.replace(/<span class="hover-title"[^>]*>[\s\S]*?<\/span>/g, '');
   /* the mobile footer wrappers and chevron are owner-directed additions too */
   s = s.replace(/<div class="wf-row">/g, '');
   s = s.replace(/<button class="wf-toggle[^>]*>[\s\S]*?<\/button>/g, '');
@@ -418,7 +415,7 @@ if (protoSkel.length === builtSkel.length && protoSkel.every((t, i) => t === bui
 /* Class-name multiset: catches a renamed or dropped hook the sequence check could mask. */
 /* Known, deliberate differences: the track's cards (Astro renders them, the prototype
    injects them at runtime) and the dev-only prototype control panel (checked in [6]). */
-const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger', 'hover-title', 'plus-field', 'wf-row', 'wf-toggle', 'wf-more', 'wf-more-inner', 'name', 'hl', 'sym', 'media-box', 'media-loader', 'mbase', 'mfill', 'media-failed', 'media-retry', 'detail-blocks', 'block-text', 'block-media', 'block', 'media', 'demo', 'swatch', 'block-heading', 'sec', 'sec-num', 'sec-title', 'sub', 'sub-key', 'lede', 'block-facts', 'block-list', 'ref', 'detail-bar', 'detail-section', 'detail-progress', 'detail-head', 'm-title', 'm-year', 'detail-body', 'detail-toc', 'detail-toc-label'];   // media-*, block-*: CMS blocks and loaders (FR-17, FR-50); block, media, demo, swatch: the prototype's placeholders they replace   // sec*, sub*, lede, ref, detail-*, m-*: the detail reading layout (CR-29)   // name, hl: the pre-rendered statement spans (ADR-0012)
+const EXPECTED_CLASS_DIFF = ['card', 'cb', 'thumb', 'meta', 'tags', 'year', 't', 'proto', 'stagger', 'plus-field', 'wf-row', 'wf-toggle', 'wf-more', 'wf-more-inner', 'name', 'hl', 'sym', 'media-box', 'media-loader', 'mbase', 'mfill', 'media-failed', 'media-retry', 'detail-blocks', 'block-text', 'block-media', 'block', 'media', 'demo', 'swatch', 'block-heading', 'sec', 'sec-num', 'sec-title', 'sub', 'sub-key', 'lede', 'block-facts', 'block-list', 'ref', 'detail-bar', 'detail-section', 'detail-progress', 'detail-head', 'm-title', 'm-year', 'detail-body', 'detail-toc', 'detail-toc-label'];   // media-*, block-*: CMS blocks and loaders (FR-17, FR-50); block, media, demo, swatch: the prototype's placeholders they replace   // sec*, sub*, lede, ref, detail-*, m-*: the detail reading layout (CR-29)   // name, hl: the pre-rendered statement spans (ADR-0012)
 function classBag(html) {
   const bag = new Map();
   for (const m of bodyOf(html).matchAll(/\bclass="([^"]*)"/g)) {
