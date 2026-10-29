@@ -122,8 +122,9 @@ against the previous language's text lengths.
   withdrawn (CR-34).
 - Card fit on short screens (CR-33): `fitCards()` in `src/scripts/site.js` narrows the cards in
   16 px steps (to 320 px at least) until title, meta and tags fit the track, so the corner bracket
-  wraps the whole card; below 800 px tall the [ Works ] heading and the spacing compact. Each card
-  keeps its own height. The card thumbnails stay undisplayed until the intro is ready (NFR-05).
+  wraps the whole card; below 900 px tall the [ Works ] heading and the spacing compact (CR-35). Each
+  card keeps its own height, and every card title takes a two-line slot so the cards' meta and tags
+  line up whatever the width (CR-35). The card thumbnails stay undisplayed until the intro is ready (NFR-05).
 - Header in the works section (CR-32): the header's Contact leaves the row and fades where it stood,
   and `src/scripts/header-shift.js` slides the language and theme toggles into its space (and back)
   with the brackets' spring; without the script they move without sliding.

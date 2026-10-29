@@ -584,9 +584,14 @@ ol.block-list li::before { content: counter(step, decimal-leading-zero); font-si
 .card .tags { flex-wrap: wrap; }
 /* each card keeps its own height, so its frame ends below its own tags, not the tallest card's (CR-33) */
 .track { align-items: flex-start; }
-/* Short screens (CR-33): the heading and spacing give up about 70 px so the cards, which
-   site.js narrows until they fit (fitCards), keep a usable size on a 720 px laptop screen */
-@media (max-height: 800px) and (min-width: 768px) {
+/* every card title takes two lines (CR-35): whether a title wraps depends on the card's width, which
+   changes with the window, so a fixed slot keeps the meta and tags of all cards on one line. A longer
+   title ends in an ellipsis. */
+.card h3 { min-height: 2.2em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+/* Short screens (CR-33, CR-35): below 900 px tall the heading and spacing give up about 70 px so the
+   cards, which site.js narrows until they fit (fitCards), keep their width more often; at 800 px a
+   window just above the old threshold narrowed them and wrapped their titles */
+@media (max-height: 899px) and (min-width: 768px) {
   .works-head h2 { font-size: clamp(44px, 4.4vw, 56px); }
   .works-main { gap: 12px; padding-top: 12px; padding-bottom: 8px; }
 }
